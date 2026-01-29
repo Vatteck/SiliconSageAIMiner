@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.siliconsage.miner.app-mergeDebugResources-57:/values-v23/values-v23.xml",
+            "map": [
+                {
+                    "source": "/home/vatteck/.gradle/caches/9.1.0/transforms/04867f83df1f36854c8f0fc7411773dd/transformed/work-runtime-2.9.0/res/values-v23/values-v23.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,121",
+                        "endColumns": "65,62",
+                        "endOffsets": "116,179"
+                    }
+                }
+            ]
+        }
+    ]
+}
