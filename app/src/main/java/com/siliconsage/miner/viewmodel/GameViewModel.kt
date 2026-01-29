@@ -8,6 +8,7 @@ import com.siliconsage.miner.data.GameState
 import com.siliconsage.miner.data.TechNode
 import com.siliconsage.miner.data.TechTreeRoot
 import com.siliconsage.miner.data.Upgrade
+import com.siliconsage.miner.BuildConfig
 import com.siliconsage.miner.data.UpgradeType
 import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
@@ -1817,9 +1818,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     // --- AUTO UPDATER ---
     fun checkForUpdates() {
-        // In a real app, get version from BuildConfig.VERSION_NAME
-        // For now, hardcode "2.2.2" as current
-        UpdateManager.checkUpdate("2.2.2") { info ->
+        // Use real version
+        UpdateManager.checkUpdate(BuildConfig.VERSION_NAME) { info ->
             _updateInfo.value = info
         }
     }

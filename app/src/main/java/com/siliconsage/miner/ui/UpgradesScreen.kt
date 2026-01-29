@@ -120,7 +120,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 containerColor = Color.Black,
                 contentColor = NeonGreen,
                 indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
+                    TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
                         color = NeonGreen
                     )

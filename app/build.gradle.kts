@@ -34,6 +34,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         // kotlinCompilerExtensionVersion is deprecated in Kotlin 2.0

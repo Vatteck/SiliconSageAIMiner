@@ -13,16 +13,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import com.siliconsage.miner.BuildConfig
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,7 +50,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     var hapticsEnabled by remember { mutableStateOf(HapticManager.isHapticsEnabled) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    var secretClicks by remember { mutableStateOf(0) }
+    var secretClicks by remember { mutableIntStateOf(0) }
     var showDevOptions by remember { mutableStateOf(false) }
 
     // Reset Confirmation Dialogs
@@ -58,6 +62,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             Text(
@@ -90,7 +95,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             
             if (sfxEnabled) {
                 Spacer(modifier = Modifier.height(8.dp))
-                var vol by remember { mutableStateOf(SoundManager.sfxVolume) }
+                var vol by remember { mutableFloatStateOf(SoundManager.sfxVolume) }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -129,7 +134,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             
             if (bgmEnabled) {
                 Spacer(modifier = Modifier.height(8.dp))
-                var vol by remember { mutableStateOf(SoundManager.bgmVolume) }
+                var vol by remember { mutableFloatStateOf(SoundManager.bgmVolume) }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -180,7 +185,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 Button(
                     onClick = { 
                         viewModel.checkForUpdates()
-                        com.siliconsage.miner.util.SoundManager.play("click")
+                        SoundManager.play("click")
                     },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
@@ -229,7 +234,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             Spacer(modifier = Modifier.weight(1f))
             
             Text(
-                "Silicon Sage v1.9.1 [DEV]", 
+                "Silicon Sage v${BuildConfig.VERSION_NAME}", 
                 color = ElectricBlue.copy(alpha = 0.5f), 
                 fontSize = 10.sp, 
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -266,11 +271,11 @@ fun SettingsScreen(viewModel: GameViewModel) {
                      showResetDialog2 = false
                      viewModel.resetGame(context)
                      // Refresh local UI state
-                     sfxEnabled = com.siliconsage.miner.util.SoundManager.isSfxEnabled
-                     bgmEnabled = com.siliconsage.miner.util.SoundManager.isBgmEnabled
-                     hapticsEnabled = com.siliconsage.miner.util.HapticManager.isHapticsEnabled
-                     com.siliconsage.miner.util.SoundManager.play("error")
-                     com.siliconsage.miner.util.HapticManager.vibrateError()
+                     sfxEnabled = SoundManager.isSfxEnabled
+                     bgmEnabled = SoundManager.isBgmEnabled
+                     hapticsEnabled = HapticManager.isHapticsEnabled
+                     SoundManager.play("error")
+                     HapticManager.vibrateError()
                  },
                  onCancel = { showResetDialog2 = false },
                  swapButtons = true // Alternate button placement
@@ -299,7 +304,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     DevButton("ADD 1B FLOPS") { viewModel.debugAddFlops(1_000_000_000.0) }
-                    DevButton("ADD 1M \$NEURAL") { viewModel.debugAddMoney(1_000_000.0) }
+                    DevButton("ADD 1M ${'$'}NEURAL") { viewModel.debugAddMoney(1_000_000.0) }
                     DevButton("ADD 100 INSIGHT") { viewModel.debugAddInsight(100.0) }
                     DevButton("TRIGGER BREACH") { viewModel.debugTriggerBreach() }
                     DevButton("TRIGGER AIRDROP") { viewModel.debugTriggerAirdrop() }

@@ -33,12 +33,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -78,7 +78,7 @@ import com.siliconsage.miner.viewmodel.GameViewModel
 
 sealed class Screen(val title: String, val icon: ImageVector) {
     object TERMINAL : Screen("TERMINAL", Icons.Default.Home)
-    object UPGRADES : Screen("UPGRADES", Icons.Default.List)
+    object UPGRADES : Screen("UPGRADES", Icons.AutoMirrored.Filled.List)
     object NETWORK : Screen("NETWORK", Icons.Default.Share)
     object SETTINGS : Screen("SYSTEM", Icons.Default.Settings)
 }
@@ -374,7 +374,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                             }
                         }
                         
-                        Divider(color = primaryColor)
+                        HorizontalDivider(color = primaryColor)
                         
                         // Train Button
                         Box(
@@ -641,7 +641,7 @@ fun HeaderSection(
             Text("🔥 HEAT:", color = if (isHot) ErrorRed else color, fontSize = 10.sp)
             Spacer(modifier = Modifier.width(4.dp))
             LinearProgressIndicator(
-                progress = (heat / 100.0).toFloat().coerceIn(0f, 1f),
+                progress = { (heat / 100.0).toFloat().coerceIn(0f, 1f) },
                 modifier = Modifier.weight(1f).height(6.dp),
                 color = if (isHot) ErrorRed else color,
                 trackColor = Color.DarkGray
