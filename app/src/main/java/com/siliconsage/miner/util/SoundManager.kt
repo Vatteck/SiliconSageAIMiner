@@ -6,6 +6,8 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.media.SoundPool
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,14 +20,25 @@ object SoundManager {
     private var soundPool: SoundPool? = null
     private val soundMap = ConcurrentHashMap<String, Int>()
     
+    private const val PREFS_NAME = "audio_prefs"
+    private const val KEY_SFX_ENABLED = "sfx_enabled"
+    private const val KEY_SFX_VOLUME = "sfx_volume"
+    private const val KEY_BGM_ENABLED = "bgm_enabled"
+    private const val KEY_BGM_VOLUME = "bgm_volume"
+    private const val KEY_CUSTOM_URI = "custom_bgm_uri"
+    
     // --- Independent Controls ---
     var sfxVolume = 0.5f
+        set(value) {
+            field = value
+            saveSetting(KEY_SFX_VOLUME, value)
+        }
     
     var isSfxEnabled = true
         set(value) {
             field = value
+            saveSetting(KEY_SFX_ENABLED, value)
             if (!value) {
-                // Stop all active SFX
                 soundPool?.autoPause()
             } else {
                 soundPool?.autoResume()
@@ -35,12 +48,14 @@ object SoundManager {
     var bgmVolume = 0.8f
         set(value) {
             field = value
+            saveSetting(KEY_BGM_VOLUME, value)
             updateBgmVolume()
         }
         
     var isBgmEnabled = true
         set(value) {
             field = value
+            saveSetting(KEY_BGM_ENABLED, value)
             if (!value) {
                 stopBgm()
             } else {
@@ -52,19 +67,21 @@ object SoundManager {
     private var bgmPlayer: MediaPlayer? = null
     private var isBgmPlaying = false
     private var bgmStage = 0 
-    private var context: Context? = null
+    private var appCtx: Context? = null
     
     // Custom Music Support
     var customMusicUri: String? = null 
-    private const val PREFS_NAME = "audio_prefs"
-    private const val KEY_CUSTOM_URI = "custom_bgm_uri"
 
     fun init(ctx: Context) {
         try {
-            context = ctx.applicationContext
+            appCtx = ctx.applicationContext
             
             // Load Preferences
             val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            isSfxEnabled = prefs.getBoolean(KEY_SFX_ENABLED, true)
+            sfxVolume = prefs.getFloat(KEY_SFX_VOLUME, 0.5f)
+            isBgmEnabled = prefs.getBoolean(KEY_BGM_ENABLED, true)
+            bgmVolume = prefs.getFloat(KEY_BGM_VOLUME, 0.8f)
             customMusicUri = prefs.getString(KEY_CUSTOM_URI, null)
             
             // SFX Pool
@@ -87,7 +104,7 @@ object SoundManager {
     }
 
     private fun loadSounds() {
-        val ctx = context ?: return
+        val ctx = appCtx ?: return
         CoroutineScope(Dispatchers.IO).launch {
             // 1. Click
             val clickPcm = AudioGenerator.generateTone(350.0, 25, AudioGenerator.WaveType.SQUARE, 0.3)
@@ -119,7 +136,7 @@ object SoundManager {
             val alarmPcm = AudioGenerator.generateTone(600.0, 200, AudioGenerator.WaveType.SAWTOOTH, 0.6)
             loadPcm(ctx, "alarm", alarmPcm)
 
-            // 8. Hum (Lowered volume from 0.3 to 0.1 to be less annoying)
+            // 8. Hum
             val humPcm = AudioGenerator.generateTone(60.0, 500, AudioGenerator.WaveType.SQUARE, 0.1)
             loadPcm(ctx, "hum", humPcm)
             
@@ -127,13 +144,12 @@ object SoundManager {
             val typePcm = AudioGenerator.generateTone(800.0, 40, AudioGenerator.WaveType.NOISE, 0.05)
             loadPcm(ctx, "type", typePcm)
             
-            // 10. Thrum (Overclock loop) - Low throbbing
+            // 10. Thrum
             val thrumPcm = AudioGenerator.generateTone(50.0, 400, AudioGenerator.WaveType.SAWTOOTH, 0.2)
             loadPcm(ctx, "thrum", thrumPcm)
             
-            // 11. Steam (Purge) - White noise fade
+            // 11. Steam
             val steamPcm = AudioGenerator.generateTone(0.0, 800, AudioGenerator.WaveType.NOISE, 0.4)
-            // (Note: accurate ADSR would be better, but simple noise burst works for now)
             loadPcm(ctx, "steam", steamPcm)
         }
     }
@@ -181,31 +197,23 @@ object SoundManager {
 
     // --- BGM Logic ---
 
-    // Procedural State (Legacy fallback)
     private var staticAudioTrack: AudioTrack? = null
     
     fun setBgmStage(stage: Int) {
         bgmStage = stage
-        // Asset BGM doesn't currently use stages, but we keep this for legacy logic if needed.
     }
     
     fun setCustomTrack(uri: String?) {
         customMusicUri = uri
-        
-        // Save to Prefs
-        context?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            ?.edit()
-            ?.putString(KEY_CUSTOM_URI, uri)
-            ?.apply()
-            
+        appCtx?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)?.edit {
+            putString(KEY_CUSTOM_URI, uri)
+        }
         startBgm()
     }
 
     private fun startBgm() {
         if (!isBgmEnabled) return
-        
         stopBgm()
-
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (customMusicUri != null) {
@@ -222,7 +230,7 @@ object SoundManager {
     private suspend fun playAssetBgm() {
         withContext(Dispatchers.Main) {
             try {
-                val ctx = context ?: return@withContext
+                val ctx = appCtx ?: return@withContext
                 val player = MediaPlayer()
                 val descriptor = ctx.assets.openFd("bgm.wav")
                 player.setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
@@ -232,7 +240,6 @@ object SoundManager {
                 setupPlayer(player)
             } catch (e: Exception) {
                 e.printStackTrace()
-                // If asset fails, fallback to procedural synth as a fail-safe
                 playProceduralBgm()
             }
         }
@@ -241,10 +248,9 @@ object SoundManager {
     private suspend fun playCustomBgm() {
         withContext(Dispatchers.Main) {
             try {
-                val uri = android.net.Uri.parse(customMusicUri)
+                val uri = customMusicUri!!.toUri()
                 val player = MediaPlayer()
-                
-                context?.let { ctx ->
+                appCtx?.let { ctx ->
                     player.setDataSource(ctx, uri)
                     player.isLooping = true
                     player.prepare()
@@ -261,14 +267,11 @@ object SoundManager {
     private fun playProceduralBgm() {
         try {
             val pcmData = generateBgmTrack(bgmStage)
-            
             val sampleRate = 44100
             val channelConfig = AudioFormat.CHANNEL_OUT_MONO
             val audioFormat = AudioFormat.ENCODING_PCM_16BIT
-            
             val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
             val bufferSize = pcmData.size.coerceAtLeast(minBufferSize)
-            
             val track = AudioTrack.Builder()
                 .setAudioAttributes(AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_GAME)
@@ -282,16 +285,12 @@ object SoundManager {
                 .setBufferSizeInBytes(bufferSize)
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build()
-
             track.write(pcmData, 0, pcmData.size)
             track.setLoopPoints(0, pcmData.size / 2, -1)
-            
             track.setVolume(bgmVolume)
             track.play()
-            
             staticAudioTrack = track
             isBgmPlaying = true
-            
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -308,16 +307,12 @@ object SoundManager {
     
     private fun stopBgm() {
         try {
-            if (bgmPlayer != null) {
-                bgmPlayer?.stop()
-                bgmPlayer?.release()
-                bgmPlayer = null
-            }
-            if (staticAudioTrack != null) {
-                staticAudioTrack?.stop()
-                staticAudioTrack?.release()
-                staticAudioTrack = null
-            }
+            bgmPlayer?.stop()
+            bgmPlayer?.release()
+            bgmPlayer = null
+            staticAudioTrack?.stop()
+            staticAudioTrack?.release()
+            staticAudioTrack = null
             isBgmPlaying = false
         } catch (e: Exception) { e.printStackTrace() }
     }
@@ -334,7 +329,6 @@ object SoundManager {
         val freqHari = 102.0
         val numSamples = 44100 * 4
         val buffer = ByteArray(numSamples * 2)
-        
         for (i in 0 until numSamples) {
             val t = i.toDouble() / 44100.0
             var s = kotlin.math.sin(2.0 * kotlin.math.PI * freqBase * t) * 0.6
@@ -388,17 +382,13 @@ object SoundManager {
     fun pauseAll() {
         isAppPaused = true
         soundPool?.autoPause()
-        if (isBgmPlaying) {
-            bgmPlayer?.pause()
-            staticAudioTrack?.pause()
-        }
+        bgmPlayer?.pause()
+        staticAudioTrack?.pause()
     }
     
     fun resumeAll() {
         isAppPaused = false
-        if (isSfxEnabled) {
-            soundPool?.autoResume()
-        }
+        if (isSfxEnabled) soundPool?.autoResume()
         if (isBgmEnabled && isBgmPlaying) {
             bgmPlayer?.start()
             staticAudioTrack?.play()
@@ -407,10 +397,29 @@ object SoundManager {
 
     fun release() {
         stopBgm()
-        bgmPlayer?.release()
-        bgmPlayer = null
-        
         soundPool?.release()
         soundPool = null
+    }
+
+    private fun saveSetting(key: String, value: Any) {
+        val prefs = appCtx?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) ?: return
+        prefs.edit {
+            when (value) {
+                is Boolean -> putBoolean(key, value)
+                is Float -> putFloat(key, value)
+                is String -> putString(key, value)
+            }
+        }
+    }
+
+    fun resetSettings(ctx: Context) {
+        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { clear() }
+        isSfxEnabled = true
+        sfxVolume = 0.5f
+        isBgmEnabled = true
+        bgmVolume = 0.8f
+        customMusicUri = null
+        if (isBgmEnabled) startBgm() else stopBgm()
     }
 }

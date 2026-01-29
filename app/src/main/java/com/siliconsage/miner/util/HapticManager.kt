@@ -5,93 +5,83 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.core.content.edit
 
 object HapticManager {
     private var vibrator: Vibrator? = null
-    var isHapticsEnabled = true
+    private const val PREFS_NAME = "haptic_prefs"
+    private const val KEY_HAPTICS_ENABLED = "haptics_enabled"
 
-    fun init(context: Context) {
+    var isHapticsEnabled = true
+        set(value) {
+            field = value
+            saveSetting(value)
+        }
+
+    private var appCtx: Context? = null
+
+    fun init(ctx: Context) {
+        appCtx = ctx.applicationContext
+        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        isHapticsEnabled = prefs.getBoolean(KEY_HAPTICS_ENABLED, true)
+
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vibratorManager = ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            ctx.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
     }
 
     fun vibrateClick() {
         if (!isHapticsEnabled) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(20)
-        }
+        vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
     }
     
     fun vibrateSuccess() {
         if (!isHapticsEnabled) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-             @Suppress("DEPRECATION")
-            vibrator?.vibrate(50)
-        }
+        vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
     }
     
     fun vibrateError() {
         if (!isHapticsEnabled) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val waveform = longArrayOf(0, 50, 50, 50)
-            vibrator?.vibrate(VibrationEffect.createWaveform(waveform, -1))
-        } else {
-             @Suppress("DEPRECATION")
-            vibrator?.vibrate(200)
-        }
+        val waveform = longArrayOf(0, 50, 50, 50)
+        vibrator?.vibrate(VibrationEffect.createWaveform(waveform, -1))
     }
 
     // --- SENSORY EXPANSION ---
     
     fun vibrateHum() {
-        // Continuous low-amplitude hum for Thermal Critical
         if (!isHapticsEnabled) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Amplitude 50/255 is subtle
-            val effect = VibrationEffect.createOneShot(1000, 50) 
-            vibrator?.vibrate(effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(1000)
-        }
+        val effect = VibrationEffect.createOneShot(1000, 50) 
+        vibrator?.vibrate(effect)
     }
     
     fun vibrateSiren() {
-        // Aggressive pulse for 51% Attack
         if (!isHapticsEnabled) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val timings = longArrayOf(0, 100, 50, 100, 50, 100)
-            val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255)
-            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
-            vibrator?.vibrate(effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(500)
-        }
+        val timings = longArrayOf(0, 100, 50, 100, 50, 100)
+        val amplitudes = intArrayOf(0, 255, 0, 255, 0, 255)
+        val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+        vibrator?.vibrate(effect)
     }
     
     fun vibrateGlitch() {
-        // Irregular spark pattern for [GLITCH] events
         if (!isHapticsEnabled) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-             // Randomized burst
-            val timings = longArrayOf(0, 50, 20, 30, 150, 40)
-            val amplitudes = intArrayOf(0, 200, 0, 150, 0, 250)
-            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
-            vibrator?.vibrate(effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(150)
-        }
+        val timings = longArrayOf(0, 50, 20, 30, 150, 40)
+        val amplitudes = intArrayOf(0, 200, 0, 150, 0, 250)
+        val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+        vibrator?.vibrate(effect)
+    }
+
+    private fun saveSetting(value: Boolean) {
+        val prefs = appCtx?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) ?: return
+        prefs.edit { putBoolean(KEY_HAPTICS_ENABLED, value) }
+    }
+
+    fun resetSettings(ctx: Context) {
+        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { clear() }
+        isHapticsEnabled = true
     }
 }

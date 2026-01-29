@@ -9,8 +9,10 @@ import com.siliconsage.miner.data.TechNode
 import com.siliconsage.miner.data.TechTreeRoot
 import com.siliconsage.miner.data.Upgrade
 import com.siliconsage.miner.data.UpgradeType
-import com.siliconsage.miner.util.SoundManager
 import com.siliconsage.miner.util.HapticManager
+import com.siliconsage.miner.util.SoundManager
+import com.siliconsage.miner.util.UpdateInfo
+import com.siliconsage.miner.util.UpdateManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,8 +97,18 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     val hardwareIntegrity: StateFlow<Double> = _hardwareIntegrity.asStateFlow()
     
     // v1.7.2 Security System (Exposed)
-    private val _securityLevel = MutableStateFlow(0)
+    private val _securityLevel = MutableStateFlow<Int>(0)
     val securityLevel: StateFlow<Int> = _securityLevel.asStateFlow()
+
+    // v2.2 Auto-Updater
+    private val _updateInfo = MutableStateFlow<UpdateInfo?>(null)
+    val updateInfo: StateFlow<UpdateInfo?> = _updateInfo.asStateFlow()
+    
+    private val _isUpdateDownloading = MutableStateFlow<Boolean>(false)
+    val isUpdateDownloading: StateFlow<Boolean> = _isUpdateDownloading.asStateFlow()
+    
+    private val _updateDownloadProgress = MutableStateFlow<Float>(0f)
+    val updateDownloadProgress: StateFlow<Float> = _updateDownloadProgress.asStateFlow()
     
     private var thermalRateModifier = 1.0
 
@@ -1722,8 +1734,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         addLog(message)
     }
     
-    fun resetGame() {
+    fun resetGame(context: android.content.Context) {
         viewModelScope.launch {
+            // 0. Reset Settings
+            SoundManager.resetSettings(context)
+            HapticManager.resetSettings(context)
+            
             // 1. Reset Game State (Factory Reset)
             val resetState = GameState(
                 id = 1,
@@ -1797,6 +1813,41 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun debugTriggerAirdrop() {
         if (!_isAirdropActive.value) triggerAirdrop()
+    }
+
+    // --- AUTO UPDATER ---
+    fun checkForUpdates() {
+        // In a real app, get version from BuildConfig.VERSION_NAME
+        // For now, hardcode "2.2.2" as current
+        UpdateManager.checkUpdate("2.2.2") { info ->
+            _updateInfo.value = info
+        }
+    }
+    
+    fun dismissUpdate() {
+        _updateInfo.value = null
+    }
+    
+    fun startUpdateDownload(context: android.content.Context) {
+        val info = _updateInfo.value ?: return
+        _isUpdateDownloading.value = true
+        _updateDownloadProgress.value = 0f
+        
+        UpdateManager.downloadUpdate(
+            url = info.url,
+            context = context,
+            onProgress = { _updateDownloadProgress.value = it },
+            onComplete = { file ->
+                _isUpdateDownloading.value = false
+                if (file != null) {
+                    UpdateManager.installUpdate(context, file)
+                    // We don't verify installation success here, app will just close/install
+                } else {
+                    addLog("[SYSTEM]: UPDATE FAILED. CORRUPT PACKET.")
+                    HapticManager.vibrateError()
+                }
+            }
+        )
     }
     
     fun debugTriggerDiagnostics() {

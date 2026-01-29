@@ -44,6 +44,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
     var sfxEnabled by remember { mutableStateOf(SoundManager.isSfxEnabled) }
     var bgmEnabled by remember { mutableStateOf(SoundManager.isBgmEnabled) }
     var hapticsEnabled by remember { mutableStateOf(HapticManager.isHapticsEnabled) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var secretClicks by remember { mutableStateOf(0) }
     var showDevOptions by remember { mutableStateOf(false) }
@@ -154,7 +155,6 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // Custom Music Picker
-                val context = androidx.compose.ui.platform.LocalContext.current
                 val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
                     contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
                 ) { uri ->
@@ -172,6 +172,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     border = BorderStroke(1.dp, NeonGreen)
                 ) {
                     Text("LOAD CUSTOM TRACK (BETA)", color = NeonGreen, fontSize = 12.sp)
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // --- UPDATE CHECKER (v2.2) ---
+                Button(
+                    onClick = { 
+                        viewModel.checkForUpdates()
+                        com.siliconsage.miner.util.SoundManager.play("click")
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, ElectricBlue)
+                ) {
+                    Text("CHECK FOR SYSTEM UPDATES", color = ElectricBlue, fontSize = 12.sp)
                 }
             }
             
@@ -248,9 +264,13 @@ fun SettingsScreen(viewModel: GameViewModel) {
                  confirmColor = ErrorRed,
                  onConfirm = { 
                      showResetDialog2 = false
-                     viewModel.resetGame()
-                     SoundManager.play("error")
-                     HapticManager.vibrateError()
+                     viewModel.resetGame(context)
+                     // Refresh local UI state
+                     sfxEnabled = com.siliconsage.miner.util.SoundManager.isSfxEnabled
+                     bgmEnabled = com.siliconsage.miner.util.SoundManager.isBgmEnabled
+                     hapticsEnabled = com.siliconsage.miner.util.HapticManager.isHapticsEnabled
+                     com.siliconsage.miner.util.SoundManager.play("error")
+                     com.siliconsage.miner.util.HapticManager.vibrateError()
                  },
                  onCancel = { showResetDialog2 = false },
                  swapButtons = true // Alternate button placement

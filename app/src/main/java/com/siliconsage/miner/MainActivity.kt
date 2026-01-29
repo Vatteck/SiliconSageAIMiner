@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel.loadTechTree(this)
+        viewModel.checkForUpdates()
         
         // Init Engines
         com.siliconsage.miner.util.HapticManager.init(this)

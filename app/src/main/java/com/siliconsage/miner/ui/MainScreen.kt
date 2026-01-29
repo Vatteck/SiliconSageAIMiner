@@ -28,6 +28,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
@@ -49,11 +52,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import kotlinx.coroutines.delay
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +68,7 @@ import com.siliconsage.miner.data.UpgradeType
 import com.siliconsage.miner.ui.components.AirdropButton
 import com.siliconsage.miner.ui.components.NewsTicker
 import com.siliconsage.miner.ui.components.SecurityBreachOverlay
+import com.siliconsage.miner.ui.components.UpdateOverlay
 import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.ui.theme.ErrorRed
 import com.siliconsage.miner.ui.theme.NeonGreen
@@ -127,6 +128,9 @@ fun MainScreen(viewModel: GameViewModel) {
 
     val storyStage by viewModel.storyStage.collectAsState()
     val themeColor by viewModel.themeColor.collectAsState()
+    val updateInfo by viewModel.updateInfo.collectAsState(null)
+    val isUpdateDownloading by viewModel.isUpdateDownloading.collectAsState(false)
+    val updateProgress by viewModel.updateDownloadProgress.collectAsState(0f)
 
     // Hoist state for persistent ticker
     val currentNews by viewModel.currentNews.collectAsState()
@@ -189,6 +193,18 @@ fun MainScreen(viewModel: GameViewModel) {
                         Screen.SETTINGS -> SettingsScreen(viewModel)
                     }
                 }
+            }
+            
+            // v2.2 Update Overlay
+            updateInfo?.let { info ->
+                val context = androidx.compose.ui.platform.LocalContext.current
+                UpdateOverlay(
+                   updateInfo = info,
+                   isDownloading = isUpdateDownloading,
+                   progress = updateProgress,
+                   onUpdate = { viewModel.startUpdateDownload(context) },
+                   onLater = { viewModel.dismissUpdate() }
+                )
             }
         }
     }
@@ -367,11 +383,12 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                                 .height(60.dp)
                                 .background(Color.Transparent)
                                 .pointerInput(isThermalLockout, isBreakerTripped, isGridOverloaded) {
+                                    val width = size.width
                                     detectTapGestures { offset ->
                                         if (!isThermalLockout && !isBreakerTripped && !isGridOverloaded) {
                                             // Calculate pan from x: 0 (left) to size.width (right)
                                             // Map to -1.0 to 1.0
-                                            val pan = ((offset.x / size.width) * 2f) - 1f
+                                            val pan = ((offset.x / width) * 2f) - 1f
                                             viewModel.trainModel()
                                             SoundManager.play("click", pan = pan)
                                             HapticManager.vibrateClick()
