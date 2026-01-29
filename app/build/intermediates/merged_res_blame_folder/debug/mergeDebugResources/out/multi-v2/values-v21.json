@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.siliconsage.miner.app-mergeDebugResources-57:/values-v21/values-v21.xml",
+            "outputFile": "com.siliconsage.miner.app-mergeDebugResources-60:/values-v21/values-v21.xml",
             "map": [
                 {
-                    "source": "/home/vatteck/.gradle/caches/9.1.0/transforms/a89c45642f7dda13554947dbc037a835/transformed/core-1.12.0/res/values-v21/values-v21.xml",
+                    "source": "/home/vatteck/.gradle/caches/9.1.0/transforms/66ce15ad7986d1d2de07a8e4d7fe7e88/transformed/core-1.15.0/res/values-v21/values-v21.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,13",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4",
