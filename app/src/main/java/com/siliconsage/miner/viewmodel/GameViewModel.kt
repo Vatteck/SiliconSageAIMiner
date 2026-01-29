@@ -14,6 +14,7 @@ import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
 import com.siliconsage.miner.util.UpdateInfo
 import com.siliconsage.miner.util.UpdateManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -1817,10 +1818,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     // --- AUTO UPDATER ---
-    fun checkForUpdates() {
+    fun checkForUpdates(onResult: ((Boolean) -> Unit)? = null) {
         // Use real version
         UpdateManager.checkUpdate(BuildConfig.VERSION_NAME) { info ->
-            _updateInfo.value = info
+            viewModelScope.launch(Dispatchers.Main) {
+                _updateInfo.value = info
+                onResult?.invoke(info != null)
+            }
         }
     }
     

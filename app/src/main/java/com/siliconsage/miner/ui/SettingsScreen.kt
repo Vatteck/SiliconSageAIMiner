@@ -178,22 +178,28 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 ) {
                     Text("LOAD CUSTOM TRACK (BETA)", color = NeonGreen, fontSize = 12.sp)
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // --- UPDATE CHECKER (v2.2) ---
-                Button(
-                    onClick = { 
-                        viewModel.checkForUpdates()
-                        SoundManager.play("click")
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                    shape = RoundedCornerShape(4.dp),
-                    border = BorderStroke(1.dp, ElectricBlue)
-                ) {
-                    Text("CHECK FOR SYSTEM UPDATES", color = ElectricBlue, fontSize = 12.sp)
-                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // --- UPDATE CHECKER (v2.2) ---
+            Button(
+                onClick = { 
+                    SoundManager.play("click")
+                    viewModel.checkForUpdates { found ->
+                         android.widget.Toast.makeText(
+                             context,
+                             if (found) "SYSTEM UPDATE DETECTED" else "SYSTEM IS UP TO DATE",
+                             android.widget.Toast.LENGTH_SHORT
+                         ).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                shape = RoundedCornerShape(4.dp),
+                border = BorderStroke(1.dp, ElectricBlue)
+            ) {
+                Text("CHECK FOR SYSTEM UPDATES", color = ElectricBlue, fontSize = 12.sp)
             }
             
             Spacer(modifier = Modifier.height(16.dp))
