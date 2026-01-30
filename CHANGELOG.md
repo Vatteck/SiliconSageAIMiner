@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.3.0-dev] - 2026-01-30
+
+### Changed
+- **Purge System Rework**: "Purge Heat" now sacrifices **ALL** current FLOPS to reduce heat. The reduction scales with the amount sacrificed. Removed the fixed $500 cost.
+- **UI Header**: Unified the Header style across Main and Upgrades screens. Added **Security Level** (`🔒 SEC`) to the header for better visibility.
+- **Upgrades Screen**: Centered the header and added explicit Cooling Rate badges (`❄ -X/s`) to cooling items.
+- **Network Screen**: Complete layout overhaul. The entire screen is now scrollable, fixing visibility issues on smaller devices.
+
+### Fixed
+- **Navigation**: Resolved layout issues on smaller screens.
+- **Visuals**: Added press animations to "Train Model", "Sell", and "Stake" buttons.
+- **Bugs**: Fixed "Sell" button overflow and text wrapping issues.
+
 ## [2.2.7-dev] - 2026-01-29
 
 ### Changed

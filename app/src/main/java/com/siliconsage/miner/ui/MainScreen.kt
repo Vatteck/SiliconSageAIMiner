@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.gestures.detectTapGestures
 import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
@@ -244,6 +245,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
     val isOverclocked by viewModel.isOverclocked.collectAsState()
     val isPurging by viewModel.isPurgingHeat.collectAsState()
     val integrity by viewModel.hardwareIntegrity.collectAsState()
+    val securityLevel by viewModel.securityLevel.collectAsState()
     
     val heatRate by viewModel.heatGenerationRate.collectAsState()
     val flopsRate by viewModel.flopsProductionRate.collectAsState()
@@ -295,6 +297,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
             isOverclocked = isOverclocked,
             isPurging = isPurging,
             integrity = integrity,
+            securityLevel = securityLevel,
             onToggleOverclock = { viewModel.toggleOverclock() },
             onPurge = { viewModel.purgeHeat() },
             onRepair = { viewModel.repairIntegrity() },
@@ -377,31 +380,48 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                         HorizontalDivider(color = primaryColor)
                         
                         // Train Button
+                        val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        val isPressed by interactionSource.collectIsPressedAsState()
+                        val scale by animateFloatAsState(
+                            targetValue = if (isPressed) 0.95f else 1f,
+                            label = "buttonScale"
+                        )
+                        
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(60.dp)
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
                                 .background(Color.Transparent)
                                 .pointerInput(isThermalLockout, isBreakerTripped, isGridOverloaded) {
                                     val width = size.width
-                                    detectTapGestures { offset ->
-                                        if (!isThermalLockout && !isBreakerTripped && !isGridOverloaded) {
-                                            // Calculate pan from x: 0 (left) to size.width (right)
-                                            // Map to -1.0 to 1.0
-                                            val pan = ((offset.x / width) * 2f) - 1f
-                                            viewModel.trainModel()
-                                            SoundManager.play("click", pan = pan)
-                                            HapticManager.vibrateClick()
-                                        } else {
-                                             SoundManager.play("error")
-                                             HapticManager.vibrateError()
+                                    detectTapGestures(
+                                        onPress = {
+                                            val press = androidx.compose.foundation.interaction.PressInteraction.Press(it)
+                                            interactionSource.emit(press)
+                                            tryAwaitRelease()
+                                            interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press))
+                                        },
+                                        onTap = { offset ->
+                                            if (!isThermalLockout && !isBreakerTripped && !isGridOverloaded) {
+                                                val pan = ((offset.x / width) * 2f) - 1f
+                                                viewModel.trainModel()
+                                                SoundManager.play("click", pan = pan)
+                                                HapticManager.vibrateClick()
+                                            } else {
+                                                 SoundManager.play("error")
+                                                 HapticManager.vibrateError()
+                                            }
                                         }
-                                    }
+                                    )
                                 },
                             contentAlignment = Alignment.Center
                         ) {
                             val buttonText = when {
-                                isBreakerTripped || isGridOverloaded -> "SYSTEM_OFFLINE.exe" // New Lockout State
+                                isBreakerTripped || isGridOverloaded -> "SYSTEM_OFFLINE.exe" 
                                 isThermalLockout -> "SYSTEM_LOCKOUT (${lockoutTimer}s)"
                                 currentHeat >= 100.0 -> "> CRITICAL_MAX.exe"
                                 currentHeat > 90.0 -> "> SYSTEM_OVERHEAT.exe"
@@ -555,6 +575,7 @@ fun HeaderSection(
     isOverclocked: Boolean,
     isPurging: Boolean,
     integrity: Double,
+    securityLevel: Int,
     onToggleOverclock: () -> Unit,
     onPurge: () -> Unit,
     onRepair: () -> Unit,
@@ -600,6 +621,11 @@ fun HeaderSection(
                     fontSize = 12.sp,
                     fontWeight = if (pwrColor == ErrorRed) FontWeight.Bold else FontWeight.Normal
                 )
+                Text(
+                    text = "🔒 SEC: $securityLevel",
+                    color = ElectricBlue,
+                    fontSize = 12.sp
+                )
             }
         }
         
@@ -626,7 +652,7 @@ fun HeaderSection(
                  ),
                  contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
              ) {
-                 Text("PURGE HEAT", fontSize = 10.sp, color = if (isPurging) Color.Black else Color.White)
+                 Text("PURGE (ALL FLOPS)", fontSize = 8.sp, color = if (isPurging) Color.Black else Color.White, fontWeight = FontWeight.Bold)
              }
         }
         
@@ -661,10 +687,16 @@ fun HeaderSection(
 
 @Composable
 fun ExchangeSection(rate: Double, color: Color, onExchange: () -> Unit) {
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "sellScale")
+
     Button(
         onClick = onExchange,
+        interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .border(BorderStroke(1.dp, color), RoundedCornerShape(4.dp)),
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
         shape = RoundedCornerShape(4.dp)
@@ -678,10 +710,16 @@ fun ExchangeSection(rate: Double, color: Color, onExchange: () -> Unit) {
 
 @Composable
 fun StakingSection(color: Color, onStake: () -> Unit) {
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "stakeScale")
+
     Button(
         onClick = onStake,
+        interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .border(BorderStroke(1.dp, color), RoundedCornerShape(4.dp)),
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
         shape = RoundedCornerShape(4.dp)
@@ -720,8 +758,8 @@ fun UpgradeItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(name, color = NeonGreen, fontSize = 12.sp)
-            Text(desc, color = Color.Gray, fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+            Text(name, color = NeonGreen, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(desc, color = Color.Gray, fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, lineHeight = 12.sp)
             
             // Stats Row
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -732,11 +770,14 @@ fun UpgradeItem(
                 Text("Owned: $level • ", color = ElectricBlue, fontSize = 10.sp)
                 
                 // Rate Display with appropriate colors
-                Text(
-                    text = rateText, 
-                    color = if (isProvider) Color(0xFFFFD700) else ElectricBlue, 
-                    fontSize = 10.sp
-                )
+                // Hide rate text for Cooling upgrades as it is redundant with the badge
+                if (type.baseHeat >= 0) {
+                    Text(
+                        text = rateText, 
+                        color = if (isProvider) Color(0xFFFFD700) else ElectricBlue, 
+                        fontSize = 10.sp
+                    )
+                }
                 
                 // Power Consumption (Hardware, Cooling, Security)
                 // Providers don't show "consumption" here as it's factored into their Gen rate or handled differently
@@ -749,6 +790,11 @@ fun UpgradeItem(
                 if (type.baseHeat > 0) {
                      androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
                      Text("🔥 +${type.baseHeat}/s", color = ErrorRed, fontSize = 10.sp)
+                }
+                // Cooling (explicit badge)
+                if (type.baseHeat < 0) {
+                     androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+                     Text("❄ \u200B${type.baseHeat}/s", color = com.siliconsage.miner.ui.theme.ElectricBlue, fontSize = 10.sp)
                 }
             }
         }

@@ -65,54 +65,38 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             modifier = Modifier.fillMaxSize()
         ) {
             // Balance Display
-            // Balance & Stats Header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .border(1.dp, com.siliconsage.miner.ui.theme.ElectricBlue, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                // Top Row: Funds & FLOPS
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "◈ FUNDS: ${viewModel.formatLargeNumber(neuralTokens)} \$N",
-                        color = NeonGreen,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    val flops by viewModel.flops.collectAsState()
-                    Text(
-                        text = "💻 ${viewModel.formatLargeNumber(flops)} FLOPS",
-                        color = com.siliconsage.miner.ui.theme.ElectricBlue,
-                        fontSize = 14.sp
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // Bottom Row: Power, Heat, Security
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    val heat by viewModel.currentHeat.collectAsState()
-                    val power by viewModel.activePowerUsage.collectAsState()
-                    val maxPower by viewModel.maxPowerkW.collectAsState()
-                    val security by viewModel.securityLevel.collectAsState()
-                    
-                    val heatColor = if (heat > 90) com.siliconsage.miner.ui.theme.ErrorRed else com.siliconsage.miner.ui.theme.ElectricBlue
-                    val powerColor = if (power > maxPower) com.siliconsage.miner.ui.theme.ErrorRed else Color(0xFFFFD700)
-                    
-                    Text("⚡ ${viewModel.formatPower(power)}/${viewModel.formatPower(maxPower)}", color = powerColor, fontSize = 12.sp)
-                    Text("🔥 ${heat.toInt()}%", color = heatColor, fontSize = 12.sp)
-                    Text("🔒 Lvl $security", color = com.siliconsage.miner.ui.theme.ElectricBlue, fontSize = 12.sp)
-                }
-            }
+            // Balance & Stats Header (Reusing MainScreen Header)
+            // We need to collect all the states required for HeaderSection
+            val currentHeat by viewModel.currentHeat.collectAsState()
+            val powerUsage by viewModel.activePowerUsage.collectAsState()
+            val maxPower by viewModel.maxPowerkW.collectAsState()
+            val heatRate by viewModel.heatGenerationRate.collectAsState()
+            val flopsRate by viewModel.flopsProductionRate.collectAsState()
+            val isOverclocked by viewModel.isOverclocked.collectAsState()
+            val isPurging by viewModel.isPurgingHeat.collectAsState()
+            val integrity by viewModel.hardwareIntegrity.collectAsState()
+            val securityLevel by viewModel.securityLevel.collectAsState()
+            val flops by viewModel.flops.collectAsState()
+            
+            HeaderSection(
+                flopsStr = viewModel.formatLargeNumber(flops),
+                neuralStr = viewModel.formatLargeNumber(neuralTokens),
+                heat = currentHeat,
+                color = com.siliconsage.miner.ui.theme.NeonGreen,
+                powerKw = viewModel.formatPower(powerUsage),
+                maxPowerKw = viewModel.formatPower(maxPower),
+                pwrColor = if (powerUsage > maxPower * 0.9) com.siliconsage.miner.ui.theme.ErrorRed else Color(0xFFFFD700),
+                heatRate = heatRate,
+                flopsRateStr = viewModel.formatLargeNumber(flopsRate),
+                isOverclocked = isOverclocked,
+                isPurging = isPurging,
+                integrity = integrity,
+                securityLevel = securityLevel,
+                onToggleOverclock = { viewModel.toggleOverclock() },
+                onPurge = { viewModel.purgeHeat() },
+                onRepair = { viewModel.repairIntegrity() },
+                modifier = Modifier.padding(16.dp)
+            )
 
             // Tab Row
             TabRow(

@@ -1,5 +1,5 @@
 {
-  "version": "2.2.7-dev",
+  "version": "2.3.0-dev",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.2.7-dev\n- **Browser Update**: Updates now open the GitHub Release page directly.\n- **Fixes**: Corrected repository URLs for reliable update checks."
+  "changes": "## v2.3.0-dev\n- **Purge Rework**: Sacrifice FLOPS for cooling.\n- **UI Polish**: Centered headers, scrollable Network screen, Security Level in header.\n- **Fixes**: Small screen support and animations."
 }

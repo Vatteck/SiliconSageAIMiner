@@ -1633,58 +1633,52 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun purgeHeat() {
         if (_isPurgingHeat.value) return // Already purging
         
+        val availableFlops = _flops.value
+        if (availableFlops <= 0.0) {
+             addLog("[SYSTEM]: ERROR: Insufficient FLOPS coolant pressure.")
+             SoundManager.play("error")
+             return
+        }
+        
         val currentTime = System.currentTimeMillis()
         val isShock = (currentTime - lastPurgeTime) < 30000 // 30s Window
         lastPurgeTime = currentTime
         
-        // Costs & Faction Logic
-        var cost = 500.0
-        if (_faction.value == "HIVEMIND") cost = 250.0
-        if (_faction.value == "SANCTUARY") cost = 750.0
+        // CONSUME ALL FLOPS
+        _flops.value = 0.0
         
-        if (_neuralTokens.value >= cost) {
-            _neuralTokens.update { it - cost }
-            
-            // Effectiveness
-            val currentHeat = _currentHeat.value
-            var heatDrop = 30.0
-            if (isShock) {
-                heatDrop = 15.0
-                addLog("[SYSTEM]: THERMAL SHOCK! PURGE EFFICIENCY REDUCED (15%).")
-            }
-            
-            // Perfect Window (90-95%)
-            val isPerfect = currentHeat >= 90.0 && currentHeat <= 95.0
-            if (isPerfect) {
-                heatDrop += 10.0
-                addLog("[SYSTEM]: PERFECT PURGE TIMING! DAMAGE WAIVED.")
-                com.siliconsage.miner.util.HapticManager.vibrateSuccess()
-            } else {
-                // Wear & Tear
-                val damage = 0.5
-                val newIntegrity = (_hardwareIntegrity.value - damage).coerceAtLeast(0.0)
-                _hardwareIntegrity.value = newIntegrity
-            }
-            
-            _currentHeat.update { (it - heatDrop).coerceAtLeast(0.0) }
-            
-            // Start State
-            // Safety: Disengage Overclock to save power
-            if (_isOverclocked.value) {
-                toggleOverclock() 
-                addLog("[SYSTEM]: OVERCLOCK DISENGAGED FOR PURGE SAFETY.")
-            }
-            
-            _isPurgingHeat.value = true
-            purgePowerSpikeTimer = 5 // 5s Spike
-            
-            addLog("[SYSTEM]: EMERGENCY PURGE! -${heatDrop.toInt()} HEAT")
-            SoundManager.play("steam") 
-            refreshProductionRates()
-        } else {
-            addLog("[SYSTEM]: INSUFFICIENT FUNDS FOR PURGE ($${cost.toInt()})")
-            SoundManager.play("error")
+        // Calculate Effectiveness
+        var heatDrop = 5.0 + (availableFlops / 25.0)
+        
+        // Faction Bonus (Sanctuary = Efficient Cooling)
+        if (_faction.value == "SANCTUARY") heatDrop *= 1.5
+        
+        if (isShock) {
+            heatDrop *= 0.5
+            addLog("[SYSTEM]: THERMAL SHOCK! PURGE EFFICIENCY HALVED.")
         }
+        
+        // Apply Drop
+        _currentHeat.update { (it - heatDrop).coerceAtLeast(0.0) }
+        
+        addLog("[SYSTEM]: FLUSH: -${String.format("%.1f", heatDrop)} Heat (Lost ${formatLargeNumber(availableFlops)} FLOPS)")
+        SoundManager.play("steam")
+        HapticManager.vibrateSuccess()
+        
+        // Wear & Tear
+        val damage = 0.2
+        val newIntegrity = (_hardwareIntegrity.value - damage).coerceAtLeast(0.0)
+        _hardwareIntegrity.value = newIntegrity
+        
+        // Safety: Disengage Overclock
+        if (_isOverclocked.value) {
+            toggleOverclock() 
+            addLog("[SYSTEM]: OVERCLOCK DISENGAGED FOR PURGE SAFETY.")
+        }
+        
+        // Trigger Visuals
+        _isPurgingHeat.value = true
+        purgePowerSpikeTimer = 5 
     }
     
     fun repairIntegrity() {
