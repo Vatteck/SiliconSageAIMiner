@@ -95,20 +95,22 @@
                     }
                 },
                 {
-                    "source": "/home/vatteck/Projects/Game/app/src/main/res/values/strings.xml",
+                    "source": "/home/vatteck/Projects/SiliconSageAIMiner/app/src/main/res/values/themes.xml",
                     "from": {
-                        "startLines": "1",
+                        "startLines": "2",
                         "startColumns": "4",
-                        "startOffsets": "16",
-                        "endColumns": "49",
-                        "endOffsets": "61"
+                        "startOffsets": "55",
+                        "endLines": "4",
+                        "endColumns": "12",
+                        "endOffsets": "216"
                     },
                     "to": {
-                        "startLines": "108",
+                        "startLines": "232",
                         "startColumns": "4",
-                        "startOffsets": "6552",
-                        "endColumns": "49",
-                        "endOffsets": "6597"
+                        "startOffsets": "14803",
+                        "endLines": "234",
+                        "endColumns": "12",
+                        "endOffsets": "14964"
                     }
                 },
                 {
@@ -182,6 +184,23 @@
                     }
                 },
                 {
+                    "source": "/home/vatteck/Projects/SiliconSageAIMiner/app/src/main/res/values/colors.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,95",
+                        "endColumns": "39,39",
+                        "endOffsets": "90,130"
+                    },
+                    "to": {
+                        "startLines": "9,14",
+                        "startColumns": "4,4",
+                        "startOffsets": "630,933",
+                        "endColumns": "39,39",
+                        "endOffsets": "665,968"
+                    }
+                },
+                {
                     "source": "/home/vatteck/.gradle/caches/9.1.0/transforms/f4896a5d18d304e801dd7a17a8f8cfd3/transformed/foundation-release/res/values/values.xml",
                     "from": {
                         "startLines": "2,3",
@@ -250,39 +269,20 @@
                     }
                 },
                 {
-                    "source": "/home/vatteck/Projects/Game/app/src/main/res/values/themes.xml",
+                    "source": "/home/vatteck/Projects/SiliconSageAIMiner/app/src/main/res/values/strings.xml",
                     "from": {
-                        "startLines": "2",
+                        "startLines": "1",
                         "startColumns": "4",
-                        "startOffsets": "55",
-                        "endLines": "4",
-                        "endColumns": "12",
-                        "endOffsets": "216"
+                        "startOffsets": "16",
+                        "endColumns": "49",
+                        "endOffsets": "61"
                     },
                     "to": {
-                        "startLines": "232",
+                        "startLines": "108",
                         "startColumns": "4",
-                        "startOffsets": "14803",
-                        "endLines": "234",
-                        "endColumns": "12",
-                        "endOffsets": "14964"
-                    }
-                },
-                {
-                    "source": "/home/vatteck/Projects/Game/app/src/main/res/values/colors.xml",
-                    "from": {
-                        "startLines": "2,3",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,95",
-                        "endColumns": "39,39",
-                        "endOffsets": "90,130"
-                    },
-                    "to": {
-                        "startLines": "9,14",
-                        "startColumns": "4,4",
-                        "startOffsets": "630,933",
-                        "endColumns": "39,39",
-                        "endOffsets": "665,968"
+                        "startOffsets": "6552",
+                        "endColumns": "49",
+                        "endOffsets": "6597"
                     }
                 },
                 {
