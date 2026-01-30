@@ -1852,24 +1852,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun startUpdateDownload(context: android.content.Context) {
         val info = _updateInfo.value ?: return
-        _isUpdateDownloading.value = true
-        _updateDownloadProgress.value = 0f
         
-        UpdateManager.downloadUpdate(
-            url = info.url,
-            context = context,
-            onProgress = { _updateDownloadProgress.value = it },
-            onComplete = { file ->
-                _isUpdateDownloading.value = false
-                if (file != null) {
-                    UpdateManager.installUpdate(context, file)
-                    // We don't verify installation success here, app will just close/install
-                } else {
-                    addLog("[SYSTEM]: UPDATE FAILED. CORRUPT PACKET.")
-                    HapticManager.vibrateError()
-                }
-            }
-        )
+        // Browser Redirect Flow
+        UpdateManager.openReleasePage(context, "https://github.com/Vatteck/SiliconSageAIMiner/releases")
+        
+        // Hide update prompt as we've handled it
+        _updateInfo.value = null
     }
     
     fun debugTriggerDiagnostics() {
