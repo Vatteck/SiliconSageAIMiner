@@ -1,5 +1,5 @@
 {
-  "version": "2.2.6-dev",
-  "url": "https://github.com/SiliconSage/AIMiner/releases/download/v2.2.6-dev/Sage_2.2.5.dev.apk",
-  "changes": "## v2.2.6-dev\n- Testing improvements."
+  "version": "2.2.7-dev",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
+  "changes": "## v2.2.7-dev\n- **Browser Update**: Updates now open the GitHub Release page directly.\n- **Fixes**: Corrected repository URLs for reliable update checks."
 }

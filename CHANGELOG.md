@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.7-dev] - 2026-01-29
+
+### Changed
+- **Update Flow**: The auto-updater now redirects to the GitHub Releases page in your browser instead of downloading the APK directly in-app. This ensures compatibility and easier access to release notes.
+- **Update Source**: Fixed the repository URL for version checks to point to the correct location (`SiliconSageAIMiner`).
+
+### Changed
+- **Version**: Bumped version code to 7 and version name to `2.2.7-dev`.
+
 ## [2.2.5-dev] - 2026-01-29
 
 ### Added
