@@ -1,20 +1,20 @@
 -- Merging decision tree log ---
 provider#androidx.core.content.FileProvider
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:21:9-29:20
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:21:9-29:20
 	android:grantUriPermissions
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:25:13-47
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:25:13-47
 	android:authorities
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:23:13-64
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:23:13-64
 	android:exported
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:24:13-37
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:24:13-37
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:22:13-62
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:22:13-62
 manifest
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:2:1-43:12
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:2:1-43:12
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:2:1-43:12
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:2:1-43:12
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:2:1-43:12
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:2:1-43:12
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:2:1-43:12
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:2:1-43:12
 MERGED from [androidx.work:work-runtime-ktx:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/f40a588bdecd1a6808fbd7742b9404f3/transformed/work-runtime-ktx-2.10.0/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.work:work-runtime:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/51c7a93ad674829f98225279d75c027c/transformed/work-runtime-2.10.0/AndroidManifest.xml:17:1-145:12
 MERGED from [androidx.navigation:navigation-common:2.8.4] /home/vatteck/.gradle/caches/9.1.0/transforms/9b88f9453abdb37b221f1eb4a344b538/transformed/navigation-common-2.8.4/AndroidManifest.xml:17:1-22:12
@@ -79,30 +79,30 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/vatte
 MERGED from [androidx.interpolator:interpolator:1.0.0] /home/vatteck/.gradle/caches/9.1.0/transforms/96901a134a5a64bb0fa54ddf5007ede1/transformed/interpolator-1.0.0/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.arch.core:core-runtime:2.2.0] /home/vatteck/.gradle/caches/9.1.0/transforms/5918c0944d337fdd6ba62c09d0cb16fc/transformed/core-runtime-2.2.0/AndroidManifest.xml:17:1-22:12
 	package
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 	android:versionName
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 	xmlns:tools
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:3:5-51
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:3:5-51
 	android:versionCode
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 	xmlns:android
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:2:11-69
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:2:11-69
 uses-permission#android.permission.VIBRATE
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:5:5-66
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:5:5-66
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:5:22-63
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:5:22-63
 uses-permission#android.permission.INTERNET
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:6:5-67
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:6:5-67
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:6:22-64
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:6:22-64
 uses-permission#android.permission.REQUEST_INSTALL_PACKAGES
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:7:5-83
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:7:5-83
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:7:22-80
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:7:22-80
 application
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:9:5-41:19
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:9:5-41:19
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:9:5-41:19
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:9:5-41:19
 MERGED from [androidx.work:work-runtime:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/51c7a93ad674829f98225279d75c027c/transformed/work-runtime-2.10.0/AndroidManifest.xml:28:5-143:19
 MERGED from [androidx.work:work-runtime:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/51c7a93ad674829f98225279d75c027c/transformed/work-runtime-2.10.0/AndroidManifest.xml:28:5-143:19
 MERGED from [androidx.compose.ui:ui-test-manifest:1.7.5] /home/vatteck/.gradle/caches/9.1.0/transforms/0f533d513cf16e96227e652d2b0e56ef/transformed/ui-test-manifest-1.7.5/AndroidManifest.xml:22:5-26:19
@@ -124,57 +124,57 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /home/vatteck/.gradle/cache
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/vatteck/.gradle/caches/9.1.0/transforms/da9a68ecbb57722d2de7cb04f6876be9/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/vatteck/.gradle/caches/9.1.0/transforms/da9a68ecbb57722d2de7cb04f6876be9/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
 	android:extractNativeLibs
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.15.0] /home/vatteck/.gradle/caches/9.1.0/transforms/66ce15ad7986d1d2de07a8e4d7fe7e88/transformed/core-1.15.0/AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:17:9-35
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:17:9-35
 	android:label
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:15:9-41
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:15:9-41
 	android:fullBackupContent
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:13:9-54
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:13:9-54
 	android:roundIcon
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:16:9-54
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:16:9-54
 	tools:targetApi
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:19:9-29
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:19:9-29
 	android:icon
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:14:9-43
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:14:9-43
 	android:allowBackup
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:11:9-35
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:11:9-35
 	android:theme
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:18:9-56
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:18:9-56
 	android:dataExtractionRules
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:12:9-65
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:12:9-65
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:10:9-41
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:10:9-41
 activity#com.siliconsage.miner.MainActivity
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:31:9-40:20
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:31:9-40:20
 	android:exported
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:33:13-36
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:33:13-36
 	android:theme
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:34:13-60
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:34:13-60
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:32:13-41
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:32:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:35:13-39:29
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:35:13-39:29
 action#android.intent.action.MAIN
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:36:17-69
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:36:17-69
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:36:25-66
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:36:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:38:17-77
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:38:17-77
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:38:27-74
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:38:27-74
 meta-data#android.support.FILE_PROVIDER_PATHS
-ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:26:13-28:58
+ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:26:13-28:58
 	android:resource
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:28:17-55
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:28:17-55
 	android:name
-		ADDED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml:27:17-67
+		ADDED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml:27:17-67
 uses-sdk
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
-INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
+INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 MERGED from [androidx.work:work-runtime-ktx:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/f40a588bdecd1a6808fbd7742b9404f3/transformed/work-runtime-ktx-2.10.0/AndroidManifest.xml:20:5-44
 MERGED from [androidx.work:work-runtime-ktx:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/f40a588bdecd1a6808fbd7742b9404f3/transformed/work-runtime-ktx-2.10.0/AndroidManifest.xml:20:5-44
 MERGED from [androidx.work:work-runtime:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/51c7a93ad674829f98225279d75c027c/transformed/work-runtime-2.10.0/AndroidManifest.xml:21:5-44
@@ -302,9 +302,9 @@ MERGED from [androidx.interpolator:interpolator:1.0.0] /home/vatteck/.gradle/cac
 MERGED from [androidx.arch.core:core-runtime:2.2.0] /home/vatteck/.gradle/caches/9.1.0/transforms/5918c0944d337fdd6ba62c09d0cb16fc/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
 MERGED from [androidx.arch.core:core-runtime:2.2.0] /home/vatteck/.gradle/caches/9.1.0/transforms/5918c0944d337fdd6ba62c09d0cb16fc/transformed/core-runtime-2.2.0/AndroidManifest.xml:20:5-44
 	android:targetSdkVersion
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from /home/vatteck/Projects/Game/app/src/main/AndroidManifest.xml
+		INJECTED from /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/AndroidManifest.xml
 uses-permission#android.permission.WAKE_LOCK
 ADDED from [androidx.work:work-runtime:2.10.0] /home/vatteck/.gradle/caches/9.1.0/transforms/51c7a93ad674829f98225279d75c027c/transformed/work-runtime-2.10.0/AndroidManifest.xml:23:5-68
 	android:name

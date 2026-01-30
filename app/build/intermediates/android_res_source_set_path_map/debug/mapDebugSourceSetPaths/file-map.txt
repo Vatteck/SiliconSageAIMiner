@@ -57,9 +57,9 @@ com.siliconsage.miner.app-annotation-experimental-1.4.1-55 /home/vatteck/.gradle
 com.siliconsage.miner.app-work-runtime-ktx-2.10.0-56 /home/vatteck/.gradle/caches/9.1.0/transforms/f40a588bdecd1a6808fbd7742b9404f3/transformed/work-runtime-ktx-2.10.0/res
 com.siliconsage.miner.app-foundation-release-57 /home/vatteck/.gradle/caches/9.1.0/transforms/f4896a5d18d304e801dd7a17a8f8cfd3/transformed/foundation-release/res
 com.siliconsage.miner.app-lifecycle-runtime-release-58 /home/vatteck/.gradle/caches/9.1.0/transforms/fcaf52e76760a6b985d87a08065bfb04/transformed/lifecycle-runtime-release/res
-com.siliconsage.miner.app-updated_navigation_xml-59 /home/vatteck/Projects/Game/app/build/generated/updated_navigation_xml/debug
-com.siliconsage.miner.app-packageDebugResources-60 /home/vatteck/Projects/Game/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
-com.siliconsage.miner.app-packageDebugResources-61 /home/vatteck/Projects/Game/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
-com.siliconsage.miner.app-debug-62 /home/vatteck/Projects/Game/app/build/intermediates/merged_res/debug/mergeDebugResources
-com.siliconsage.miner.app-debug-63 /home/vatteck/Projects/Game/app/src/debug/res
-com.siliconsage.miner.app-main-64 /home/vatteck/Projects/Game/app/src/main/res
+com.siliconsage.miner.app-updated_navigation_xml-59 /home/vatteck/Projects/SiliconSageAIMiner/app/build/generated/updated_navigation_xml/debug
+com.siliconsage.miner.app-packageDebugResources-60 /home/vatteck/Projects/SiliconSageAIMiner/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.siliconsage.miner.app-packageDebugResources-61 /home/vatteck/Projects/SiliconSageAIMiner/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.siliconsage.miner.app-debug-62 /home/vatteck/Projects/SiliconSageAIMiner/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.siliconsage.miner.app-debug-63 /home/vatteck/Projects/SiliconSageAIMiner/app/src/debug/res
+com.siliconsage.miner.app-main-64 /home/vatteck/Projects/SiliconSageAIMiner/app/src/main/res
