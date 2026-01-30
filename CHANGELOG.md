@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.5-dev] - 2026-01-29
+
+### Added
+- **Updater UI**: Enhanced `UpdateOverlay` to render Markdown changelogs, including bold headers and bullet points.
+
+### Fixed
+- **Version Check**: Improved `UpdateManager` to robustly parse semantic versions (e.g. `v2.2.4-dev`) by stripping prefixes and suffixes before comparison.
+- **Build**: Fixed compilation error in `UpdateOverlay` (`crossAxisAlignment` -> `verticalAlignment`).
+
+### Changed
+- **Version**: Bumped version code to 6 and version name to `2.2.5-dev`.
+
 ## [2.2.4-dev] - 2026-01-29
 
 ### Fixed
