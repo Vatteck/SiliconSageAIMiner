@@ -650,7 +650,7 @@ fun HeaderSection(
             Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 10.sp)
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "${trendSymbol} ${String.format("%.1f", kotlin.math.abs(heatRate))}/s",
+                text = "${trendSymbol} ${String.format("%.2f", kotlin.math.abs(heatRate))}/s",
                 color = trendColor,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold

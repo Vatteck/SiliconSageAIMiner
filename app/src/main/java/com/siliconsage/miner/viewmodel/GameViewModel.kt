@@ -256,6 +256,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         if (type.name.contains("BACKUP")) secLevel += level * 20
                     }
                     _securityLevel.value = secLevel
+                    
+                    // Refresh Rates on Upgrade Change (Fixes delayed UI)
+                    refreshProductionRates()
                 }
             }
             
@@ -278,7 +281,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 }
             }
             
+            
             startGameLoops()
+            
+            // Initial Rate Refresh
+            refreshProductionRates()
         }
     }
 
@@ -565,6 +572,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 addLog("[SYSTEM]: NETWORK STABILIZED. EFFICIENCY RESTORED.")
                 SoundManager.play("buy")
                 HapticManager.vibrateSuccess()
+                refreshProductionRates()
             }
         }
     }
@@ -588,6 +596,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         addLog("[SYSTEM]: WARNING: NETWORK INSTABILITY DETECTED! REPAIR REQUIRED.")
         SoundManager.play("error")
         HapticManager.vibrateError()
+        refreshProductionRates()
     }
 
     private fun updateMarketRate() {
@@ -736,12 +745,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private fun triggerAirdrop() {
         _isAirdropActive.value = true
         addLog("[SYSTEM]: EVENT: Mysterious encrypted packet detected...")
+        refreshProductionRates()
         // Disappear after 15s if not claimed
         viewModelScope.launch {
             delay(15_000)
             if(_isAirdropActive.value) {
                  _isAirdropActive.value = false
                  addLog("[SYSTEM]: Packet lost.")
+                 refreshProductionRates()
             }
         }
     }
@@ -1101,7 +1112,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
 
-    private fun calculatePassiveIncome() {
+    private fun calculateFlopsRate(): Double {
         val currentUpgrades = _upgrades.value
         var flopsPerSec = 0.0
         
@@ -1161,18 +1172,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
         
         // Dynamic Thermal Throttling Curve
-        // Multiplier = 1.0 - max(0, (CurrentHeat - 75) / 25)
-        // At 75 Heat: 1.0 - 0 = 100% eff
-        // At 87.5 Heat: 1.0 - 0.5 = 50% eff
-        // At 100 Heat: 1.0 - 1.0 = 0% eff (or clamp to min 10%)
         if (_currentHeat.value > 75.0) {
              val penalty = ((_currentHeat.value - 75.0) / 25.0).coerceIn(0.0, 0.9) // Min 10% eff
              flopsPerSec *= (1.0 - penalty)
-             
-             if (System.currentTimeMillis() % 5000 < 1000) { // Occasional warning
-                 // Optional log, maybe too spammy
-             }
         }
+        
+        return flopsPerSec
+    }
+
+    private fun calculatePassiveIncome() {
+        val flopsPerSec = calculateFlopsRate()
         
         if (flopsPerSec > 0) {
             _flops.update { it + flopsPerSec }
@@ -1260,8 +1269,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // Narrative Data
 
 
-    private fun calculateHeat() {
-        val currentHeat = _currentHeat.value
+    private fun calculateHeatMetrics(): Triple<Double, Double, Double> {
         val currentUpgrades = _upgrades.value
         
         // Calculate buffers and capacities
@@ -1269,10 +1277,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         currentUpgrades.forEach { (type, count) ->
             if (count > 0) totalThermalBuffer += type.thermalBuffer * count
         }
-        // Normalize Heat to 0-100 scale relative to capacity? 
-        // Request says: "Heat shouldn't just vanish... Heat Sink capacity."
-        // For now, let's keep the 0-100 scale as "% of Capacity".
-        // Use netChange as "Units of Heat".
         
         // Calculate dynamic heat change Units
         var netChangeUnits = 0.0
@@ -1287,11 +1291,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             }
         }
         
-        // Purge Heat Active? (v1.4: Purge is instant, so this timer logic is removed or changed)
-        // If we want a "Cooling Cycle" visual, we can keep a flag, but the heat drop happens in the action.
-        
         // Base Dissipation
-        netChangeUnits -= 10.0 // v1.8 Rebalance: 1.0%/s baseline (Scaling 0.1 * 10.0)
+        netChangeUnits -= 1.0 // Unifying Units: Base 1.0 matches UI expectation (-1.0/s)
         
         // v1.5 Exhaust Phase (Sanctuary immune)
         if (purgeExhaustTimer > 0 && _faction.value != "SANCTUARY") {
@@ -1299,12 +1300,33 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
              if (netChangeUnits < 0) {
                  netChangeUnits *= 0.5
              }
-             purgeExhaustTimer--
         }
         
         // Convert Units to % Change based on Capacity
-        // Larger buffer = Slower % rise
-        val percentChange = (netChangeUnits / totalThermalBuffer) * 100.0 * 0.1 // Scaling factor
+        // Removed 0.1 scaling to maintain 1:1 Unit ratio with upgrades
+        val percentChange = (netChangeUnits / totalThermalBuffer) * 100.0 
+        
+        return Triple(netChangeUnits, totalThermalBuffer, percentChange)
+    }
+
+    private fun refreshProductionRates() {
+        // Update FLOPS Rate
+        _flopsProductionRate.value = calculateFlopsRate()
+        
+        // Update Heat Rate
+        // Use netChangeUnits directly for UI to match Upgrade Descriptions
+        val (netChangeUnits, _, _) = calculateHeatMetrics()
+        _heatGenerationRate.value = netChangeUnits
+    }
+
+    private fun calculateHeat() {
+        val currentHeat = _currentHeat.value
+        val (netChangeUnits, _, percentChange) = calculateHeatMetrics()
+        
+        // Decrement timer if active (Logic moved here from extractor to avoid side effects there)
+        if (purgeExhaustTimer > 0 && _faction.value != "SANCTUARY") {
+             purgeExhaustTimer--
+        }
         
         // Haptic Feedback for Heat Flip
         val previousRate = _heatGenerationRate.value
@@ -1313,15 +1335,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
         
         // Update UI Rate (%/s)
-        // v1.9 Cooling Display Fix:
-        // If cooling, show standardized rate (based on base buffer 100) to satisfy "number go down"
-        // If heating, show actual risk % (based on total buffer)
-        if (netChangeUnits < 0) {
-            // Standardized: netChange / 100.0 * 100.0 * 0.1 = netChange * 0.1
-            _heatGenerationRate.value = netChangeUnits * 0.1
-        } else {
-            _heatGenerationRate.value = percentChange
-        }
+        refreshProductionRates()
         
         val newHeat = (currentHeat + percentChange).coerceIn(0.0, 100.0)
         _currentHeat.value = newHeat
@@ -1544,6 +1558,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
              purgePowerSpikeTimer = 0
              addLog("[SYSTEM]: PURGE ABORTED DUE TO POWER FAILURE.")
         }
+        refreshProductionRates()
     }
     
     fun resetBreaker() {
@@ -1598,6 +1613,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         addLog("[SYSTEM]: MANUAL BREAKER RESET SUCCESSFUL.")
         SoundManager.play("click")
         HapticManager.vibrateClick()
+        refreshProductionRates()
     }
     
     fun toggleOverclock() {
@@ -1611,6 +1627,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             SoundManager.stop("thrum")
             SoundManager.play("click") // Feedback for stopping
         }
+        refreshProductionRates() // Immediate update
     }
     
     fun purgeHeat() {
@@ -1663,6 +1680,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             
             addLog("[SYSTEM]: EMERGENCY PURGE! -${heatDrop.toInt()} HEAT")
             SoundManager.play("steam") 
+            refreshProductionRates()
         } else {
             addLog("[SYSTEM]: INSUFFICIENT FUNDS FOR PURGE ($${cost.toInt()})")
             SoundManager.play("error")
