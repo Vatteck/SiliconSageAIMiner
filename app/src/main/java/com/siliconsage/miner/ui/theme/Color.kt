@@ -9,6 +9,8 @@ val DarkGray = Color(0xFF121212)
 val TerminalText = Color(0xFF39FF14) // Same as NeonGreen for text
 val ErrorRed = Color(0xFFFF0033)
 
+val HivemindOrange = Color(0xFFFF8C00) // DarkOrange (Lighter than RedOrange)
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

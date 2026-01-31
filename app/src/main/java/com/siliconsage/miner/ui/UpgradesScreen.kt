@@ -78,6 +78,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             val integrity by viewModel.hardwareIntegrity.collectAsState()
             val securityLevel by viewModel.securityLevel.collectAsState()
             val flops by viewModel.flops.collectAsState()
+            val playerTitle by viewModel.playerTitle.collectAsState()
             
             HeaderSection(
                 flopsStr = viewModel.formatLargeNumber(flops),
@@ -93,6 +94,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 isPurging = isPurging,
                 integrity = integrity,
                 securityLevel = securityLevel,
+                playerTitle = playerTitle,
                 onToggleOverclock = { viewModel.toggleOverclock() },
                 onPurge = { viewModel.purgeHeat() },
                 onRepair = { viewModel.repairIntegrity() },

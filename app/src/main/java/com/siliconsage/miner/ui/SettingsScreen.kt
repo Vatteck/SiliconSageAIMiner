@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -301,8 +302,10 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .fillMaxHeight() // Fill height to allow scrolling
                         .border(BorderStroke(2.dp, NeonGreen), RoundedCornerShape(8.dp))
                         .background(Color.Black)
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -315,7 +318,53 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     DevButton("TRIGGER BREACH") { viewModel.debugTriggerBreach() }
                     DevButton("TRIGGER AIRDROP") { viewModel.debugTriggerAirdrop() }
                     DevButton("TRIGGER DIAGNOSTICS") { viewModel.debugTriggerDiagnostics() }
+                    DevButton("TRIGGER DILEMMA") { viewModel.debugTriggerDilemma() }
                     DevButton("RESET ASCENSION") { viewModel.debugResetAscension() }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("HEADLINE TRIGGERS", color = NeonGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugInjectHeadline("[BULL]") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("BULL", color = NeonGreen, fontSize = 10.sp) }
+                         
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugInjectHeadline("[BEAR]") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("BEAR", color = Color(0xFFFFA500), fontSize = 10.sp) }
+                    }
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugInjectHeadline("[ENERGY_SPIKE]") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("SPIKE", color = ErrorRed, fontSize = 10.sp) }
+                         
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugInjectHeadline("[ENERGY_DROP]") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("DROP", color = ElectricBlue, fontSize = 10.sp) }
+                    }
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugInjectHeadline("[GLITCH]") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("GLITCH", color = NeonGreen, fontSize = 10.sp) }
+                         
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugInjectHeadline("[LORE]") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("LORE", color = Color.White, fontSize = 10.sp) }
+                    }
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     

@@ -14,15 +14,19 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.ui.theme.NeonGreen
-
-import androidx.compose.ui.draw.clipToBounds
+import com.siliconsage.miner.ui.theme.ErrorRed
+import com.siliconsage.miner.ui.theme.ElectricBlue
+import com.siliconsage.miner.util.SoundManager
+import kotlinx.coroutines.delay
 
 @Composable
 fun NewsTicker(
@@ -30,16 +34,60 @@ fun NewsTicker(
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "ticker")
-    // Dynamic range based on text length to avoid cut-offs
-    val textLength = news.length
+    
+    // Parse the news to get color and clean text
+    val (displayText, baseColor) = remember(news) {
+        var text = news
+        var color = NeonGreen // Default
+
+        when {
+            text.contains("[BULL]") -> {
+                text = text.replace("[BULL]", "").trim()
+                color = NeonGreen
+            }
+            text.contains("[BEAR]") -> {
+                text = text.replace("[BEAR]", "").trim()
+                color = Color(0xFFFFA500) // Orange
+            }
+            text.contains("[ENERGY_SPIKE]") -> {
+                text = text.replace("[ENERGY_SPIKE]", "").trim()
+                color = ErrorRed
+            }
+            text.contains("[ENERGY_DROP]") -> {
+                text = text.replace("[ENERGY_DROP]", "").trim()
+                color = ElectricBlue
+            }
+            text.contains("[GLITCH]") -> {
+                text = text.replace("[GLITCH]", "").trim()
+                color = ElectricBlue // Placeholder, overridden by effect
+            }
+            text.contains("[STORY_PROG]") -> {
+                text = text.replace("[STORY_PROG]", "").trim()
+                color = Color(0xFFFFD700) // Gold
+            }
+            text.contains("[LORE]") -> {
+                text = text.replace("[LORE]", "").trim()
+                color = Color.White
+            }
+            // Fallback for any other tags or no tags
+            else -> {
+                // Formatting clean up just in case
+                text = text.replace(Regex("\\[.*?\\]"), "").trim()
+            }
+        }
+        text to color
+    }
+
+    // Dynamic range based on clean text length
+    val textLength = displayText.length
     val estimatedWidth = textLength * 8f + 200f // Rough estimate in dp
     
     val offsetX by infiniteTransition.animateFloat(
-        initialValue = 500f, // Start from right side (standard phone width is around 400dp)
+        initialValue = 500f, // Start from right side
         targetValue = -estimatedWidth, // End way off-screen left
         animationSpec = infiniteRepeatable(
             animation = tween(
-                durationMillis = (estimatedWidth * 15).toInt().coerceAtLeast(5000), // Speed proportional to length
+                durationMillis = (estimatedWidth * 15).toInt().coerceAtLeast(5000), 
                 easing = LinearEasing
             ),
             repeatMode = RepeatMode.Restart
@@ -49,11 +97,10 @@ fun NewsTicker(
 
     androidx.compose.runtime.LaunchedEffect(news) {
         if (news.isNotEmpty()) {
-            // Play typing sound for a limited duration (e.g., 2 seconds) when news changes
             val startTime = System.currentTimeMillis()
             while (System.currentTimeMillis() - startTime < 2000) {
-                com.siliconsage.miner.util.SoundManager.play("type")
-                kotlinx.coroutines.delay(180) // Teletype speed
+                SoundManager.play("type")
+                delay(180) 
             }
         }
     }
@@ -65,12 +112,11 @@ fun NewsTicker(
             .background(Color.Black.copy(alpha = 0.8f))
             .clipToBounds()
     ) {
-        if (news.isNotEmpty()) {
+        if (displayText.isNotEmpty()) {
             val isGlitch = news.contains("[GLITCH]")
-            val isBear = news.contains("[BEAR]") || news.contains("[HEAT_UP]")
             
-            // Glitch visual effect
-            var glitchColor = NeonGreen
+            // Glitch visual effect logic
+            var finalColor = baseColor
             if (isGlitch) {
                  val flicker by infiniteTransition.animateFloat(
                     initialValue = 0f, targetValue = 1f,
@@ -80,17 +126,11 @@ fun NewsTicker(
                     ),
                     label = "glitchFlicker"
                 )
-                glitchColor = if (flicker > 0.5f) Color.Red else NeonGreen
-            }
-            
-            val finalColor = when {
-                isGlitch -> glitchColor
-                isBear -> Color(0xFFFF6B6B) // Red-ish
-                else -> NeonGreen
+                finalColor = if (flicker > 0.5f) ErrorRed else ElectricBlue
             }
             
             Text(
-                text = ">>> MARKET UPDATE: $news <<<",
+                text = ">>> MARKET UPDATE: $displayText <<<",
                 color = finalColor,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

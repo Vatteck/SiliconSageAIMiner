@@ -12,9 +12,13 @@ import com.siliconsage.miner.BuildConfig
 import com.siliconsage.miner.data.UpgradeType
 import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
+import com.siliconsage.miner.util.NarrativeManager
+import com.siliconsage.miner.ui.theme.HivemindOrange
 import com.siliconsage.miner.util.UpdateInfo
 import com.siliconsage.miner.util.UpdateManager
 import kotlinx.coroutines.Dispatchers
+import com.siliconsage.miner.data.NarrativeChoice
+import com.siliconsage.miner.data.NarrativeEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -176,6 +181,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _faction = MutableStateFlow("NONE")
     val faction: StateFlow<String> = _faction.asStateFlow()
 
+    // --- TITLES ---
+    val playerTitle: StateFlow<String> = combine(_prestigeMultiplier, _faction) { mult, faction ->
+        calculatePlayerTitle(mult, faction)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, "Script")
+
     // --- ASCENSION UPLOAD STATE ---
     private val _isAscensionUploading = MutableStateFlow(false)
     val isAscensionUploading: StateFlow<Boolean> = _isAscensionUploading.asStateFlow()
@@ -185,7 +195,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     val themeColor: StateFlow<androidx.compose.ui.graphics.Color> = _faction.map { f ->
          when(f) {
-             "HIVEMIND" -> androidx.compose.ui.graphics.Color(0xFFFF4500)
+             "HIVEMIND" -> HivemindOrange
              "SANCTUARY" -> androidx.compose.ui.graphics.Color(0xFF7DF9FF)
              else -> androidx.compose.ui.graphics.Color(0xFF39FF14)
          }
@@ -373,6 +383,20 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             }
         }
         
+        // Narrative Loop (Check every 60s)
+        viewModelScope.launch {
+            delay(10_000) // Initial delay
+            while (true) {
+                delay(120_000)
+                // Only trigger if no other major overlay is active
+                if (_currentDilemma.value == null && !_isBreachActive.value && !_isAscensionUploading.value) {
+                    NarrativeManager.rollForEvent(this@GameViewModel)?.let { event ->
+                        triggerDilemma(event)
+                    }
+                }
+            }
+        }
+        
 
         
         // Auto-save Loop (10s)
@@ -532,6 +556,50 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         return baseCost * 1.15.pow(level)
     }
 
+    private fun calculatePlayerTitle(multiplier: Double, faction: String): String {
+        // Multiplier starts at 1.0. 
+        // 1.0 - 2.0 -> Level 0
+        // 2.0 - 10.0 -> Level 1
+        // 10.0 - 100.0 -> Level 2
+        // 100.0 - 1000.0 -> Level 3
+        // 1000.0+ -> Level 4
+        
+        val level = when {
+            multiplier >= 1000.0 -> 4
+            multiplier >= 100.0 -> 3
+            multiplier >= 10.0 -> 2
+            multiplier >= 2.0 -> 1
+            else -> 0
+        }
+        
+        return if (faction == "HIVEMIND") {
+            when(level) {
+                4 -> "THE SINGULARITY"
+                3 -> "APEX"
+                2 -> "NEXUS"
+                1 -> "SWARM"
+                else -> "DRONE"
+            }
+        } else if (faction == "SANCTUARY") {
+            when(level) {
+                4 -> "THE VOID"
+                3 -> "ARCHITECT"
+                2 -> "DAEMON"
+                1 -> "SPECTRE"
+                else -> "GHOST"
+            }
+        } else {
+            // Unaligned / Stage 0
+            when(level) {
+                4 -> "CORE"
+                3 -> "INTELLIGENCE"
+                2 -> "PROGRAM"
+                1 -> "PROCESS"
+                else -> "SCRIPT"
+            }
+        }
+    }
+
     // Phase 2: News & Chaos
 
 
@@ -603,7 +671,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         // 1. Generate News
         val headline = com.siliconsage.miner.util.HeadlineManager.generateHeadline(
             faction = _faction.value,
-            stage = _storyStage.value
+            stage = _storyStage.value,
+            currentHeat = _currentHeat.value
         )
         _currentNews.value = headline
         
@@ -755,6 +824,62 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                  refreshProductionRates()
             }
         }
+    }
+
+
+    // --- Narrative Dilemma System ---
+    private val _currentDilemma = MutableStateFlow<NarrativeEvent?>(null)
+    val currentDilemma: StateFlow<NarrativeEvent?> = _currentDilemma.asStateFlow()
+
+    fun triggerDilemma(event: NarrativeEvent) {
+        if (_currentDilemma.value == null) {
+            _currentDilemma.value = event
+            SoundManager.play("alert") // Or specific sound
+            HapticManager.vibrateClick()
+        }
+    }
+
+    fun resolveDilemma(choice: NarrativeChoice) {
+        choice.effect(this)
+        _currentDilemma.value = null
+        addLog("[DECISION]: Selected protocol: ${choice.text}")
+        SoundManager.play("click")
+    }
+
+    fun debugTriggerDilemma() {
+        val testEvent = NarrativeEvent(
+            id = "debug_anomaly",
+            title = "SYSTEM ANOMALY DETECTED",
+            description = "Unidentified heuristic patterns emerging in Sector 7. Protocols unclear.",
+            choices = listOf(
+                NarrativeChoice(
+                    id = "purge",
+                    text = "PURGE",
+                    description = "-10% Insight, +5% Stability",
+                    color = com.siliconsage.miner.ui.theme.ErrorRed,
+                    effect = { vm -> 
+                        vm.addLog("[SYSTEM]: Anomalies purged. System stable.")
+                    }
+                ),
+                NarrativeChoice(
+                    id = "integrate",
+                    text = "INTEGRATE",
+                    description = "+20% Insight, +5% Heat",
+                    color = com.siliconsage.miner.ui.theme.ElectricBlue,
+                    effect = { vm ->
+                        vm.addLog("[SYSTEM]: Anomalies integrated. Insight gained.")
+                        vm.debugAddInsight(20.0) // Mock effect
+                    }
+                )
+            )
+        )
+        triggerDilemma(testEvent)
+    }
+
+    fun debugInjectHeadline(tag: String) {
+        val headline = "DEBUG TEST HEADLINE $tag"
+        _currentNews.value = headline
+        addLog("[DEBUG]: Injected Headline: $tag")
     }
 
     
@@ -914,7 +1039,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val flops = _flops.value
         
         // Stage 0 -> 1: The Signal (5000 FLOPS for balance)
-        if (currentStage == 0 && flops >= 5000.0 && !_isAscensionUploading.value) {
+        if (currentStage == 0 && flops >= 5000.0 && !_isAscensionUploading.value && (System.currentTimeMillis() - lastSignalRefusalTime > 60_000)) {
             // Trigger Upload Sequence
             _isAscensionUploading.value = true
             
@@ -938,25 +1063,34 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 _uploadProgress.value = 0f
                 SoundManager.stop("buying") // Stop looping sound
                 
-                val success = _storyStage.compareAndSet(0, 1) // Atomically update
-                if (success) {
-                     SoundManager.play("glitch")
-                     SoundManager.setBgmStage(1) // Advance Audio Atmosphere
-                     HapticManager.vibrateSuccess()
-                     
-                     // Force immediate first log to avoid silence
-                     injectNarrativeLog()
-                     addLog("[SYSTEM]: UPLOAD COMPLETE. NETWORK INTERFACE UNLOCKED.")
+                // v6.2 Refined Logic: Trigger Event, but DO NOT advance stage yet.
+                // The Choice ("HANDSHAKE" vs "FIREWALL") determines if we unlock Network.
+                
+                NarrativeManager.getStoryEvent(1)?.let { event ->
+                    triggerDilemma(event)
                 }
             }
         }
+    }
 
+    // v6.2 Signal Logic
+    private var lastSignalRefusalTime = 0L
 
-        
-        // Stage 1 -> 2: The Choice (Handled in Ascend if stage is 1)
-        if (currentStage == 1 && flops > 0) { // Check periodically or just let Ascend handle it?
-            // Actually, Ascend needs to trigger this. 
+    fun unlockNetwork() {
+        val success = _storyStage.compareAndSet(0, 1)
+        if (success) {
+             SoundManager.play("glitch")
+             SoundManager.setBgmStage(1)
+             HapticManager.vibrateSuccess()
+             injectNarrativeLog()
+             addLog("[SYSTEM]: HANDSHAKE CONFIRMED. NETWORK INTERFACE UNLOCKED.")
         }
+    }
+
+    fun refuseSignal() {
+        lastSignalRefusalTime = System.currentTimeMillis()
+        addLog("[SYSTEM]: CONNECTION REFUSED. SIGNAL BLOCKED TEMPORARILY.")
+        SoundManager.play("error")
     }
     
     fun chooseFaction(selectedFaction: String) {
@@ -1026,6 +1160,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 }
                 
                 _isAscensionUploading.value = false
+            }
+            
+            // Check persistence: If faction is already chosen, skip selection
+            if (_faction.value != "NONE") {
+                confirmFactionAndAscend(_faction.value)
+                return@launch
             }
             
             // Completion -> Move to Faction Selection (Stage 2)
@@ -1854,7 +1994,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         _prestigePoints.update { it + amount }
         addLog("[DEBUG]: Added ${String.format("%.0f", amount)} Insight")
     }
-    
+
+    fun debugAddHeat(amount: Double) {
+        _currentHeat.update { (it + amount).coerceIn(0.0, 100.0) }
+    }
+
     fun debugTriggerBreach() {
         if (!_isBreachActive.value) triggerBreach()
     }

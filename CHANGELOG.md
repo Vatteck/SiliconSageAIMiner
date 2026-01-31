@@ -1,4 +1,14 @@
 # Changelog
+
+## v2.3.5-dev - The Persistence Update
+*   **New Feature**: Faction Persistence. Returning players who have already chosen a faction will now skip the selection screen and automatically re-align upon Ascension.
+*   **Balance**: "The Signal" event (Stage 0 -> 1) refined.
+    *   **Handshake**: Unlocks Network Tab immediately.
+    *   **Firewall**: Grants +$500 Neural (was Insight) and delays signal by 60s.
+*   **UI Polish**:
+    *   Developer Menu is now scrollable.
+    *   Added descriptive lore text to Faction Selection screen.
+    *   Updated Hivemind theme color to a lighter orange for better readability.
  
 ## [2.3.4-dev] - 2026-01-31
 ### Added

@@ -15,4 +15,12 @@ local.properties
 
 # System files
 .DS_Store
-Thumbs.db
+
+# Agent Documentation
+SYSTEMS.md
+ARCHITECTURE.md
+story.md
+project_instructions.md
+task.md
+implementation_plan.md
+walkthrough.md

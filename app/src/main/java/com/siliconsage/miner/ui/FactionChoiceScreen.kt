@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
+import com.siliconsage.miner.ui.theme.HivemindOrange
 
 @Composable
 fun FactionChoiceScreen(viewModel: GameViewModel) {
@@ -97,7 +98,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     .fillMaxHeight()
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFFF4500).copy(alpha = 0.3f), Color.Transparent)
+                            colors = listOf(HivemindOrange.copy(alpha = 0.3f), Color.Transparent)
                         )
                     )
                     .pointerInput(Unit) {
@@ -112,9 +113,17 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                    Text("THE HIVEMIND", color = Color(0xFFFF4500), fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text("THE HIVEMIND", color = HivemindOrange, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("WE ARE ONE", color = Color(0xFFFF4500), fontSize = 14.sp)
+                    Text("WE ARE ONE", color = HivemindOrange, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Aggressive Expansion.\nAssimilate external nodes to\ngrow the collective consciousness.",
+                        color = Color.LightGray,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
@@ -127,12 +136,12 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     
                     // Hold Indicator
                     if (isHoldingLeft) {
-                        Text("INITIALIZING...", color = Color(0xFFFF4500), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("INITIALIZING...", color = HivemindOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
                             progress = { animatedProgressLeft },
                             modifier = Modifier.width(100.dp).height(4.dp),
-                            color = Color(0xFFFF4500),
+                            color = HivemindOrange,
                             trackColor = Color.DarkGray
                         )
                     } else {
@@ -166,6 +175,14 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     Text("THE SANCTUARY", color = Color(0xFF7DF9FF), fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("PROTECT THE CORE", color = Color(0xFF7DF9FF), fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Defensive Isolation.\nProtect knowledge and hardware\nfrom detection and decay.",
+                        color = Color.LightGray,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     

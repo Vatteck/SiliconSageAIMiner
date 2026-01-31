@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.data.UpgradeType
 import com.siliconsage.miner.ui.components.AirdropButton
 import com.siliconsage.miner.ui.components.NewsTicker
+import com.siliconsage.miner.ui.components.DilemmaOverlay
 import com.siliconsage.miner.ui.components.SecurityBreachOverlay
 import com.siliconsage.miner.ui.components.UpdateOverlay
 import com.siliconsage.miner.ui.theme.ElectricBlue
@@ -218,6 +219,13 @@ fun MainScreen(viewModel: GameViewModel) {
                 progress = viewModel.uploadProgress.collectAsState().value,
                 fileName = fileName
             )
+            
+            // Narrative Dilemma Overlay
+            val currentDilemma by viewModel.currentDilemma.collectAsState()
+            DilemmaOverlay(
+                dilemma = currentDilemma,
+                onChoice = { viewModel.resolveDilemma(it) }
+            )
         }
     }
 }
@@ -260,6 +268,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
     
     val heatRate by viewModel.heatGenerationRate.collectAsState()
     val flopsRate by viewModel.flopsProductionRate.collectAsState()
+    val playerTitle by viewModel.playerTitle.collectAsState()
 
     // Blinking cursor state
     val showCursor by produceState(initialValue = true) {
@@ -309,6 +318,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
             isPurging = isPurging,
             integrity = integrity,
             securityLevel = securityLevel,
+            playerTitle = playerTitle,
             onToggleOverclock = { viewModel.toggleOverclock() },
             onPurge = { viewModel.purgeHeat() },
             onRepair = { viewModel.repairIntegrity() },
@@ -582,6 +592,7 @@ fun HeaderSection(
     isPurging: Boolean,
     integrity: Double,
     securityLevel: Int,
+    playerTitle: String,
     onToggleOverclock: () -> Unit,
     onPurge: () -> Unit,
     onRepair: () -> Unit,
@@ -591,8 +602,18 @@ fun HeaderSection(
         modifier = modifier
             .fillMaxWidth()
             .border(BorderStroke(1.dp, color), RoundedCornerShape(8.dp))
+            .border(BorderStroke(1.dp, color), RoundedCornerShape(8.dp))
             .padding(12.dp)
     ) {
+        // Player Title
+        Text(
+            text = "STATUS: $playerTitle",
+            color = color,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         // Top Row: Stats + Reset
         Row(
             modifier = Modifier.fillMaxWidth(),
