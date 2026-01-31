@@ -1,5 +1,5 @@
 {
-  "version": "2.3.0-dev",
+  "version": "2.3.1-dev",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.3.0-dev\n- **Purge Rework**: Sacrifice FLOPS for cooling.\n- **UI Polish**: Centered headers, scrollable Network screen, Security Level in header.\n- **Fixes**: Small screen support and animations."
+  "changes": "## v2.3.1-dev\n- **Stability**: Room database reliability fix (Safe Load).\n- **UI Fix**: Vertical layout for upgrades on small screens.\n- **Polish**: Dynamic heat/cooling icons in header."
 }

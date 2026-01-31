@@ -8,9 +8,13 @@ class GameRepository(private val gameDao: GameDao) {
     val upgrades: Flow<List<Upgrade>> = gameDao.getUpgrades()
 
     suspend fun ensureInitialized() {
-        if (gameDao.getGameStateOneShot() == null) {
+        // Safe Load: Check if state exists, if not (or if null), insert default
+        val currentState = gameDao.getGameStateOneShot()
+        if (currentState == null) {
             gameDao.insertGameState(GameState())
         }
+        
+        // Safe Load Upgrades
         val existingUpgrades = gameDao.getUpgrades().firstOrNull() ?: emptyList()
         UpgradeType.values().forEach { type ->
             if (existingUpgrades.none { it.type == type }) {

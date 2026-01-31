@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.3.1-dev] - 2026-01-30
+
+### Fixed
+- **Upgrade UI**: Refactored `UpgradeItem` to use a vertical stack layout, solving text wrapping and button overflow issues on smaller screens.
+- **Room Stability**: Implemented "Safe Load" logic in `GameRepository` to handle null states and prevent crashes on startup.
+- **Save System**: Reverted experimental JSON persistence favoring a robust Room implementation.
+
+### Changed
+- **Header**: Added dynamic icons for Heat Rate (switches between 🔥 and ❄ based on value).
+
 ## [2.3.0-dev] - 2026-01-30
 
 ### Changed

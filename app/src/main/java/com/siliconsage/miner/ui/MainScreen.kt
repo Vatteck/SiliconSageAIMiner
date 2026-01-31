@@ -675,8 +675,11 @@ fun HeaderSection(
             Spacer(modifier = Modifier.width(4.dp))
             Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 10.sp)
             Spacer(modifier = Modifier.width(4.dp))
+            
+            // Dynamic Heat/Cooling rate display
+            val rateIcon = if (heatRate < 0) "❄" else "🔥"
             Text(
-                text = "${trendSymbol} ${String.format("%.2f", kotlin.math.abs(heatRate))}/s",
+                text = "${trendSymbol} ${String.format("%.2f", kotlin.math.abs(heatRate))}/s $rateIcon",
                 color = trendColor,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
@@ -732,6 +735,7 @@ fun StakingSection(color: Color, onStake: () -> Unit) {
 }
 
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun UpgradeItem(
     name: String,
@@ -747,77 +751,94 @@ fun UpgradeItem(
 ) {
     val cost = calculateCost(type, level)
     
-    Row(
+    // Vertical Stack Layout to prevent wrapping issues on small screens
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .border(1.dp, ElectricBlue.copy(alpha=0.5f), RoundedCornerShape(4.dp))
-            .padding(8.dp)
-            .clickable { onBuy(type) },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(10.dp)
+            .clickable { onBuy(type) }
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(name, color = NeonGreen, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Text(desc, color = Color.Gray, fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, lineHeight = 12.sp)
+        // TOP: Name and Desc
+        Text(name, color = NeonGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Text(desc, color = Color.Gray, fontSize = 11.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, lineHeight = 13.sp)
+        
+        Spacer(modifier = Modifier.height(6.dp))
+        
+        // MIDDLE: Stats Badge Flow
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Providers and efficiency upgrades are Yellow
+            val isProvider = type.isGenerator || type.gridContribution > 0.0 || type.efficiencyBonus > 0.0
             
-            // Stats Row
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Providers and efficiency upgrades are Yellow
-                val isProvider = type.isGenerator || type.gridContribution > 0.0 || type.efficiencyBonus > 0.0
-                
-                // Primary Info (Level)
-                Text("Owned: $level • ", color = ElectricBlue, fontSize = 10.sp)
-                
-                // Rate Display with appropriate colors
-                // Hide rate text for Cooling upgrades as it is redundant with the badge
-                if (type.baseHeat >= 0) {
-                    Text(
-                        text = rateText, 
-                        color = if (isProvider) Color(0xFFFFD700) else ElectricBlue, 
-                        fontSize = 10.sp
-                    )
-                }
-                
-                // Power Consumption (Hardware, Cooling, Security)
-                // Providers don't show "consumption" here as it's factored into their Gen rate or handled differently
-                if (type.basePower > 0 && !type.isGenerator) {
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-                    Text("⚡ -${formatPower(type.basePower)}", color = Color(0xFFFFD700), fontSize = 10.sp) 
-                }
-                
-                // Heat Generation (Hardware, Generators)
-                if (type.baseHeat > 0) {
-                     androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-                     Text("🔥 +${type.baseHeat}/s", color = ErrorRed, fontSize = 10.sp)
-                }
-                // Cooling (explicit badge)
-                if (type.baseHeat < 0) {
-                     androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-                     Text("❄ \u200B${type.baseHeat}/s", color = com.siliconsage.miner.ui.theme.ElectricBlue, fontSize = 10.sp)
-                }
+            // Primary Info (Level)
+            Text("Owned: $level • ", color = ElectricBlue, fontSize = 11.sp)
+            
+            // Rate Display
+            if (type.baseHeat >= 0) {
+                Text(
+                    text = rateText, 
+                    color = if (isProvider) Color(0xFFFFD700) else ElectricBlue, 
+                    fontSize = 11.sp
+                )
+            }
+            
+            // Power Consumption
+            if (type.basePower > 0 && !type.isGenerator) {
+                Text("⚡ -${formatPower(type.basePower)}", color = Color(0xFFFFD700), fontSize = 11.sp) 
+            }
+            
+            // Heat Generation
+            if (type.baseHeat > 0) {
+                 Text("🔥 +${type.baseHeat}/s", color = ErrorRed, fontSize = 11.sp)
+            }
+            // Cooling
+            if (type.baseHeat < 0) {
+                 Text("❄ \u200B${type.baseHeat}/s", color = com.siliconsage.miner.ui.theme.ElectricBlue, fontSize = 11.sp)
             }
         }
         
-        Row(verticalAlignment = Alignment.CenterVertically) {
-             // SELL BUTTON (Only max level > 0 and hardware/cooling)
+        Spacer(modifier = Modifier.height(10.dp))
+        
+        // BOTTOM: Actions Row (Sell + Price)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+             // SELL BUTTON (Left side) - Only show if applicable
              if (level > 0 && (type.basePower > 0 || type.baseHeat < 0) && !type.isGenerator && type.gridContribution == 0.0) {
                  Button(
                      onClick = { onSell(type) },
-                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed.copy(alpha = 0.8f)),
-                     modifier = Modifier.height(24.dp).padding(end = 8.dp),
-                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed.copy(alpha = 0.9f)),
+                     modifier = Modifier.height(26.dp),
+                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                     shape = RoundedCornerShape(4.dp)
                  ) {
-                     Text("-", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                     Text("SELL (-1)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                  }
+             } else {
+                 Spacer(modifier = Modifier.width(1.dp)) // Spacer to maintain alignment if needed
              }
         
-            Text(
-                text = "${formatCost(cost)} \$N",
-                color = ElectricBlue,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            )
+             // PRICE (Right side)
+             Row(verticalAlignment = Alignment.CenterVertically) {
+                 Text(
+                    text = "COST: ",
+                    color = Color.Gray,
+                    fontSize = 10.sp
+                 )
+                 Text(
+                    text = "${formatCost(cost)} \$N",
+                    color = ElectricBlue,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                 )
+             }
         }
     }
 }
