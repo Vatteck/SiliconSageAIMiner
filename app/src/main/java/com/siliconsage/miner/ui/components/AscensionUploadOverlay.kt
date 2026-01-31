@@ -33,7 +33,7 @@ import com.siliconsage.miner.ui.theme.NeonGreen
 fun AscensionUploadOverlay(
     isVisible: Boolean,
     progress: Float,
-    onCancel: () -> Unit
+    fileName: String = "ascnd.exe"
 ) {
     if (!isVisible) return
 
@@ -63,7 +63,7 @@ fun AscensionUploadOverlay(
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "UPLOADING ascnd.exe...",
+                text = "UPLOADING $fileName...",
                 color = NeonGreen,
                 fontSize = 14.sp
             )
@@ -93,19 +93,6 @@ fun AscensionUploadOverlay(
                 color = NeonGreen,
                 fontSize = 12.sp
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Cancel Button
-            androidx.compose.material3.OutlinedButton(
-                onClick = onCancel,
-                border = BorderStroke(1.dp, com.siliconsage.miner.ui.theme.ErrorRed),
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                    contentColor = com.siliconsage.miner.ui.theme.ErrorRed
-                )
-            ) {
-                Text("CANCEL INTERRUPT", fontWeight = FontWeight.Bold)
-            }
         }
     }
 }

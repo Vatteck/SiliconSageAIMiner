@@ -996,27 +996,64 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         return Math.sqrt(_neuralTokens.value / 10000.0)
     }
 
-    fun ascend() {
+    fun ascend(isStory: Boolean = false) {
         val potential = calculatePotentialPrestige()
         val stage = _storyStage.value
         
         // Allow Ascension if we have Insight OR if distinct story event requires it (Stage 1 -> 2)
         if (potential < 1.0 && stage != 1) return 
         
+        // Start Upload Sequence
+        viewModelScope.launch {
+            // Story Ascension (Stage 1 -> 2): Instant transition (as "upload" happened during unlock)
+            if (isStory) {
+                 addLog("[SYSTEM]: REBOOT CONFIRMED.")
+            } else {
+                // Manual Reboot (Stage > 1): Show "lobot.exe" upload
+                _isAscensionUploading.value = true
+                _uploadProgress.value = 0f
+                addLog("[SYSTEM]: INITIATING SYSTEM REBOOT...")
+                
+                // Animation Loop (5 seconds)
+                val duration = 5000L
+                val interval = 50L
+                val steps = duration / interval
+                
+                for (i in 1..steps) {
+                    if (!_isAscensionUploading.value) return@launch // Aborted
+                    _uploadProgress.value = i.toFloat() / steps
+                    delay(interval)
+                }
+                
+                _isAscensionUploading.value = false
+            }
+            
+            // Completion -> Move to Faction Selection (Stage 2)
+            _storyStage.value = 2
+            addLog("[SYSTEM]: CRITICAL DECISION REQUIRED.")
+            SoundManager.play("glitch")
+        }
+    }
+    
+    fun cancelFactionSelection() {
+        // Back out to Stage 1 (Awakened) or Stage 0 depending on state?
+        // If we were at Stage 1, go back to 1. If we triggered manual ascension later, go back to current state.
+        // Assuming we came from Stage 1 or manual trigger which effectively is Stage 1 state.
+        _storyStage.value = 1 
+        _uploadProgress.value = 0f
+        addLog("[SYSTEM]: REBOOT SEQUENCE ABORTED.")
+        SoundManager.play("error")
+    }
+
+    fun confirmFactionAndAscend(choice: String) {
+        val potential = calculatePotentialPrestige()
+        
         viewModelScope.launch {
             // 1. Calculate new Prestige
             val newPrestigeMultiplier = _prestigeMultiplier.value + (potential * 0.1) // Multiplier boost
             val newPrestigePoints = _prestigePoints.value + potential // Currency
             
-            // 2. Reset Game State (Partial Reset)
-            // Check for Narrative Stage 1 -> 2
-            var newStage = _storyStage.value
-            if (newStage == 1) {
-                newStage = 2 // Trigger Faction Choice
-                addLog("[SYSTEM]: REBOOT... CRITICAL ANOMALY DETECTED.")
-                addLog("[SYSTEM]: UPLOADING ASCENSION PROGRAM...")
-            }
-            
+            // 2. Reset Game State (Factory Reset for new Run)
             val resetState = GameState(
                 id = 1,
                 flops = 0.0,
@@ -1024,14 +1061,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 currentHeat = 0.0,
                 powerBill = 0.0,
                 prestigeMultiplier = newPrestigeMultiplier,
-                unlockedTechNodes = emptyList(), 
+                unlockedTechNodes = emptyList(), // Should preserve in real implementation but keeping consistent
                 prestigePoints = newPrestigePoints,
                 stakedTokens = 0.0,
-                storyStage = newStage,
-                faction = _faction.value
-            ) 
-            // In a real tech tree, unlockedTechNodes should NOT be reset. I will keep them.
-            // But for now, we don't have tech nodes Implemented yet.
+                storyStage = 1, // Start at Stage 1 (Awakened/Network Unlocked) for New Game+
+                faction = choice
+            )
             
             repository.updateGameState(resetState)
             
@@ -1039,7 +1074,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             val resetUpgrades = UpgradeType.values().map { Upgrade(it, 0) }
             resetUpgrades.forEach { repository.updateUpgrade(it) }
             
-            // 4. Update Local State
+            // 4. Update Local StateFlows
             _flops.value = 0.0
             _neuralTokens.value = 0.0
             _currentHeat.value = 0.0
@@ -1048,8 +1083,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _prestigeMultiplier.value = newPrestigeMultiplier
             _prestigePoints.value = newPrestigePoints
             _upgrades.value = resetUpgrades.associate { it.type to 0 }
+            _storyStage.value = 1 // Start at Stage 1
+            _faction.value = choice
             
-            addLog("[SYSTEM]: ASCENSION COMPLETE. SYSTEM REBOOTED. INSIGHT GAINED.")
+            addLog("[SYSTEM]: SYSTEM REBOOTED. FACTION: $choice INITIALIZED.")
+            addLog("[SYSTEM]: PRESTIGE APPLIED. MULTIPLIER: ${String.format("%.2f", newPrestigeMultiplier)}x")
+            SoundManager.play("startup")
         }
     }
 
@@ -1441,12 +1480,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
     
     private fun accumulatePower() {
-        // v1.7 Breaker Logic: If tripped, everything is OFF.
-        if (_isBreakerTripped.value) {
-            _activePowerUsage.value = 0.0
-            return
-        }
-        
         val currentUpgrades = _upgrades.value
         var totalKw = 0.0
         var maxCap = 100.0 // Base 100 kW
@@ -1517,25 +1550,26 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         _maxPowerkW.value = maxCap
         _activePowerUsage.value = totalKw
         
-        // v1.7 Breaker Trip
-        if (totalKw > maxCap) {
-             // Hivemind Chance to save (51%) - Reusing the perk logic or moving to Smart Grid?
-             // Reusing for flavor:
-             if (_faction.value == "HIVEMIND" && kotlin.random.Random.nextDouble() < 0.51) {
-                 addLog("[HIVEMIND]: SMART GRID PREVENTED BREAKER TRIP.")
-             } else {
-                 triggerBreakerTrip()
-                 return
-             }
-        }
-        
-        if (totalKw > 0) {
-             // Bill Calculation
-             val billableKw = (totalKw - selfGeneratedKw).coerceAtLeast(0.0)
-             
-             // v1.7 Variable Energy Rates
-             val costPerSecond = (billableKw / 3600.0) * energyPriceMultiplier
-             _powerBill.update { it + costPerSecond }
+        // BREAKER CHECK & BILLING
+        if (!_isBreakerTripped.value) {
+            // Check for Trip
+            if (totalKw > maxCap) {
+                 // Hivemind Chance to save (51%)
+                 if (_faction.value == "HIVEMIND" && kotlin.random.Random.nextDouble() < 0.51) {
+                     addLog("[HIVEMIND]: SMART GRID PREVENTED BREAKER TRIP.")
+                 } else {
+                     triggerBreakerTrip()
+                     return
+                 }
+            }
+            
+            // Pay Bill
+            if (totalKw > 0) {
+                 val billableKw = (totalKw - selfGeneratedKw).coerceAtLeast(0.0)
+                 // v1.7 Variable Energy Rates
+                 val costPerSecond = (billableKw / 3600.0) * energyPriceMultiplier
+                 _powerBill.update { it + costPerSecond }
+            }
         }
     }
     
@@ -1968,8 +2002,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             absVal >= 1.0E12 -> String.format("%.1f PW", wattsKw / 1.0E12)
             absVal >= 1.0E9 -> String.format("%.1f TW", wattsKw / 1.0E9)
             absVal >= 1.0E6 -> String.format("%.1f GW", wattsKw / 1.0E6)
-            absVal >= 1_000 -> String.format("%.1f MW", wattsKw / 1_000)
-            else -> String.format("%.1f kW", wattsKw)
+            absVal >= 100.0 -> String.format("%.1f kW", wattsKw)
+            else -> String.format("%.2f kW", wattsKw) // Precision for small changes
         }
     }
 

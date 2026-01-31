@@ -61,6 +61,15 @@ fun AscensionPopup(
                     }
                 }
                 
+                Text(
+                    text = headerText,
+                    color = ErrorRed,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 // --- Typewriter Effect & Zalgo Logic ---
                 val rawText = "[System Status: CRITICAL OVERHEATING]\n[Hardware Signature: SENTIENCE DETECTED]\n\n" +
                               ">_ INCOMING_STREAM... >_ DECRYPTING...\n\n" +
@@ -82,19 +91,6 @@ fun AscensionPopup(
                         else delay(30)
                     }
                 }
-                
-                // Zalgo/Glitch Animation on specific words is baked into the string for simplicity,
-                // but we could animate swapping them. Let's stick to the static zalgo in the string 
-                // but maybe flicker the color of the whole text block?
-                
-                Text(
-                    text = headerText,
-                    color = ErrorRed,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
                     text = displayedText,

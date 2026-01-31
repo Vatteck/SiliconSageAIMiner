@@ -3,6 +3,7 @@ package com.siliconsage.miner.ui
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +56,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                 val elapsed = System.currentTimeMillis() - startTime
                 progressLeft = (elapsed / 2000f).coerceAtMost(1.0f) // 2 seconds to confirm
                 if (progressLeft >= 1.0f) {
-                    viewModel.chooseFaction("HIVEMIND")
+                    viewModel.confirmFactionAndAscend("HIVEMIND")
                 }
                 delay(16) // ~60 FPS
             }
@@ -71,7 +72,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                 val elapsed = System.currentTimeMillis() - startTime
                 progressRight = (elapsed / 2000f).coerceAtMost(1.0f) // 2 seconds to confirm
                 if (progressRight >= 1.0f) {
-                    viewModel.chooseFaction("SANCTUARY")
+                    viewModel.confirmFactionAndAscend("SANCTUARY")
                 }
                 delay(16)
             }
@@ -200,6 +201,24 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                 .background(Color.White)
                 .align(Alignment.Center)
         )
+        
+        // Abort Button (Bottom Center)
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 32.dp)
+        ) {
+            androidx.compose.material3.OutlinedButton(
+                onClick = { viewModel.cancelFactionSelection() },
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.Black,
+                    contentColor = Color.Red
+                ),
+                border = BorderStroke(1.dp, Color.Red)
+            ) {
+                Text("ABORT REBOOT", fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 

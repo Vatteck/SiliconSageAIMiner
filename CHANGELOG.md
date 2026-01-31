@@ -1,4 +1,17 @@
 # Changelog
+ 
+## [2.3.4-dev] - 2026-01-31
+### Added
+- **Ascension UX**: Personalized filename overlays (`ascnd.exe` for story events, `lobot.exe` for manual reboots).
+- **Faction Choice UI**: Added an "ABORT REBOOT" back button to the Faction Selection screen.
+- **Persistence**: The Network Tab now remains permanently unlocked across Ascensions (New Game+).
+ 
+### Changed
+- **Ascension Flow**: The narrative "Initiate Protocol" popup now only appears during the first-ever Ascension (conditioned on Faction state).
+- **Cinematics**: Optimized the First Ascension (Stage 1 -> 2) to skip redundant upload animations, favoring an instant transition to faction choice.
+ 
+### Fixed
+- **Logic**: Updated story progression checks to use the persistent Faction state instead of the prestige multiplier.
 
 ## [2.3.3-dev] - 2026-01-31
 ### Added

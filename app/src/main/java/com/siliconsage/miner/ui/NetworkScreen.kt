@@ -43,6 +43,10 @@ fun NetworkScreen(viewModel: GameViewModel) {
     val unlockedNodes by viewModel.unlockedTechNodes.collectAsState()
     val potential = viewModel.calculatePotentialPrestige()
     
+    val storyStage by viewModel.storyStage.collectAsState()
+    val faction by viewModel.faction.collectAsState()
+    val showStoryPopup = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -102,15 +106,19 @@ fun NetworkScreen(viewModel: GameViewModel) {
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        val storyStage by viewModel.storyStage.collectAsState()
                         val canAscend = potential >= 1.0 || (storyStage == 1)
                         
                         Button(
                             onClick = { 
                                 if (canAscend) {
-                                    viewModel.ascend()
-                                    SoundManager.play("glitch") 
-                                    HapticManager.vibrateSuccess()
+                                    // Only show Story Popup on first run (Faction == NONE)
+                                    if (storyStage == 1 && faction == "NONE") {
+                                        showStoryPopup.value = true // Force popup to show
+                                    } else {
+                                        viewModel.ascend(isStory = false)
+                                        SoundManager.play("glitch") 
+                                        HapticManager.vibrateSuccess()
+                                    }
                                 } else {
                                     SoundManager.play("error")
                                     HapticManager.vibrateError()
@@ -166,15 +174,12 @@ fun NetworkScreen(viewModel: GameViewModel) {
             }
         }
         
-        val storyStage by viewModel.storyStage.collectAsState()
-        val showStoryPopup = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
-        
-        if (storyStage == 1 && showStoryPopup.value) {
+        if (storyStage == 1 && faction == "NONE" && showStoryPopup.value) {
              com.siliconsage.miner.ui.components.AscensionPopup(
                 isVisible = true,
                 onProceed = {
                     showStoryPopup.value = false // Hide it so it doesn't reappear instantly if update lags
-                    viewModel.ascend()
+                    viewModel.ascend(isStory = true)
                     SoundManager.play("glitch")
                     HapticManager.vibrateSuccess()
                 },

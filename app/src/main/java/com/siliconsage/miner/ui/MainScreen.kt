@@ -209,10 +209,14 @@ fun MainScreen(viewModel: GameViewModel) {
             }
             
             // Ascension Overlay (Global)
+            val storyStage by viewModel.storyStage.collectAsState()
+            val faction by viewModel.faction.collectAsState()
+            val fileName = if (storyStage <= 1 && faction == "NONE") "ascnd.exe" else "lobot.exe"
+            
             com.siliconsage.miner.ui.components.AscensionUploadOverlay(
                 isVisible = viewModel.isAscensionUploading.collectAsState().value,
                 progress = viewModel.uploadProgress.collectAsState().value,
-                onCancel = { viewModel.cancelAscension() }
+                fileName = fileName
             )
         }
     }

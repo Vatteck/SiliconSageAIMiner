@@ -1,5 +1,5 @@
 {
-  "version": "2.3.3-dev",
+  "version": "2.3.4-dev",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.3.3-dev\n- **Ascension UX**: Added 'NOT YET' dismiss button to Protocol 0 popup.\n- **Ascension UX**: Added 'CANCEL INTERRUPT' button to global upload overlay.\n- **Stability**: Fixed compiler errors and redundant overlay instances."
+  "changes": "## v2.3.4-dev\n- **Ascension UX**: Personalized filename overlays (ascnd.exe vs lobot.exe).\n- **Ascension UX**: Persistent Network Tab unlock across ascensions.\n- **Ascension UX**: Standardized manual vs story-driven reboot flows."
 }
