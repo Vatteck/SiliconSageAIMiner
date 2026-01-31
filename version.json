@@ -1,5 +1,5 @@
 {
-  "version": "2.3.1-dev",
+  "version": "2.3.2-dev",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.3.1-dev\n- **Stability**: Room database reliability fix (Safe Load).\n- **UI Fix**: Vertical layout for upgrades on small screens.\n- **Polish**: Dynamic heat/cooling icons in header."
+  "changes": "## v2.3.2-dev\n- **UI Polish**: Centered upgrade tabs with text truncation.\n- **Gameplay**: Hold-to-confirm Faction choice.\n- **Gameplay**: Global Ascension popup.\n- **Gameplay**: Explicit Efficiency stats."
 }
