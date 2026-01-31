@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.ui.theme.NeonGreen
 
+import androidx.compose.ui.draw.clipToBounds
+
 @Composable
 fun NewsTicker(
     news: String,
@@ -61,6 +63,7 @@ fun NewsTicker(
             .fillMaxWidth()
             .height(24.dp)
             .background(Color.Black.copy(alpha = 0.8f))
+            .clipToBounds()
     ) {
         if (news.isNotEmpty()) {
             val isGlitch = news.contains("[GLITCH]")

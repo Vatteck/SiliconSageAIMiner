@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -99,7 +100,9 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             )
 
             // Tab Row
-            TabRow(
+            // Tab Row
+            // Tab Row
+            androidx.compose.material3.TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.Black,
                 contentColor = NeonGreen,
@@ -118,7 +121,16 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                             SoundManager.play("click")
                             HapticManager.vibrateClick()
                         },
-                        text = { Text(title, fontSize = 12.sp, color = if (selectedTab == index) NeonGreen else Color.Gray) }
+                        text = { 
+                            Text(
+                                title, 
+                                fontSize = 10.sp, 
+                                letterSpacing = (-0.5).sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                                color = if (selectedTab == index) NeonGreen else Color.Gray
+                            ) 
+                        }
                     )
                 }
             }

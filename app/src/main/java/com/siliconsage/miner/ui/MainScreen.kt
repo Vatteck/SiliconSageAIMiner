@@ -207,6 +207,12 @@ fun MainScreen(viewModel: GameViewModel) {
                    onLater = { viewModel.dismissUpdate() }
                 )
             }
+            
+            // Ascension Overlay (Global)
+            com.siliconsage.miner.ui.components.AscensionUploadOverlay(
+                isVisible = viewModel.isAscensionUploading.collectAsState().value,
+                progress = viewModel.uploadProgress.collectAsState().value
+            )
         }
     }
 }
@@ -547,10 +553,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
         onChoice = { viewModel.resolveFork(it) }
     )
     
-    com.siliconsage.miner.ui.components.AscensionUploadOverlay(
-        isVisible = isAscensionUploading,
-        progress = uploadProgress
-    )
+    /* Ascension Overlay moved to MainScreen */
 }
 
 // --- EXTENSION: Breaker Overlay (was Brownout) ---
@@ -790,6 +793,12 @@ fun UpgradeItem(
             // Power Consumption
             if (type.basePower > 0 && !type.isGenerator) {
                 Text("⚡ -${formatPower(type.basePower)}", color = Color(0xFFFFD700), fontSize = 11.sp) 
+            }
+            
+            // Efficiency Bonus
+            if (type.efficiencyBonus > 0.0) {
+                 val effPercent = (type.efficiencyBonus * 100).toInt()
+                 Text("⚡ EFFICIENCY +$effPercent%", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             
             // Heat Generation

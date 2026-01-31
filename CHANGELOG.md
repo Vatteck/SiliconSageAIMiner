@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.3.2-dev] - 2026-01-30
+### Added
+- **Global Ascension Overlay**: The Ascension/Upload popup now appears on all screens, ensuring endgame visibility.
+- **Faction Choice UI**: Added "Hold to Confirm" mechanic (2s press) and revealed hidden passive stats for Hivemind and Sanctuary.
+- **Efficiency Stats**: Added explicit "EFFICIENCY +X%" labels to power-saving upgrades.
+
+### Changed
+- **Upgrade Tabs**: Switched to centered, fixed-width tabs with text overflow protection to prevent truncation on small screens.
+- **Internal**: Refactored `AscensionUploadOverlay` to MainScreen scope.
+
 ## [2.3.1-dev] - 2026-01-30
 
 ### Fixed
