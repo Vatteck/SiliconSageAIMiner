@@ -9,6 +9,7 @@
     *   Developer Menu is now scrollable.
     *   Added descriptive lore text to Faction Selection screen.
     *   Updated Hivemind theme color to a lighter orange for better readability.
+*   **System**: Configured update checker URL to point to GitHub Releases for seamless version tracking.
  
 ## [2.3.4-dev] - 2026-01-31
 ### Added
