@@ -4,5 +4,5 @@
   "last_updated": "2026-01-31",
   "description": "Faction Persistence, Signal Event Logic Refinement, and UI Polish.",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.3.4-dev\n- **Ascension UX**: Personalized filename overlays (ascnd.exe vs lobot.exe).\n- **Ascension UX**: Persistent Network Tab unlock across ascensions.\n- **Ascension UX**: Standardized manual vs story-driven reboot flows."
+  "changes": "## v2.3.5-dev - The Persistence Update\n*   **New Feature**: Faction Persistence. Returning players who have already chosen a faction will now skip the selection screen and automatically re-align upon Ascension.\n*   **Balance**: 'The Signal' event (Stage 0 -> 1) refined.\n    *   **Handshake**: Unlocks Network Tab immediately.\n    *   **Firewall**: Grants +$500 Neural (was Insight) and delays signal by 60s.\n*   **UI Polish**:\n    *   Developer Menu is now scrollable.\n    *   Added descriptive lore text to Faction Selection screen.\n    *   Updated Hivemind theme color to a lighter orange for better readability.\n*   **System**: Configured update checker URL to point to GitHub Releases for seamless version tracking."
 }
