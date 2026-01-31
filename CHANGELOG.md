@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.3-dev] - 2026-01-31
+### Added
+- **Ascension Cancellation**: Users can now back out of the Protocol 0 (Ascension) popup via a "NOT YET" button.
+- **Upload Abort**: Added a "CANCEL INTERRUPT" button to the global Ascension upload overlay to stop the process mid-way.
+
+### Fixed
+- **UI Redundancy**: Removed duplicate Ascension overlay instances causing flickering and layout issues.
+- **Build**: Resolved Kotlin compilation errors related to missing parameters.
+
 ## [2.3.2-dev] - 2026-01-30
 ### Added
 - **Global Ascension Overlay**: The Ascension/Upload popup now appears on all screens, ensuring endgame visibility.

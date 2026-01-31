@@ -29,11 +29,12 @@ import kotlinx.coroutines.delay
 @Composable
 fun AscensionPopup(
     isVisible: Boolean,
-    onProceed: () -> Unit
+    onProceed: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     if (!isVisible) return
 
-    Dialog(onDismissRequest = {}) {
+    Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,6 +110,12 @@ fun AscensionPopup(
                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
                 ) {
                     Text("INITIATE PROTOCOL", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                androidx.compose.material3.TextButton(onClick = onDismiss) {
+                    Text("NOT YET - I NEED TIME", color = Color.Gray)
                 }
             }
         }

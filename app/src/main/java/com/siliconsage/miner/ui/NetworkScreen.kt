@@ -167,13 +167,20 @@ fun NetworkScreen(viewModel: GameViewModel) {
         }
         
         val storyStage by viewModel.storyStage.collectAsState()
-        if (storyStage == 1) {
+        val showStoryPopup = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+        
+        if (storyStage == 1 && showStoryPopup.value) {
              com.siliconsage.miner.ui.components.AscensionPopup(
                 isVisible = true,
                 onProceed = {
+                    showStoryPopup.value = false // Hide it so it doesn't reappear instantly if update lags
                     viewModel.ascend()
                     SoundManager.play("glitch")
                     HapticManager.vibrateSuccess()
+                },
+                onDismiss = {
+                    showStoryPopup.value = false
+                    SoundManager.play("click")
                 }
             )
         }

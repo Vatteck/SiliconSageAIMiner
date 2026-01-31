@@ -211,7 +211,8 @@ fun MainScreen(viewModel: GameViewModel) {
             // Ascension Overlay (Global)
             com.siliconsage.miner.ui.components.AscensionUploadOverlay(
                 isVisible = viewModel.isAscensionUploading.collectAsState().value,
-                progress = viewModel.uploadProgress.collectAsState().value
+                progress = viewModel.uploadProgress.collectAsState().value,
+                onCancel = { viewModel.cancelAscension() }
             )
         }
     }
@@ -555,8 +556,6 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
     
     /* Ascension Overlay moved to MainScreen */
 }
-
-// --- EXTENSION: Breaker Overlay (was Brownout) ---
 // We can just replace the Grid Failure content block dynamically
 // But simpler to just edit the existing one in place above:
 

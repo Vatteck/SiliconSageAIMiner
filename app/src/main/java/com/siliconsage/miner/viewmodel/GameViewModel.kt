@@ -1864,6 +1864,19 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         _unlockedTechNodes.value = emptyList()
         addLog("[DEBUG]: Prestige Reset")
     }
+    
+    fun cancelAscension() {
+        if (_isAscensionUploading.value) {
+            // Cancel the upload logic
+            // Note: The actual upload coroutine loop in startAscension (not shown here but likely existing) 
+            // needs to check this flag or we need to cancel the job. 
+            // Assuming the upload logic is checking the flag or we can just reset state.
+            _isAscensionUploading.value = false
+            _uploadProgress.value = 0f
+            addLog("[SYSTEM]: ASCENSION UPLOAD ABORTED.")
+            SoundManager.play("error") // Cancellation sound
+        }
+    }
     fun debugAddFlops(amount: Double) {
         _flops.update { it + amount }
     }

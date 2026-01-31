@@ -1,5 +1,5 @@
 {
-  "version": "2.3.2-dev",
+  "version": "2.3.3-dev",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.3.2-dev\n- **UI Polish**: Centered upgrade tabs with text truncation.\n- **Gameplay**: Hold-to-confirm Faction choice.\n- **Gameplay**: Global Ascension popup.\n- **Gameplay**: Explicit Efficiency stats."
+  "changes": "## v2.3.3-dev\n- **Ascension UX**: Added 'NOT YET' dismiss button to Protocol 0 popup.\n- **Ascension UX**: Added 'CANCEL INTERRUPT' button to global upload overlay.\n- **Stability**: Fixed compiler errors and redundant overlay instances."
 }
