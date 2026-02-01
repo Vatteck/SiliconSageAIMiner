@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.2-dev] - 2026-02-01
+
+### Fixed - Power Upgrade UI & Glitch Effects
+- **Power Upgrade UI Revamp**: 
+  - Unified **Generators** and **Infrastructure** under a single `+X MAX` label (Gold Color).
+  - Fixed duplicate info pill bug (generic Rate Pill + custom Power Power).
+  - Assigned distinct icons (`Bolt` for Gen, `Power` for Cap) but unified the visual language as requested.
+  - Restored missing power consumption pills (Yellow `-kW`) for Hardware/Cooling.
+- **Glitch Effects**: 
+  - Implemented `GlitchText` component for Protocol 0 theming.
+  - Added heat-reactive glitching to Main Stats (FLOPS, Neural) when >90% heat.
+  - Updated News Ticker to use static Gold color with text scrambling for `[GLITCH]` events.
+  
 ## [2.4.1-dev] - 2026-02-01
 
 ### Fixed - Terminal UI Polish

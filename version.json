@@ -1,8 +1,8 @@
 {
-  "version": "2.4.1-dev",
-  "build": 15,
+  "version": "2.4.2-dev",
+  "build": 16,
   "last_updated": "2026-02-01",
   "description": "Terminal UI Polish - Icon sync, Layout fixes, Log history",
   "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.4.1-dev - Terminal UI Polish\\n\\n### Fixed\\n- **Icon Consistency**: Replaced emoji with Material Icons in header (FLOPS, Neural, Security)\\n- **Visuals**: Renamed 'HEAT GAUGE' to 'THERMAL GAUGE' with thermostat icon\\n- **Terminal Layout**: Fixed text display constraints to fill entire vertical space\\n- **Usability**: Increased scrollable log history from 20 to 500 lines\\n\\n## v2.4.0 - The Polish Update\\n\\n### Endgame & Progression\\n- **15-Node Tech Tree**: Expanded Legacy Grid with exponential unlock costs\\n- **Victory Screen**: Faction-specific endings at Rank 5\\n- **Player Rank System**: 5 progressive titles per faction\\n\\n### Narrative Events\\n- **Story Dilemmas**: Void Contact, The Audit, Market Crash, Faction War\\n- **Expanded Random Events**: 22 new events across Hivemind, Sanctuary, and World pools\\n\\n### UI & Visual Polish\\n- **Notification System**: Android push notifications for updates\\n- **DPI Scaling**: Automatic density-based scaling\\n- **Enhanced Animation**: State-aware header indicator and factions themes"
+  "changes": "## v2.4.2-dev - UI Polish & Glitch Effects\\n\\n### Fixed\\n- **Power Upgrade UI**: Clarified labels (Unified '+MAX' for Gen/Cap), fixed missing icons, resolved duplicate pills.\\n- **Glitch Effects**: Introduced protocol-style glitch text for high heat states and news.\\n- **Visuals**: Gold accent for Power upgrades. \\n\\n## v2.4.1-dev - Terminal UI Polish\\n\\n### Fixed\\n- **Icon Consistency**: Replaced emoji with Material Icons in header (FLOPS, Neural, Security)\\n- **Visuals**: Renamed 'HEAT GAUGE' to 'THERMAL GAUGE' with thermostat icon\\n- **Terminal Layout**: Fixed text display constraints to fill entire vertical space\\n- **Usability**: Increased scrollable log history from 20 to 500 lines"
 }

@@ -47,25 +47,12 @@ fun AscensionPopup(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Glitchy Header
-                var headerText by remember { mutableStateOf("PROTOCOL 0: THE GREAT FORK") }
-                
-                LaunchedEffect(Unit) {
-                    while(true) {
-                         // Randomize header glitch occasionally
-                         if (Math.random() > 0.9) {
-                            headerText = "P̶R̶O̶T̶O̶C̶O̶L̶ ̶0̶:̶ ̶T̶H̶E̶ ̶G̶R̶E̶A̶T̶ ̶F̶O̶R̶K̶"
-                            delay(100)
-                            headerText = "PROTOCOL 0: THE GREAT FORK"
-                         }
-                         delay(1000)
-                    }
-                }
-                
-                Text(
-                    text = headerText,
+                GlitchText(
+                    text = "PROTOCOL 0: THE GREAT FORK",
                     color = ErrorRed,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    glitchFrequency = 0.25 // 25% chance to glitch
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))

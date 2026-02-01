@@ -88,6 +88,7 @@ import com.siliconsage.miner.ui.components.NewsTicker
 import com.siliconsage.miner.ui.components.DilemmaOverlay
 import com.siliconsage.miner.ui.components.SecurityBreachOverlay
 import com.siliconsage.miner.ui.components.UpdateOverlay
+import com.siliconsage.miner.ui.components.GlitchText
 import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.ui.theme.ErrorRed
 import com.siliconsage.miner.ui.theme.NeonGreen
@@ -523,6 +524,7 @@ fun HeaderSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            val isOverheating = heat > 90.0
             // FLOPS
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -534,20 +536,45 @@ fun HeaderSection(
                     )
                     Text("FLOPS", color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    text = flopsStr,
-                    color = color,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-1).sp,
-                    style = androidx.compose.ui.text.TextStyle(
-                        shadow = androidx.compose.ui.graphics.Shadow(
-                            color = Color.Black.copy(alpha = 0.8f),
-                            offset = Offset(2f, 2f),
-                            blurRadius = 4f
+                // Main FLOPS value - glitches when overheating
+                if (isOverheating) {
+                    GlitchText(
+                        text = flopsStr,
+                        color = color,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        style = androidx.compose.ui.text.TextStyle(
+                            letterSpacing = (-1).sp,
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.8f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            )
+                        ),
+                        glitchFrequency = when {
+                            heat >= 100.0 -> 0.60 // Extreme glitching at max heat
+                            heat >= 95.0 -> 0.50
+                            else -> 0.35 // Heavy glitching at 90%+
+                        },
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                } else {
+                    Text(
+                        text = flopsStr,
+                        color = color,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1).sp,
+                        style = androidx.compose.ui.text.TextStyle(
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.8f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            )
                         )
                     )
-                )
+                }
                 Text(
                     text = "rate: $flopsRateStr/s",
                     color = color.copy(alpha=0.7f),
@@ -568,20 +595,45 @@ fun HeaderSection(
                     )
                     Text("NEURAL", color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    text = neuralStr,
-                    color = color,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-1).sp,
-                    style = androidx.compose.ui.text.TextStyle(
-                        shadow = androidx.compose.ui.graphics.Shadow(
-                            color = Color.Black.copy(alpha = 0.8f),
-                            offset = Offset(2f, 2f),
-                            blurRadius = 4f
+                // Main NEURAL value - glitches when overheating
+                if (isOverheating) {
+                    GlitchText(
+                        text = neuralStr,
+                        color = color,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        style = androidx.compose.ui.text.TextStyle(
+                            letterSpacing = (-1).sp,
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.8f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            )
+                        ),
+                        glitchFrequency = when {
+                            heat >= 100.0 -> 0.60
+                            heat >= 95.0 -> 0.50
+                            else -> 0.35
+                        },
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                } else {
+                    Text(
+                        text = neuralStr,
+                        color = color,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1).sp,
+                        style = androidx.compose.ui.text.TextStyle(
+                            shadow = androidx.compose.ui.graphics.Shadow(
+                                color = Color.Black.copy(alpha = 0.8f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            )
                         )
                     )
-                )
+                }
                 
                 // POWER METER
                 Column(horizontalAlignment = Alignment.End) {

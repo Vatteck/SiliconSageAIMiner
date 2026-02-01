@@ -2249,10 +2249,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun formatPower(wattsKw: Double): String {
         val absVal = kotlin.math.abs(wattsKw)
         return when {
-            absVal >= 1.0E15 -> String.format("%.1f EW", wattsKw / 1.0E15)
-            absVal >= 1.0E12 -> String.format("%.1f PW", wattsKw / 1.0E12)
-            absVal >= 1.0E9 -> String.format("%.1f TW", wattsKw / 1.0E9)
-            absVal >= 1.0E6 -> String.format("%.1f GW", wattsKw / 1.0E6)
+            absVal >= 1.0E9 -> String.format("%.2f TW", wattsKw / 1.0E9)
+            absVal >= 1.0E6 -> String.format("%.2f GW", wattsKw / 1.0E6)
+            absVal >= 1_000.0 -> String.format("%.2f MW", wattsKw / 1_000.0)
             absVal >= 100.0 -> String.format("%.1f kW", wattsKw)
             else -> String.format("%.2f kW", wattsKw) // Precision for small changes
         }

@@ -27,6 +27,8 @@ import com.siliconsage.miner.ui.theme.ErrorRed
 import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.util.SoundManager
 import kotlinx.coroutines.delay
+import androidx.compose.ui.text.style.TextOverflow
+import com.siliconsage.miner.ui.components.GlitchText
 
 @Composable
 fun NewsTicker(
@@ -115,32 +117,37 @@ fun NewsTicker(
         if (displayText.isNotEmpty()) {
             val isGlitch = news.contains("[GLITCH]")
             
-            // Glitch visual effect logic
-            var finalColor = baseColor
-            if (isGlitch) {
-                 val flicker by infiniteTransition.animateFloat(
-                    initialValue = 0f, targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(100, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "glitchFlicker"
-                )
-                finalColor = if (flicker > 0.5f) ErrorRed else ElectricBlue
-            }
+            // Use static gold color for glitch headlines to stand out
+            val finalColor = if (isGlitch) Color(0xFFFFD700) else baseColor
             
-            Text(
-                text = ">>> MARKET UPDATE: $displayText <<<",
-                color = finalColor,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                softWrap = false,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = offsetX.dp)
-            )
+            if (isGlitch) {
+                 GlitchText(
+                    text = ">>> MARKET UPDATE: $displayText <<<",
+                    color = finalColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    softWrap = false,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
+                    glitchFrequency = 0.40, // 40% glitch chance for news
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = offsetX.dp)
+                )
+            } else {
+                Text(
+                    text = ">>> MARKET UPDATE: $displayText <<<",
+                    color = finalColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    softWrap = false,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(x = offsetX.dp)
+                )
+            }
         }
     }
 }
