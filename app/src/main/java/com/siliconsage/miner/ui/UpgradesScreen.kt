@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -114,10 +115,16 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             // Tab Row
             // Tab Row
             // Tab Row
+            // Tab Row
             androidx.compose.material3.TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.Black,
+                containerColor = Color.Black.copy(alpha = 0.75f), // Glass
                 contentColor = NeonGreen,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.DarkGray, RoundedCornerShape(8.dp))
+                    .padding(4.dp),
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),

@@ -241,6 +241,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private var chaosLoop: Job? = null
     private var narrativeLoop: Job? = null
     
+    // --- POPUP MUTEX (Prevent Overlap) ---
+    private var lastPopupTime = 0L
+    
     // --- THERMAL LOCKOUT ---
     private val _isThermalLockout = MutableStateFlow(false)
     val isThermalLockout: StateFlow<Boolean> = _isThermalLockout.asStateFlow()
@@ -425,25 +428,29 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 if (_isGamePaused.value) continue
 
                 // 5% chance of breach
-                if (!_isBreachActive.value && Random.nextDouble() < 0.05) {
+                if (!_isBreachActive.value && Random.nextDouble() < 0.05 && canShowPopup()) {
                     triggerBreach()
+                    markPopupShown()
                 }
                 // 10% chance of Airdrop
-                if (!_isAirdropActive.value && Random.nextDouble() < 0.10) {
+                if (!_isAirdropActive.value && Random.nextDouble() < 0.10 && canShowPopup()) {
                     triggerAirdrop()
+                    markPopupShown()
                 }
                 
                 // 5% chance of Network Instability
-                if (!_isDiagnosticsActive.value && Random.nextDouble() < 0.05) {
+                if (!_isDiagnosticsActive.value && Random.nextDouble() < 0.05 && canShowPopup()) {
                     triggerDiagnostics()
+                    markPopupShown()
                 }
                 
                 // 5% Chance of 51% Attack (New Chaos)
                 // Reduced frequency if Sanctuary Faction (-50% chance -> 2.5%)
                 val isSanctuary = _faction.value == "SANCTUARY"
                 val attackChance = if (isSanctuary) 0.025 else 0.05
-                if (!_is51AttackActive.value && Random.nextDouble() < attackChance) {
+                if (!_is51AttackActive.value && Random.nextDouble() < attackChance && canShowPopup()) {
                     trigger51Attack()
+                    markPopupShown()
                 }
             }
         }
@@ -452,15 +459,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         viewModelScope.launch {
             delay(10_000) // Initial delay
             while (true) {
-                delay(120_000)
+                delay(240_000) // Reduced frequency: 4 min (was 2 min)
                 
                 // Skip if Paused
                 if (_isGamePaused.value) continue
 
-                // Only trigger if no other major overlay is active
-                if (_currentDilemma.value == null && !_isBreachActive.value && !_isAscensionUploading.value) {
+                // Only trigger if no other major overlay is active AND mutex allows
+                if (_currentDilemma.value == null && !_isBreachActive.value && !_isAscensionUploading.value && canShowPopup()) {
                     NarrativeManager.rollForEvent(this@GameViewModel)?.let { event ->
                         triggerDilemma(event)
+                        markPopupShown()
                     }
                 }
             }
@@ -884,6 +892,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
 
+    // --- Popup Mutex Helpers ---
+    private fun canShowPopup(): Boolean {
+        val now = System.currentTimeMillis()
+        val cooldown = 30_000L // 30 seconds between ANY popups
+        return (now - lastPopupTime) >= cooldown
+    }
+
+    private fun markPopupShown() {
+        lastPopupTime = System.currentTimeMillis()
+    }
 
     // --- Narrative Dilemma System ---
     private val _currentDilemma = MutableStateFlow<NarrativeEvent?>(null)
@@ -2205,7 +2223,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun addLog(message: String) {
         _logs.update { list ->
-            (list + "> $message").takeLast(20) // Keep last 20 logs
+            (list + "> $message").takeLast(500) // Keep last 500 logs
         }
     }
 

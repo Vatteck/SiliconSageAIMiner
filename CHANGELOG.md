@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.4.1-dev] - 2026-02-01
+
+### Fixed - Terminal UI Polish
+- **Icon Consistency**: Synchronized header icons with upgrade card system
+  - FLOPS: Replaced 💻 emoji with `Icons.Default.Computer`
+  - $NEURAL: Replaced 🪙 emoji with `Icons.Default.AttachMoney`
+  - Security Level: Added `Icons.Default.Lock` icon
+- **Thermal Gauge**: Renamed "HEAT GAUGE" to "THERMAL GAUGE" with `Icons.Default.DeviceThermostat` icon
+- **Terminal Text Display**: Fixed layout constraints causing logs to display only halfway
+  - Removed redundant nested Column wrapper in `TerminalScreen.kt`
+  - LazyColumn now properly fills available vertical space with `.weight(1f)` modifier
+- **Log History**: Increased terminal log limit from 20 to 500 lines for better scrollable history
+  - Logs stored in memory only, reset on app close to avoid persistence overhead
+  - LazyColumn virtualization ensures no performance impact even with 500+ entries
+
 ## [2.4.0-dev] - 2026-02-01
 
 ### Added - Endgame & Progression

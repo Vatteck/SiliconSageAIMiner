@@ -92,6 +92,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp)) // Glass
                         .border(BorderStroke(1.dp, ElectricBlue), RoundedCornerShape(8.dp))
                         .padding(16.dp)
                 ) {
@@ -223,7 +224,8 @@ fun PrestigeStat(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(BorderStroke(1.dp, Color.DarkGray), RoundedCornerShape(4.dp))
+            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp)) // Glass
+            .border(BorderStroke(1.dp, Color.DarkGray), RoundedCornerShape(8.dp))
             .padding(12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -254,6 +256,7 @@ fun LegacyGrid(
         modifier = Modifier
             .fillMaxWidth()
             .height(500.dp) // Fixed height for the tree container
+            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp)) // Glass
             .padding(16.dp)
             .border(BorderStroke(1.dp, Color.DarkGray.copy(alpha=0.5f)), RoundedCornerShape(8.dp))
     ) {

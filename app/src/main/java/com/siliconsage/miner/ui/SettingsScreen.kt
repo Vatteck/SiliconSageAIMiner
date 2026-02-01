@@ -173,7 +173,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 Button(
                     onClick = { launcher.launch("audio/*") },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.75f)), // Glass
                     shape = RoundedCornerShape(4.dp),
                     border = BorderStroke(1.dp, NeonGreen)
                 ) {
@@ -220,7 +220,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentScaleOrdinal < 0) NeonGreen.copy(alpha = 0.2f) else Color.Transparent
+                        containerColor = if (currentScaleOrdinal < 0) NeonGreen.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.75f) // Glass
                     ),
                     border = BorderStroke(1.dp, if (currentScaleOrdinal < 0) NeonGreen else Color.DarkGray),
                     shape = RoundedCornerShape(4.dp)
@@ -239,7 +239,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (currentScaleOrdinal == scale.ordinal) NeonGreen.copy(alpha = 0.2f) else Color.Transparent
+                            containerColor = if (currentScaleOrdinal == scale.ordinal) NeonGreen.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.75f) // Glass
                         ),
                         border = BorderStroke(1.dp, if (currentScaleOrdinal == scale.ordinal) NeonGreen else Color.DarkGray),
                         shape = RoundedCornerShape(4.dp)
@@ -269,7 +269,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     )
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.75f)), // Glass
                 shape = RoundedCornerShape(4.dp),
                 border = BorderStroke(1.dp, ElectricBlue)
             ) {
@@ -473,6 +473,7 @@ fun SettingItem(label: String, isChecked: Boolean, onCheckedChange: (Boolean) ->
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp)) // Glass
             .border(BorderStroke(1.dp, ElectricBlue), RoundedCornerShape(4.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically

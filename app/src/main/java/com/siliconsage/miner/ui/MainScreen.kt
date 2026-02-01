@@ -50,6 +50,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -320,11 +324,17 @@ fun MainScreen(viewModel: GameViewModel) {
                         }
                     )
                     
-                    com.siliconsage.miner.ui.components.DiagnosticsOverlay(
-                        isVisible = isDiagnostics,
-                        gridState = diagnosticGrid,
-                        onTap = { viewModel.onDiagnosticTap(it) }
-                    )
+                    
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        com.siliconsage.miner.ui.components.DiagnosticsOverlay(
+                            isVisible = isDiagnostics,
+                            gridState = diagnosticGrid,
+                            onTap = { viewModel.onDiagnosticTap(it) }
+                        )
+                    }
                     
                     com.siliconsage.miner.ui.components.GovernanceForkOverlay(
                         isVisible = isGovernanceFork,
@@ -425,9 +435,10 @@ fun HeaderSection(
         label = "critBlink"
     )
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
             .drawBehind {
                 val w = size.width
                 val h = size.height
@@ -450,6 +461,9 @@ fun HeaderSection(
             }
             .padding(12.dp)
     ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
         // TOP: Status & Rank
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -459,14 +473,14 @@ fun HeaderSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "STATUS: ",
-                    color = color.copy(alpha = 0.6f),
-                    fontSize = 10.sp,
+                    color = Color.LightGray,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = playerTitle,
                     color = color,
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
@@ -482,7 +496,13 @@ fun HeaderSection(
             
             // Security Level Small Badge
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("SEC:", color = Color.Gray, fontSize = 9.sp)
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = Color.LightGray,
+                    modifier = Modifier.size(12.dp).padding(end = 4.dp)
+                )
+                Text("SEC", color = Color.LightGray, fontSize = 11.sp)
                 Spacer(modifier = Modifier.width(4.dp))
                 repeat(5) { i ->
                     Box(
@@ -506,7 +526,13 @@ fun HeaderSection(
             // FLOPS
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("💻 FLOPS", color = color.copy(alpha=0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.Computer,
+                        contentDescription = null,
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(14.dp).padding(end = 4.dp)
+                    )
+                    Text("FLOPS", color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Text(
                     text = flopsStr,
@@ -524,8 +550,8 @@ fun HeaderSection(
                 )
                 Text(
                     text = "rate: $flopsRateStr/s",
-                    color = color.copy(alpha=0.6f),
-                    fontSize = 10.sp,
+                    color = color.copy(alpha=0.7f),
+                    fontSize = 11.sp,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 )
             }
@@ -533,7 +559,15 @@ fun HeaderSection(
             
             // NEURAL tokens
             Column(horizontalAlignment = Alignment.End) {
-                Text("🪙 \$NEURAL", color = color.copy(alpha=0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.AttachMoney,
+                        contentDescription = null,
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(14.dp).padding(end = 2.dp)
+                    )
+                    Text("NEURAL", color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
                 Text(
                     text = neuralStr,
                     color = color,
@@ -552,9 +586,9 @@ fun HeaderSection(
                 // POWER METER
                 Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("PWR:", color = Color.Gray, fontSize = 9.sp)
+                        Text("PWR:", color = Color.LightGray, fontSize = 11.sp)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = powerKw, color = pwrColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = powerKw, color = pwrColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     // Small Power Bar
                     Box(
@@ -706,7 +740,13 @@ fun HeaderSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🔥 HEAT GAUGE", color = if (isHot) ErrorRed else Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.DeviceThermostat,
+                        contentDescription = null,
+                        tint = if (isHot) ErrorRed else Color.LightGray,
+                        modifier = Modifier.size(14.dp).padding(end = 4.dp)
+                    )
+                    Text("THERMAL GAUGE", color = if (isHot) ErrorRed else Color.LightGray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     if (isCritical) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -718,7 +758,7 @@ fun HeaderSection(
                         )
                     }
                 }
-                Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             
             Spacer(modifier = Modifier.height(4.dp))
@@ -785,18 +825,19 @@ fun HeaderSection(
                 Text(
                     text = "TREND: $trendSymbol ${String.format("%.2f", heatRate)}/s",
                     color = trendColor,
-                    fontSize = 9.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
                     text = "INTEGRITY: ${integrity.toInt()}%",
-                    color = if (integrity < 30) ErrorRed else Color.Gray,
-                    fontSize = 9.sp
+                    color = if (integrity < 30) ErrorRed else Color.LightGray,
+                    fontSize = 10.sp
                 )
             }
         }
-    }
+        } // End Column
+    } // End Box
 }
 
 @Composable
