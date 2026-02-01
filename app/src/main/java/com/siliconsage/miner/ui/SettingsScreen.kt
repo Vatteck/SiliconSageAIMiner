@@ -62,7 +62,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(Color.Transparent)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
@@ -183,17 +183,90 @@ fun SettingsScreen(viewModel: GameViewModel) {
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            // --- UI SCALE ---
+            val prefs = context.getSharedPreferences("ui_preferences", android.content.Context.MODE_PRIVATE)
+            var currentScaleOrdinal by remember { mutableIntStateOf(prefs.getInt("ui_scale", -1)) }
+            val densityDpi = context.resources.displayMetrics.densityDpi
+            
+            Text("UI SCALE", color = NeonGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Display current auto-scale info
+            val autoScaleInfo = when {
+                densityDpi >= 640 -> "Auto: Compact (75%)"
+                densityDpi >= 480 -> "Auto: Medium (83%)"
+                densityDpi >= 320 -> "Auto: Normal (88%)"
+                else -> "Auto: Normal (100%)"
+            }
+            
+            Text(
+                text = if (currentScaleOrdinal < 0) "Current: $autoScaleInfo" else "Current: ${com.siliconsage.miner.data.UIScale.fromOrdinal(currentScaleOrdinal).displayName}",
+                color = Color.Gray,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+            ) {
+                // Auto button
+                Button(
+                    onClick = {
+                        currentScaleOrdinal = -1
+                        prefs.edit().putInt("ui_scale", -1).apply()
+                        SoundManager.play("click")
+                        android.widget.Toast.makeText(context, "Restart app to apply", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (currentScaleOrdinal < 0) NeonGreen.copy(alpha = 0.2f) else Color.Transparent
+                    ),
+                    border = BorderStroke(1.dp, if (currentScaleOrdinal < 0) NeonGreen else Color.DarkGray),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text("AUTO", color = if (currentScaleOrdinal < 0) NeonGreen else Color.Gray, fontSize = 10.sp)
+                }
+                
+                // Scale options
+                com.siliconsage.miner.data.UIScale.values().forEach { scale ->
+                    Button(
+                        onClick = {
+                            currentScaleOrdinal = scale.ordinal
+                            prefs.edit().putInt("ui_scale", scale.ordinal).apply()
+                            SoundManager.play("click")
+                            android.widget.Toast.makeText(context, "Restart app to apply", android.widget.Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (currentScaleOrdinal == scale.ordinal) NeonGreen.copy(alpha = 0.2f) else Color.Transparent
+                        ),
+                        border = BorderStroke(1.dp, if (currentScaleOrdinal == scale.ordinal) NeonGreen else Color.DarkGray),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(scale.displayName.uppercase(), color = if (currentScaleOrdinal == scale.ordinal) NeonGreen else Color.Gray, fontSize = 10.sp)
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // --- UPDATE CHECKER (v2.2) ---
             Button(
                 onClick = { 
                     SoundManager.play("click")
-                    viewModel.checkForUpdates { found ->
-                         android.widget.Toast.makeText(
-                             context,
-                             if (found) "SYSTEM UPDATE DETECTED" else "SYSTEM IS UP TO DATE",
-                             android.widget.Toast.LENGTH_SHORT
-                         ).show()
-                    }
+                    viewModel.checkForUpdates(
+                        onResult = { found ->
+                            android.widget.Toast.makeText(
+                                context,
+                                if (found) "SYSTEM UPDATE DETECTED" else "SYSTEM IS UP TO DATE",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        },
+                        showNotification = false // Don't show notification when manually checking
+                    )
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),

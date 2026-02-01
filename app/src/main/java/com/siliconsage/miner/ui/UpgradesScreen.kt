@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.data.UpgradeType
+import com.siliconsage.miner.ui.components.UpgradeItem
 import com.siliconsage.miner.ui.theme.NeonGreen
 import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
@@ -60,7 +61,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -79,6 +80,10 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             val securityLevel by viewModel.securityLevel.collectAsState()
             val flops by viewModel.flops.collectAsState()
             val playerTitle by viewModel.playerTitle.collectAsState()
+            val playerRank by viewModel.playerRankTitle.collectAsState()
+            val isThermalLockout by viewModel.isThermalLockout.collectAsState()
+            val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
+            val lockoutTimer by viewModel.lockoutTimer.collectAsState()
             
             HeaderSection(
                 flopsStr = viewModel.formatLargeNumber(flops),
@@ -95,6 +100,11 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 integrity = integrity,
                 securityLevel = securityLevel,
                 playerTitle = playerTitle,
+                playerRank = playerRank,
+                isThermalLockout = isThermalLockout,
+                isBreakerTripped = isBreakerTripped,
+                lockoutTimer = lockoutTimer,
+                faction = viewModel.faction.collectAsState().value,
                 onToggleOverclock = { viewModel.toggleOverclock() },
                 onPurge = { viewModel.purgeHeat() },
                 onRepair = { viewModel.repairIntegrity() },

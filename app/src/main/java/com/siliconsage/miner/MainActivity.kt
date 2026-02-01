@@ -23,13 +23,37 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel.loadTechTree(this)
-        viewModel.checkForUpdates()
+        viewModel.loadDilemmaState(this) // Load History
+        
+        // Check for updates on startup and show notification if found
+        viewModel.checkForUpdates(
+            onResult = { found ->
+                if (found) {
+                    val updateInfo = viewModel.updateInfo.value
+                    if (updateInfo != null && 
+                        com.siliconsage.miner.util.UpdateNotificationManager.shouldShowNotification(this)) {
+                        com.siliconsage.miner.util.UpdateNotificationManager.showUpdateNotification(
+                            this,
+                            updateInfo.version,
+                            updateInfo.url
+                        )
+                        com.siliconsage.miner.util.UpdateNotificationManager.markNotificationShown(this)
+                    }
+                }
+            },
+            showNotification = false // We handle notification manually above
+        )
         
         // Init Engines
         com.siliconsage.miner.util.HapticManager.init(this)
         com.siliconsage.miner.util.SoundManager.init(this)
         com.siliconsage.miner.util.HeadlineManager.init(this)
+        
+        // Init notification channel for updates
+        com.siliconsage.miner.util.UpdateNotificationManager.createNotificationChannel(this)
+        
+        // Apply DPI-aware UI scaling
+        applyUIScaling()
 
         setContent {
             val themeColor by viewModel.themeColor.collectAsState(initial = com.siliconsage.miner.ui.theme.NeonGreen)
@@ -51,6 +75,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         com.siliconsage.miner.util.SoundManager.pauseAll()
+        viewModel.saveDilemmaState(this) // Save History
         viewModel.onAppBackgrounded()
     }
     
@@ -58,5 +83,35 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         com.siliconsage.miner.util.SoundManager.resumeAll()
         viewModel.onAppForegrounded(this)
+    }
+    
+    /**
+     * Apply DPI-aware UI scaling based on device density and user preference
+     */
+    private fun applyUIScaling() {
+        val prefs = getSharedPreferences("ui_preferences", MODE_PRIVATE)
+        val userScaleOrdinal = prefs.getInt("ui_scale", -1)
+        
+        val densityDpi = resources.displayMetrics.densityDpi
+        
+        // Determine target density
+        val targetDensity = if (userScaleOrdinal >= 0) {
+            // User has set a preference - use it
+            val userScale = com.siliconsage.miner.data.UIScale.fromOrdinal(userScaleOrdinal)
+            densityDpi * userScale.scaleFactor
+        } else {
+            // Auto-scale based on device DPI
+            when {
+                densityDpi >= 640 -> densityDpi * 0.75f  // xxxhdpi -> compact
+                densityDpi >= 480 -> densityDpi * 0.83f  // xxhdpi -> slightly compact
+                densityDpi >= 320 -> densityDpi * 0.88f  // xhdpi -> slightly compact
+                else -> densityDpi.toFloat()  // mdpi/hdpi unchanged
+            }
+        }
+        
+        // Apply scaling
+        val scale = targetDensity / densityDpi
+        resources.displayMetrics.density = resources.displayMetrics.density * scale
+        resources.displayMetrics.scaledDensity = resources.displayMetrics.scaledDensity * scale
     }
 }

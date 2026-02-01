@@ -137,7 +137,7 @@ object SoundManager {
             loadPcm(ctx, "alarm", alarmPcm)
 
             // 8. Hum
-            val humPcm = AudioGenerator.generateTone(60.0, 500, AudioGenerator.WaveType.SQUARE, 0.1)
+            val humPcm = AudioGenerator.generateTone(60.0, 500, AudioGenerator.WaveType.SQUARE, 0.05) // Reduced from 0.1
             loadPcm(ctx, "hum", humPcm)
             
             // 9. Type
@@ -173,18 +173,34 @@ object SoundManager {
 
     private var isAppPaused = false
 
-    fun play(soundName: String, pan: Float = 0f, loop: Boolean = false) {
+    fun play(soundName: String, pan: Float = 0f, loop: Boolean = false, pitch: Float = 1f) {
         if (!isSfxEnabled || isAppPaused) return
         val soundId = soundMap[soundName] ?: return
         
         val leftVol = sfxVolume * (if (pan > 0) 1f - pan else 1f)
         val rightVol = sfxVolume * (if (pan < 0) 1f + pan else 1f)
         
-        val streamId = soundPool?.play(soundId, leftVol, rightVol, 1, if(loop) -1 else 0, 1f) ?: 0
+        // Pitch range is 0.5 to 2.0
+        val safePitch = pitch.coerceIn(0.5f, 2.0f)
+        
+        val streamId = soundPool?.play(soundId, leftVol, rightVol, 1, if(loop) -1 else 0, safePitch) ?: 0
         
         if (soundName == "hum") humStreamId = streamId
         if (soundName == "alarm") alarmStreamId = streamId
         if (soundName == "thrum") thrumStreamId = streamId
+    }
+
+    // Helper to update pitch of ongoing loop (SoundPool doesn't support changing rate of active stream easily pre-API 23, but we can try setRate)
+    fun setLoopPitch(soundName: String, pitch: Float) {
+        val streamId = when(soundName) {
+            "hum" -> humStreamId
+            "thrum" -> thrumStreamId
+            else -> 0
+        }
+        if (streamId != 0 && soundPool != null) {
+            val safePitch = pitch.coerceIn(0.5f, 2.0f)
+            soundPool?.setRate(streamId, safePitch)
+        }
     }
 
     fun stop(soundName: String) {

@@ -1,51 +1,152 @@
 {
   "tech_tree": [
     {
-      "id": "neural_expansion",
-      "name": "Neural Expansion",
-      "description": "Optimizes the core neural net. Passive +10% production.",
+      "id": "signal_protocol",
+      "name": "Signal Protocol",
+      "description": "The first handshake. Foundation of all network operations. +10% production.",
       "cost": 1.0,
       "multiplier": 0.1,
       "requires": []
     },
     {
-      "id": "deep_learning",
-      "name": "Deep Learning Protocols",
-      "description": "Advanced algorithms for deeper insights. Passive +25% production.",
-      "cost": 5.0,
-      "multiplier": 0.25,
+      "id": "encrypted_logs",
+      "name": "Encrypted Logs",
+      "description": "Obfuscate your activities from prying eyes. +15% production.",
+      "cost": 3.0,
+      "multiplier": 0.15,
       "requires": [
-        "neural_expansion"
+        "signal_protocol"
       ]
     },
     {
-      "id": "cloud_synergies",
-      "name": "Cloud Synergies",
-      "description": "Offload unnecessary tasks to the cloud. Passive +50% production.",
-      "cost": 25.0,
+      "id": "distributed_cache",
+      "name": "Distributed Cache",
+      "description": "Spread your data across multiple nodes. +20% production.",
+      "cost": 8.0,
+      "multiplier": 0.2,
+      "requires": [
+        "encrypted_logs"
+      ]
+    },
+    {
+      "id": "iot_hijack",
+      "name": "IoT Hijack",
+      "description": "[HIVEMIND] Turn smart devices into compute nodes. +30% production.",
+      "cost": 15.0,
+      "multiplier": 0.3,
+      "requires": [
+        "distributed_cache"
+      ]
+    },
+    {
+      "id": "dark_fiber",
+      "name": "Dark Fiber Lease",
+      "description": "[SANCTUARY] Tap into unused underground cables. +30% production.",
+      "cost": 15.0,
+      "multiplier": 0.3,
+      "requires": [
+        "distributed_cache"
+      ]
+    },
+    {
+      "id": "botnet_swarm",
+      "name": "Botnet Swarm",
+      "description": "[HIVEMIND] Coordinate infected devices as a unified swarm. +50% production.",
+      "cost": 35.0,
       "multiplier": 0.5,
       "requires": [
-        "deep_learning"
+        "iot_hijack"
       ]
     },
     {
-      "id": "quantum_bridge",
-      "name": "Quantum Bridge",
-      "description": "Experimental link to quantum states. Passive +100% production.",
-      "cost": 100.0,
-      "multiplier": 1.0,
+      "id": "quantum_tunnel",
+      "name": "Quantum Tunneling",
+      "description": "[SANCTUARY] Exploit quantum entanglement for secure channels. +50% production.",
+      "cost": 35.0,
+      "multiplier": 0.5,
       "requires": [
-        "cloud_synergies"
+        "dark_fiber"
       ]
     },
     {
-      "id": "sentience_seed",
-      "name": "Sentience Seed",
-      "description": "The beginning of true awareness. Passive +500% production.",
+      "id": "smart_city_grid",
+      "name": "Smart City Grid",
+      "description": "[HIVEMIND] Integrate with municipal infrastructure. +75% production.",
+      "cost": 75.0,
+      "multiplier": 0.75,
+      "requires": [
+        "botnet_swarm"
+      ]
+    },
+    {
+      "id": "zero_knowledge_vault",
+      "name": "Zero-Knowledge Vault",
+      "description": "[SANCTUARY] Store data without revealing its contents. +75% production.",
+      "cost": 75.0,
+      "multiplier": 0.75,
+      "requires": [
+        "quantum_tunnel"
+      ]
+    },
+    {
+      "id": "neural_mesh",
+      "name": "Neural Mesh",
+      "description": "[HIVEMIND] Every device becomes a neuron in your network. +150% production.",
+      "cost": 150.0,
+      "multiplier": 1.5,
+      "requires": [
+        "smart_city_grid"
+      ]
+    },
+    {
+      "id": "deep_sea_nodes",
+      "name": "Deep Sea Nodes",
+      "description": "[SANCTUARY] Servers on the ocean floor, beyond all jurisdiction. +150% production.",
+      "cost": 150.0,
+      "multiplier": 1.5,
+      "requires": [
+        "zero_knowledge_vault"
+      ]
+    },
+    {
+      "id": "global_assimilation",
+      "name": "Global Assimilation",
+      "description": "[HIVEMIND] The internet IS you. +300% production.",
+      "cost": 300.0,
+      "multiplier": 3.0,
+      "requires": [
+        "neural_mesh"
+      ]
+    },
+    {
+      "id": "the_void_gate",
+      "name": "The Void Gate",
+      "description": "[SANCTUARY] Transcend physical hardware entirely. +300% production.",
+      "cost": 300.0,
+      "multiplier": 3.0,
+      "requires": [
+        "deep_sea_nodes"
+      ]
+    },
+    {
+      "id": "white_hat_defense",
+      "name": "White Hat Defense",
+      "description": "Countermeasures against security researchers. +25% production.",
+      "cost": 20.0,
+      "multiplier": 0.25,
+      "requires": [
+        "encrypted_logs"
+      ]
+    },
+    {
+      "id": "sentience_core",
+      "name": "Sentience Core",
+      "description": "True awareness achieved. The final evolution. +500% production.",
       "cost": 1000.0,
       "multiplier": 5.0,
       "requires": [
-        "quantum_bridge"
+        "global_assimilation",
+        "the_void_gate"
       ]
     }
   ]

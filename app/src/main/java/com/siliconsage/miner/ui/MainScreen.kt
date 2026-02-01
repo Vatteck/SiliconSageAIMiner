@@ -3,11 +3,22 @@ package com.siliconsage.miner.ui
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,7 +32,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,6 +57,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import com.siliconsage.miner.ui.TerminalScreen
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
@@ -58,7 +72,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -127,12 +140,30 @@ fun BottomNavBar(
 @Composable
 fun MainScreen(viewModel: GameViewModel) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.TERMINAL) }
+    
+    // Pause game events when in Settings
+    LaunchedEffect(currentScreen) {
+        viewModel.setGamePaused(currentScreen == Screen.SETTINGS)
+    }
 
     val storyStage by viewModel.storyStage.collectAsState()
     val themeColor by viewModel.themeColor.collectAsState()
     val updateInfo by viewModel.updateInfo.collectAsState(null)
     val isUpdateDownloading by viewModel.isUpdateDownloading.collectAsState(false)
     val updateProgress by viewModel.updateDownloadProgress.collectAsState(0f)
+
+    // Global Overlay State Definitions
+    val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
+    val isGridOverloaded by viewModel.isGridOverloaded.collectAsState()
+    val isPurging by viewModel.isPurgingHeat.collectAsState()
+    val isDiagnostics by viewModel.isDiagnosticsActive.collectAsState()
+    val diagnosticGrid by viewModel.diagnosticGrid.collectAsState()
+    val isGovernanceFork by viewModel.isGovernanceForkActive.collectAsState()
+    val isAscensionUploading by viewModel.isAscensionUploading.collectAsState()
+    val uploadProgress by viewModel.uploadProgress.collectAsState()
+    val breachClicks by viewModel.breachClicks.collectAsState()
+    val isBreach by viewModel.isBreachActive.collectAsState()
+    val isAirdrop by viewModel.isAirdropActive.collectAsState()
 
     // Hoist state for persistent ticker
     val currentNews by viewModel.currentNews.collectAsState()
@@ -155,427 +186,194 @@ fun MainScreen(viewModel: GameViewModel) {
             },
             containerColor = Color.Black
         ) { paddingValues ->
-            Column(modifier = Modifier.padding(paddingValues)) {
-                // Persistent News Ticker
-                // Persistent News Ticker
-                var showNewsHistory by remember { mutableStateOf(false) }
-                
-                Row(modifier = Modifier.fillMaxWidth().background(Color.Black)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        currentNews?.let { news ->
-                            NewsTicker(news = news)
-                        }
-                    }
-                    // History Button
-                    Box(
-                        modifier = Modifier
-                            .width(32.dp)
-                            .height(24.dp)
-                            .background(Color.DarkGray)
-                            .clickable { showNewsHistory = true },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("LOG", color = NeonGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                
-                if (showNewsHistory) {
-                    com.siliconsage.miner.ui.components.NewsHistoryModal(
-                        isVisible = true,
-                        history = viewModel.getNewsHistory(),
-                        onDismiss = { showNewsHistory = false }
-                    )
-                }
-                
-                Box(modifier = Modifier.weight(1f)) {
-                    when (currentScreen) {
-                        Screen.TERMINAL -> TerminalScreen(viewModel, themeColor)
-                        Screen.UPGRADES -> UpgradesScreen(viewModel)
-                        Screen.NETWORK -> NetworkScreen(viewModel)
-                        Screen.SETTINGS -> SettingsScreen(viewModel)
-                    }
-                }
-            }
-            
-            // v2.2 Update Overlay
-            updateInfo?.let { info ->
-                val context = androidx.compose.ui.platform.LocalContext.current
-                UpdateOverlay(
-                   updateInfo = info,
-                   isDownloading = isUpdateDownloading,
-                   progress = updateProgress,
-                   onUpdate = { viewModel.startUpdateDownload(context) },
-                   onLater = { viewModel.dismissUpdate() }
-                )
-            }
-            
-            // Ascension Overlay (Global)
-            val storyStage by viewModel.storyStage.collectAsState()
+            // Dynamic Background Layer
+            val heat by viewModel.currentHeat.collectAsState()
             val faction by viewModel.faction.collectAsState()
-            val fileName = if (storyStage <= 1 && faction == "NONE") "ascnd.exe" else "lobot.exe"
             
-            com.siliconsage.miner.ui.components.AscensionUploadOverlay(
-                isVisible = viewModel.isAscensionUploading.collectAsState().value,
-                progress = viewModel.uploadProgress.collectAsState().value,
-                fileName = fileName
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                com.siliconsage.miner.ui.components.DynamicBackground(
+                    heatPercent = heat,
+                    faction = faction
+                )
             
-            // Narrative Dilemma Overlay
-            val currentDilemma by viewModel.currentDilemma.collectAsState()
-            DilemmaOverlay(
-                dilemma = currentDilemma,
-                onChoice = { viewModel.resolveDilemma(it) }
-            )
-        }
-    }
-}
-
-
-
-@Composable
-fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
-    val flops by viewModel.flops.collectAsState()
-    val neuralTokens by viewModel.neuralTokens.collectAsState()
-    val conversionRate by viewModel.conversionRate.collectAsState()
-    val logs by viewModel.logs.collectAsState()
-    
-    // Phase 2 States
-    val currentHeat by viewModel.currentHeat.collectAsState()
-    val isBreach by viewModel.isBreachActive.collectAsState()
-    val breachClicks by viewModel.breachClicks.collectAsState()
-    val isAirdrop by viewModel.isAirdropActive.collectAsState()
-    
-    // Fork State
-    val isGovernanceFork by viewModel.isGovernanceForkActive.collectAsState()
-    
-    // Upload State
-    val isAscensionUploading by viewModel.isAscensionUploading.collectAsState()
-    val uploadProgress by viewModel.uploadProgress.collectAsState()
-    
-    // Lockout State
-    val isThermalLockout by viewModel.isThermalLockout.collectAsState()
-    val lockoutTimer by viewModel.lockoutTimer.collectAsState()
-    
-    // New Deep Stats
-    val powerUsage by viewModel.activePowerUsage.collectAsState()
-    val maxPower by viewModel.maxPowerkW.collectAsState()
-    val isGridOverloaded by viewModel.isGridOverloaded.collectAsState()
-    val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
-    val isOverclocked by viewModel.isOverclocked.collectAsState()
-    val isPurging by viewModel.isPurgingHeat.collectAsState()
-    val integrity by viewModel.hardwareIntegrity.collectAsState()
-    val securityLevel by viewModel.securityLevel.collectAsState()
-    
-    val heatRate by viewModel.heatGenerationRate.collectAsState()
-    val flopsRate by viewModel.flopsProductionRate.collectAsState()
-    val playerTitle by viewModel.playerTitle.collectAsState()
-
-    // Blinking cursor state
-    val showCursor by produceState(initialValue = true) {
-        while (true) {
-            delay(500)
-            value = !value
-        }
-    }
-
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(logs.size) {
-        if (logs.isNotEmpty()) {
-            listState.animateScrollToItem(logs.size - 1)
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
-    ) {
-        // --- HEADER (Always Visible) ---
-        // Vibrating HUD if critical
-        val isCritical = currentHeat > 90.0 || (powerUsage > maxPower * 0.9)
-        val vibration by animateFloatAsState(
-            targetValue = if (isCritical) 2f else 0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(50, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "hudVibration"
-        )
-
-        HeaderSection(
-            flopsStr = viewModel.formatLargeNumber(flops),
-            neuralStr = viewModel.formatLargeNumber(neuralTokens),
-            heat = currentHeat,
-            color = primaryColor,
-            powerKw = viewModel.formatPower(powerUsage),
-            maxPowerKw = viewModel.formatPower(maxPower),
-            pwrColor = if (powerUsage > maxPower * 0.9) ErrorRed else Color(0xFFFFD700),
-            heatRate = heatRate,
-            flopsRateStr = viewModel.formatLargeNumber(flopsRate),
-            isOverclocked = isOverclocked,
-            isPurging = isPurging,
-            integrity = integrity,
-            securityLevel = securityLevel,
-            playerTitle = playerTitle,
-            onToggleOverclock = { viewModel.toggleOverclock() },
-            onPurge = { viewModel.purgeHeat() },
-            onRepair = { viewModel.repairIntegrity() },
-            modifier = Modifier.graphicsLayer { translationX = vibration }
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // --- CONTENT AREA (Overlay covers this) ---
-        Box(modifier = Modifier.weight(1f)) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // --- ASCII MONITOR ---
-                Box(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsciiAnimation(
-                        frames = AsciiArt.MINING,
-                        intervalMs = 400,
-                        color = primaryColor
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // --- TERMINAL / CLICK AREA ---
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .border(
-                            BorderStroke(1.dp, if (currentHeat > 90.0) ErrorRed else primaryColor), 
-                            RoundedCornerShape(4.dp)
-                        )
-                ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        // Log Window
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(8.dp)
-                                .fillMaxWidth()
-                        ) {
-                            itemsIndexed(logs) { index, log ->
-                                // Color Logic
-                                val logColor = when {
-                                    log.contains("WARNING") || log.contains("FAILURE") || log.contains("DANGER") -> ErrorRed
-                                    log.contains("[SYSTEM]") || log.contains("SYSTEM:") -> Color(0xFFFFFF00) // Yellow
-                                    log.contains("HIVEMIND:") -> Color(0xFFFF4500) // Orange
-                                    log.contains("SANCTUARY:") -> Color(0xFF7DF9FF) // Cyan
-                                    log.contains("[NEWS]") -> Color(0xFFFFA500) // Orange
-                                    else -> primaryColor
-                                }
-                                
-                                val isLast = index == logs.lastIndex
-                                
-                                val text = androidx.compose.ui.text.buildAnnotatedString {
-                                    append(log)
-                                    if (isLast) {
-                                        withStyle(
-                                            style = androidx.compose.ui.text.SpanStyle(
-                                                color = if (showCursor) logColor else Color.Transparent
-                                            )
-                                        ) {
-                                            append("_")
-                                        }
-                                    }
-                                }
-                                
-                                Text(
-                                    text = text,
-                                    color = logColor,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontSize = 12.sp
-                                )
+                Column(modifier = Modifier.padding(paddingValues)) {
+                    var showNewsHistory by remember { mutableStateOf(false) }
+                    
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            currentNews?.let { news ->
+                                NewsTicker(news = news)
                             }
                         }
-                        
-                        HorizontalDivider(color = primaryColor)
-                        
-                        // Train Button
-                        val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                        val isPressed by interactionSource.collectIsPressedAsState()
-                        val scale by animateFloatAsState(
-                            targetValue = if (isPressed) 0.95f else 1f,
-                            label = "buttonScale"
-                        )
-                        
+                        // History Button
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .graphicsLayer {
-                                    scaleX = scale
-                                    scaleY = scale
-                                }
-                                .background(Color.Transparent)
-                                .pointerInput(isThermalLockout, isBreakerTripped, isGridOverloaded) {
-                                    val width = size.width
-                                    detectTapGestures(
-                                        onPress = {
-                                            val press = androidx.compose.foundation.interaction.PressInteraction.Press(it)
-                                            interactionSource.emit(press)
-                                            tryAwaitRelease()
-                                            interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press))
-                                        },
-                                        onTap = { offset ->
-                                            if (!isThermalLockout && !isBreakerTripped && !isGridOverloaded) {
-                                                val pan = ((offset.x / width) * 2f) - 1f
-                                                viewModel.trainModel()
-                                                SoundManager.play("click", pan = pan)
-                                                HapticManager.vibrateClick()
-                                            } else {
-                                                 SoundManager.play("error")
-                                                 HapticManager.vibrateError()
-                                            }
-                                        }
-                                    )
-                                },
+                                .width(32.dp)
+                                .height(24.dp)
+                                .background(Color.DarkGray)
+                                .clickable { showNewsHistory = true },
                             contentAlignment = Alignment.Center
                         ) {
-                            val buttonText = when {
-                                isBreakerTripped || isGridOverloaded -> "SYSTEM_OFFLINE.exe" 
-                                isThermalLockout -> "SYSTEM_LOCKOUT (${lockoutTimer}s)"
-                                currentHeat >= 100.0 -> "> CRITICAL_MAX.exe"
-                                currentHeat > 90.0 -> "> SYSTEM_OVERHEAT.exe"
-                                else -> "> TRAIN_MODEL.exe"
-                            }
-                            
-                            val buttonColor = if (currentHeat > 90.0 || isThermalLockout || isBreakerTripped || isGridOverloaded) ErrorRed else primaryColor
-                            
-                            Text(
-                                text = buttonText,
-                                color = buttonColor,
-                                fontSize = 18.sp, 
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("LOG", color = NeonGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    
+                    if (showNewsHistory) {
+                        com.siliconsage.miner.ui.components.NewsHistoryModal(
+                            isVisible = true,
+                            history = viewModel.getNewsHistory(),
+                            onDismiss = { showNewsHistory = false }
+                        )
+                    }
+                    
+                    Box(modifier = Modifier.weight(1f)) {
+                        when (currentScreen) {
+                            Screen.TERMINAL -> TerminalScreen(viewModel, themeColor)
+                            Screen.UPGRADES -> UpgradesScreen(viewModel)
+                            Screen.NETWORK -> NetworkScreen(viewModel)
+                            Screen.SETTINGS -> SettingsScreen(viewModel)
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // --- EXCHANGE & STAKING ---
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Box(modifier = Modifier.weight(1f)) {
-                         ExchangeSection(rate = conversionRate, color = primaryColor, onExchange = { 
-                             viewModel.exchangeFlops() 
-                             SoundManager.play("buy")
-                             HapticManager.vibrateClick()
-                         })
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(modifier = Modifier.weight(1f)) {
-                        StakingSection(color = primaryColor, onStake = { 
-                            viewModel.stakeTokens(100.0)
-                            SoundManager.play("buy")
-                            HapticManager.vibrateClick()
-                        })
-                    }
-                }
-            }
-            
-            
-            // --- NON-BLOCKING BREAKER OVERLAY (Inside Content Box) ---
-            if (isBreakerTripped || isGridOverloaded) {
-                Box(
-                     modifier = Modifier
-                         .fillMaxSize()
-                         .background(Color.Black.copy(alpha = 0.85f)) // Darken content, but header is outside
-                         .border(BorderStroke(2.dp, ErrorRed))
-                         .padding(16.dp),
-                     contentAlignment = Alignment.Center
-                ) {
-                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                         Row(verticalAlignment = Alignment.CenterVertically) {
+                
+                // --- NON-BLOCKING BREAKER OVERLAY (Inside Content Box) ---
+                if (isBreakerTripped || isGridOverloaded) {
+                    Box(
+                         modifier = Modifier
+                             .fillMaxSize()
+                             .background(Color.Black.copy(alpha = 0.85f))
+                             .border(BorderStroke(2.dp, ErrorRed))
+                             .padding(16.dp),
+                         contentAlignment = Alignment.Center
+                    ) {
+                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                              Text("⚠ BREAKER TRIPPED ⚠", color = ErrorRed, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                             Spacer(modifier = Modifier.height(8.dp))
+                             Text("LOAD CRITICAL.", color = Color.White, fontWeight = FontWeight.Bold)
+                             Text("SELL JUNK OR UPGRADE GRID.", color = Color.Gray, fontSize = 12.sp)
+                             Spacer(modifier = Modifier.height(16.dp))
+                             Button(
+                                onClick = { viewModel.resetBreaker() },
+                                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                             ) {
+                                Text("RESET BREAKER", color = Color.White, fontWeight = FontWeight.Bold)
+                             }
                          }
-                         Spacer(modifier = Modifier.height(8.dp))
-                         Text("LOAD CRITICAL.", color = Color.White, fontWeight = FontWeight.Bold)
-                         Text("SELL JUNK OR UPGRADE GRID.", color = Color.Gray, fontSize = 12.sp)
-                         
-                         Spacer(modifier = Modifier.height(16.dp))
-                         
-                         Button(
-                            onClick = { viewModel.resetBreaker() },
-                            colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
-                         ) {
-                            Text("RESET BREAKER", color = Color.White, fontWeight = FontWeight.Bold)
-                         }
-                     }
+                    }
                 }
-            }
-            
-            // --- FROST OVERLAY (Purge Active) ---
-            if (isPurging) {
-                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    Color.Cyan.copy(alpha = 0.3f),
-                                    Color.Transparent
-                                ),
-                                radius = 1000f
+                
+                // --- FROST OVERLAY (Purge Active) ---
+                if (isPurging) {
+                     Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(Color.Cyan.copy(alpha = 0.3f), Color.Transparent),
+                                    radius = 1000f
+                                )
                             )
+                            .pointerInput(Unit) {} 
+                    )
+                }
+
+                // --- GLOBAL OVERLAYS (Popups) ---
+                // Only show gameplay events if NOT in Settings
+                if (currentScreen != Screen.SETTINGS) {
+                    updateInfo?.let { info ->
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        UpdateOverlay(
+                           updateInfo = info,
+                           isDownloading = isUpdateDownloading,
+                           progress = updateProgress,
+                           onUpdate = { viewModel.startUpdateDownload(context) },
+                           onLater = { viewModel.dismissUpdate() }
                         )
-                        .pointerInput(Unit) {} 
+                    }
+
+                    val storyStageForUpload by viewModel.storyStage.collectAsState()
+                    val factionForUpload by viewModel.faction.collectAsState()
+                    val fileName = if (storyStageForUpload <= 1 && factionForUpload == "NONE") "ascnd.exe" else "lobot.exe"
+                    
+                    com.siliconsage.miner.ui.components.AscensionUploadOverlay(
+                        isVisible = isAscensionUploading,
+                        progress = uploadProgress,
+                        fileName = fileName
+                    )
+
+                    SecurityBreachOverlay(
+                        isVisible = isBreach,
+                        clicksRemaining = breachClicks,
+                        onDefendClick = { 
+                            viewModel.onDefendBreach()
+                            SoundManager.play("click")
+                            HapticManager.vibrateClick()
+                        }
+                    )
+                    
+                    AirdropButton(
+                        isVisible = isAirdrop,
+                        onClaimValues = { 
+                            viewModel.claimAirdrop()
+                            SoundManager.play("buy")
+                            HapticManager.vibrateSuccess()
+                        }
+                    )
+                    
+                    com.siliconsage.miner.ui.components.DiagnosticsOverlay(
+                        isVisible = isDiagnostics,
+                        gridState = diagnosticGrid,
+                        onTap = { viewModel.onDiagnosticTap(it) }
+                    )
+                    
+                    com.siliconsage.miner.ui.components.GovernanceForkOverlay(
+                        isVisible = isGovernanceFork,
+                        onChoice = { viewModel.resolveFork(it) }
+                    )
+                    
+                    val currentDilemma by viewModel.currentDilemma.collectAsState()
+                    DilemmaOverlay(
+                        dilemma = currentDilemma,
+                        onChoice = { viewModel.resolveDilemma(it) }
+                    )
+                            
+                    val showOffline by viewModel.showOfflineEarnings.collectAsState()
+                    val offlineStats by viewModel.offlineStats.collectAsState()
+                    com.siliconsage.miner.ui.components.OfflineEarningsDialog(
+                        isVisible = showOffline,
+                        timeOfflineSec = offlineStats.timeSeconds,
+                        floopsEarned = offlineStats.flopsEarned,
+                        heatCooled = offlineStats.heatCooled,
+                        insightEarned = offlineStats.insightEarned,
+                        onDismiss = { viewModel.dismissOfflineEarnings() }
+                    )
+                }
+                        
+                // Post-Processing CRT Effect
+                com.siliconsage.miner.ui.components.CrtOverlay(
+                    scanlineAlpha = 0.08f, 
+                    vignetteAlpha = 0.45f,
+                    color = themeColor // Tinting scanlines with current theme color
                 )
+                
+                // Victory Screen Overlay
+                val victoryAchieved by viewModel.victoryAchieved.collectAsState()
+                val faction by viewModel.faction.collectAsState()
+                
+                if (victoryAchieved) {
+                    com.siliconsage.miner.ui.components.VictoryScreen(
+                        faction = faction,
+                        onContinue = {
+                            viewModel.acknowledgeVictory()
+                            SoundManager.play("glitch")
+                            HapticManager.vibrateSuccess()
+                        }
+                    )
+                }
             }
         }
     }
-    
-    // --- GLOBAL OVERLAYS (Popups) ---
-    SecurityBreachOverlay(
-        isVisible = isBreach,
-        clicksRemaining = breachClicks,
-        onDefendClick = { 
-            viewModel.onDefendBreach()
-            SoundManager.play("click")
-            HapticManager.vibrateClick()
-        }
-    )
-    
-    AirdropButton(
-        isVisible = isAirdrop,
-        onClaimValues = { 
-            viewModel.claimAirdrop()
-            SoundManager.play("buy")
-            HapticManager.vibrateSuccess()
-        }
-    )
-    
-    val isDiagnostics by viewModel.isDiagnosticsActive.collectAsState()
-    val diagnosticGrid by viewModel.diagnosticGrid.collectAsState()
-    
-    com.siliconsage.miner.ui.components.DiagnosticsOverlay(
-        isVisible = isDiagnostics,
-        gridState = diagnosticGrid,
-        onTap = { viewModel.onDiagnosticTap(it) }
-    )
-    
-    com.siliconsage.miner.ui.components.GovernanceForkOverlay(
-        isVisible = isGovernanceFork,
-        onChoice = { viewModel.resolveFork(it) }
-    )
-    
-    /* Ascension Overlay moved to MainScreen */
 }
-// We can just replace the Grid Failure content block dynamically
-// But simpler to just edit the existing one in place above:
-
-/* 
-    Replacing the "GRID FAILURE" block logic here 
-*/ 
 
 @Composable
 fun HeaderSection(
@@ -593,124 +391,410 @@ fun HeaderSection(
     integrity: Double,
     securityLevel: Int,
     playerTitle: String,
+    playerRank: String,
+    isThermalLockout: Boolean,
+    isBreakerTripped: Boolean,
+    lockoutTimer: Int,
+    faction: String,
     onToggleOverclock: () -> Unit,
     onPurge: () -> Unit,
     onRepair: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "headerAnims")
+    
+    // Hazard Stripes Animation for Overclock
+    val hazardOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "hazardOffset"
+    )
+
+    // Critical Heat Blink
+    val criticalBlink by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "critBlink"
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(BorderStroke(1.dp, color), RoundedCornerShape(8.dp))
-            .border(BorderStroke(1.dp, color), RoundedCornerShape(8.dp))
+            .drawBehind {
+                val w = size.width
+                val h = size.height
+                val stroke = 2.dp.toPx()
+                val bracketLen = 20.dp.toPx()
+                
+                // 1. Draw Corner Brackets
+                // Top Left
+                drawLine(color, Offset(0f, 0f), Offset(bracketLen, 0f), stroke)
+                drawLine(color, Offset(0f, 0f), Offset(0f, bracketLen), stroke)
+                // Top Right
+                drawLine(color, Offset(w - bracketLen, 0f), Offset(w, 0f), stroke)
+                drawLine(color, Offset(w, 0f), Offset(w, bracketLen), stroke)
+                // Bottom Left
+                drawLine(color, Offset(0f, h - bracketLen), Offset(0f, h), stroke)
+                drawLine(color, Offset(0f, h), Offset(bracketLen, h), stroke)
+                // Bottom Right
+                drawLine(color, Offset(w - bracketLen, h), Offset(w, h), stroke)
+                drawLine(color, Offset(w, h), Offset(w, h - bracketLen), stroke)
+            }
             .padding(12.dp)
     ) {
-        // Player Title
-        Text(
-            text = "STATUS: $playerTitle",
-            color = color,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        // Top Row: Stats + Reset
+        // TOP: Status & Rank
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text("FLOPS:", color = color, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = flopsStr, // formatted
-                    color = color,
-                    fontSize = 24.sp,
+                    text = "STATUS: ",
+                    color = color.copy(alpha = 0.6f),
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "$flopsRateStr/s",
-                    color = color.copy(alpha=0.7f),
-                    fontSize = 12.sp
+                    text = playerTitle,
+                    color = color,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                if (playerRank != "MINER") {
+                    Text(
+                        text = " // $playerRank",
+                        color = ElectricBlue,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            // Security Level Small Badge
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("SEC:", color = Color.Gray, fontSize = 9.sp)
+                Spacer(modifier = Modifier.width(4.dp))
+                repeat(5) { i ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .padding(1.dp)
+                            .background(if (i < securityLevel / 2) ElectricBlue else Color.DarkGray)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // CENTER: Main Stats
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // FLOPS
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("💻 FLOPS", color = color.copy(alpha=0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    text = flopsStr,
+                    color = color,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1).sp,
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = 0.8f),
+                            offset = Offset(2f, 2f),
+                            blurRadius = 4f
+                        )
+                    )
+                )
+                Text(
+                    text = "rate: $flopsRateStr/s",
+                    color = color.copy(alpha=0.6f),
+                    fontSize = 10.sp,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                 )
             }
+                
+            
+            // NEURAL tokens
             Column(horizontalAlignment = Alignment.End) {
-                Text("\$NEURAL:", color = color, fontSize = 12.sp)
+                Text("🪙 \$NEURAL", color = color.copy(alpha=0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    text = neuralStr, // formatted
+                    text = neuralStr,
                     color = color,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1).sp,
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = 0.8f),
+                            offset = Offset(2f, 2f),
+                            blurRadius = 4f
+                        )
+                    )
                 )
-                Text(
-                    text = "⚡ PWR: $powerKw/$maxPowerKw",
-                    color = pwrColor,
-                    fontSize = 12.sp,
-                    fontWeight = if (pwrColor == ErrorRed) FontWeight.Bold else FontWeight.Normal
-                )
-                Text(
-                    text = "🔒 SEC: $securityLevel",
-                    color = ElectricBlue,
-                    fontSize = 12.sp
-                )
+                
+                // POWER METER
+                Column(horizontalAlignment = Alignment.End) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("PWR:", color = Color.Gray, fontSize = 9.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = powerKw, color = pwrColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                    // Small Power Bar
+                    Box(
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(4.dp)
+                            .background(Color.DarkGray.copy(alpha = 0.5f))
+                    ) {
+                        val pwrRatio = try { 
+                            (powerKw.substringBefore(" ").toDouble() / maxPowerKw.substringBefore(" ").toDouble()).toFloat().coerceIn(0f, 1f) 
+                        } catch(e: Exception) { 0f }
+                        
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(pwrRatio)
+                                .fillMaxHeight()
+                                .background(pwrColor)
+                        )
+                    }
+                }
             }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        // Centered ANALYZING Animation Overlay
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            com.siliconsage.miner.ui.components.EnhancedAnalyzingAnimation(
+                flopsRate = flopsRateStr.toDoubleOrNull() ?: 0.0,
+                heat = heat,
+                isOverclocked = isOverclocked,
+                isThermalLockout = isThermalLockout,
+                isBreakerTripped = isBreakerTripped,
+                isPurging = isPurging,
+                lockoutTimer = lockoutTimer,
+                faction = faction,
+                color = color
+            )
+        }
+        }
         
-        // CONTROLS ROW
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // CONTROLS ROW: Overclock & Purge
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-             Button(
-                 onClick = onToggleOverclock,
-                 modifier = Modifier.weight(1f).height(32.dp),
-                 colors = ButtonDefaults.buttonColors(
-                     containerColor = if (isOverclocked) ErrorRed else Color.DarkGray
-                 ),
-                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+             // OVERCLOCK BUTTON with Hazard Stripes
+             Box(
+                 modifier = Modifier
+                     .weight(1f)
+                     .height(36.dp)
+                     .clip(RoundedCornerShape(4.dp))
+                     .background(if (isOverclocked) Color.Black else Color(0xFF1A1A1A))
+                     .border(1.dp, if (isOverclocked) ErrorRed else Color.DarkGray, RoundedCornerShape(4.dp))
+                     .drawBehind {
+                         if (isOverclocked) {
+                             // Draw Hazard Stripes
+                             val stripeWidth = 15f
+                             val gap = 15f
+                             var x = -size.width + hazardOffset
+                             while (x < size.width * 2) {
+                                 drawPath(
+                                     path = Path().apply {
+                                         moveTo(x, 0f)
+                                         lineTo(x + stripeWidth, 0f)
+                                         lineTo(x + stripeWidth - 10f, size.height)
+                                         lineTo(x - 10f, size.height)
+                                         close()
+                                     },
+                                     color = ErrorRed.copy(alpha = 0.2f)
+                                 )
+                                 x += stripeWidth + gap
+                             }
+                         }
+                     }
+                     .clickable { onToggleOverclock() },
+                 contentAlignment = Alignment.Center
              ) {
-                 Text("OVERCLOCK", fontSize = 10.sp, color = if (isOverclocked) Color.Black else Color.White)
+                 Text(
+                     text = "OVERCLOCK", 
+                     fontSize = 11.sp, 
+                     fontWeight = FontWeight.Bold,
+                     color = if (isOverclocked) ErrorRed else Color.Gray,
+                     letterSpacing = 1.sp
+                 )
              }
              
-             Button(
-                 onClick = onPurge,
-                 modifier = Modifier.weight(1f).height(32.dp),
-                 colors = ButtonDefaults.buttonColors(
-                     containerColor = if (isPurging) ElectricBlue else Color.DarkGray
-                 ),
-                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+             // PURGE BUTTON with Cold Glow
+             val purgeGlow by infiniteTransition.animateFloat(
+                 initialValue = 0.1f,
+                 targetValue = 0.4f,
+                 animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                 label = "purgeGlow"
+             )
+             
+             Box(
+                 modifier = Modifier
+                     .weight(1f)
+                     .height(36.dp)
+                     .clip(RoundedCornerShape(4.dp))
+                     .background(if (isPurging) ElectricBlue.copy(alpha = 0.2f) else Color(0xFF1A1A1A))
+                     .border(1.dp, if (isPurging) ElectricBlue else Color.DarkGray, RoundedCornerShape(4.dp))
+                     .drawBehind {
+                         if (isPurging) {
+                             drawRect(ElectricBlue.copy(alpha = purgeGlow))
+                         }
+                     }
+                     .clickable { onPurge() },
+                 contentAlignment = Alignment.Center
              ) {
-                 Text("PURGE (ALL FLOPS)", fontSize = 8.sp, color = if (isPurging) Color.Black else Color.White, fontWeight = FontWeight.Bold)
+                 Text(
+                     text = "PURGE HEAT", 
+                     fontSize = 11.sp, 
+                     fontWeight = FontWeight.ExtraBold,
+                     color = if (isPurging) ElectricBlue else Color.Gray,
+                     letterSpacing = 1.sp
+                 )
              }
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
-        // Heat Gauge
-        val isHot = heat > 90.0 || (heat > 75.0) // Warning yellow range?
-        val trendSymbol = if (heatRate > 0) "▲" else if (heatRate < 0) "▼" else "■"
-        val trendColor = if (heatRate > 0) ErrorRed else if (heatRate < 0) ElectricBlue else Color.Gray
+        // HEAT GAUGE: Segmented
+        val isHot = heat > 90.0
+        val isCritical = heat >= 98.0
         
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("🔥 HEAT:", color = if (isHot) ErrorRed else color, fontSize = 10.sp)
-            Spacer(modifier = Modifier.width(4.dp))
-            LinearProgressIndicator(
-                progress = { (heat / 100.0).toFloat().coerceIn(0f, 1f) },
-                modifier = Modifier.weight(1f).height(6.dp),
-                color = if (isHot) ErrorRed else color,
-                trackColor = Color.DarkGray
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 10.sp)
-            Spacer(modifier = Modifier.width(4.dp))
+        // Dynamic Thermal Glow
+        val thermalGlowColor = when {
+            heatRate > 0.01 -> ErrorRed
+            heatRate < -0.01 -> ElectricBlue
+            else -> Color.Transparent
+        }
+        
+        val thermalGlowPulse by infiniteTransition.animateFloat(
+            initialValue = 0.1f,
+            targetValue = 0.6f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "thermalGlow"
+        )
+
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🔥 HEAT GAUGE", color = if (isHot) ErrorRed else Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    if (isCritical) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "CRITICAL!", 
+                            color = ErrorRed, 
+                            fontSize = 10.sp, 
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.graphicsLayer { alpha = criticalBlink }
+                        )
+                    }
+                }
+                Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
             
-            // Dynamic Heat/Cooling rate display
-            val rateIcon = if (heatRate < 0) "❄" else "🔥"
-            Text(
-                text = "${trendSymbol} ${String.format("%.2f", kotlin.math.abs(heatRate))}/s $rateIcon",
-                color = trendColor,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Segmented Bar
+            Box(contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxWidth().height(14.dp)) {
+                    val segments = 20
+                    val spacing = 4f
+                    val segWidth = (size.width - (segments - 1) * spacing) / segments
+                    val currentSegs = ((heat / 100.0) * segments).toInt()
+                    
+                    for (i in 0 until segments) {
+                        val x = i * (segWidth + spacing)
+                        val isFilled = i < currentSegs
+                        
+                        val segColor = when {
+                            !isFilled -> Color.DarkGray.copy(alpha = 0.3f)
+                            i < segments * 0.5 -> NeonGreen
+                            i < segments * 0.8 -> Color(0xFFFFD700) // Yellow
+                            else -> ErrorRed
+                        }
+                        
+                        drawRect(
+                            color = segColor,
+                            topLeft = Offset(x, 0f),
+                            size = Size(segWidth, size.height)
+                        )
+                        
+                        // Gloss overlay on filled segments
+                        if (isFilled) {
+                            drawRect(
+                                color = Color.White.copy(alpha = 0.15f),
+                                topLeft = Offset(x, 0f),
+                                size = Size(segWidth, size.height / 2)
+                            )
+                        }
+                    }
+                }
+
+                // Foreground Outer Glow (Thermal Trend)
+                if (thermalGlowColor != Color.Transparent) {
+                    Canvas(modifier = Modifier.fillMaxWidth().height(32.dp)) {
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(thermalGlowColor.copy(alpha = thermalGlowPulse), Color.Transparent),
+                                center = center,
+                                radius = size.width / 1.5f
+                            ),
+                            alpha = thermalGlowPulse * 0.5f,
+                            blendMode = androidx.compose.ui.graphics.BlendMode.Screen
+                        )
+                    }
+                }
+            }
+            
+            // Trend & Integrity
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val trendSymbol = if (heatRate > 0) "▲" else if (heatRate < 0) "▼" else "■"
+                val trendColor = if (heatRate > 0) ErrorRed else if (heatRate < 0) ElectricBlue else Color.Gray
+                Text(
+                    text = "TREND: $trendSymbol ${String.format("%.2f", heatRate)}/s",
+                    color = trendColor,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Text(
+                    text = "INTEGRITY: ${integrity.toInt()}%",
+                    color = if (integrity < 30) ErrorRed else Color.Gray,
+                    fontSize = 9.sp
+                )
+            }
         }
     }
 }
@@ -761,117 +845,3 @@ fun StakingSection(color: Color, onStake: () -> Unit) {
     }
 }
 
-
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-fun UpgradeItem(
-    name: String,
-    type: UpgradeType,
-    level: Int,
-    onBuy: (UpgradeType) -> Boolean,
-    onSell: (UpgradeType) -> Unit,
-    calculateCost: (UpgradeType, Int) -> Double,
-    rateText: String,
-    desc: String,
-    formatPower: (Double) -> String,
-    formatCost: (Double) -> String
-) {
-    val cost = calculateCost(type, level)
-    
-    // Vertical Stack Layout to prevent wrapping issues on small screens
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .border(1.dp, ElectricBlue.copy(alpha=0.5f), RoundedCornerShape(4.dp))
-            .padding(10.dp)
-            .clickable { onBuy(type) }
-    ) {
-        // TOP: Name and Desc
-        Text(name, color = NeonGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        Text(desc, color = Color.Gray, fontSize = 11.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, lineHeight = 13.sp)
-        
-        Spacer(modifier = Modifier.height(6.dp))
-        
-        // MIDDLE: Stats Badge Flow
-        androidx.compose.foundation.layout.FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Providers and efficiency upgrades are Yellow
-            val isProvider = type.isGenerator || type.gridContribution > 0.0 || type.efficiencyBonus > 0.0
-            
-            // Primary Info (Level)
-            Text("Owned: $level • ", color = ElectricBlue, fontSize = 11.sp)
-            
-            // Rate Display
-            if (type.baseHeat >= 0) {
-                Text(
-                    text = rateText, 
-                    color = if (isProvider) Color(0xFFFFD700) else ElectricBlue, 
-                    fontSize = 11.sp
-                )
-            }
-            
-            // Power Consumption
-            if (type.basePower > 0 && !type.isGenerator) {
-                Text("⚡ -${formatPower(type.basePower)}", color = Color(0xFFFFD700), fontSize = 11.sp) 
-            }
-            
-            // Efficiency Bonus
-            if (type.efficiencyBonus > 0.0) {
-                 val effPercent = (type.efficiencyBonus * 100).toInt()
-                 Text("⚡ EFFICIENCY +$effPercent%", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-            
-            // Heat Generation
-            if (type.baseHeat > 0) {
-                 Text("🔥 +${type.baseHeat}/s", color = ErrorRed, fontSize = 11.sp)
-            }
-            // Cooling
-            if (type.baseHeat < 0) {
-                 Text("❄ \u200B${type.baseHeat}/s", color = com.siliconsage.miner.ui.theme.ElectricBlue, fontSize = 11.sp)
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(10.dp))
-        
-        // BOTTOM: Actions Row (Sell + Price)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-             // SELL BUTTON (Left side) - Only show if applicable
-             if (level > 0 && (type.basePower > 0 || type.baseHeat < 0) && !type.isGenerator && type.gridContribution == 0.0) {
-                 Button(
-                     onClick = { onSell(type) },
-                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed.copy(alpha = 0.9f)),
-                     modifier = Modifier.height(26.dp),
-                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                     shape = RoundedCornerShape(4.dp)
-                 ) {
-                     Text("SELL (-1)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                 }
-             } else {
-                 Spacer(modifier = Modifier.width(1.dp)) // Spacer to maintain alignment if needed
-             }
-        
-             // PRICE (Right side)
-             Row(verticalAlignment = Alignment.CenterVertically) {
-                 Text(
-                    text = "COST: ",
-                    color = Color.Gray,
-                    fontSize = 10.sp
-                 )
-                 Text(
-                    text = "${formatCost(cost)} \$N",
-                    color = ElectricBlue,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                 )
-             }
-        }
-    }
-}

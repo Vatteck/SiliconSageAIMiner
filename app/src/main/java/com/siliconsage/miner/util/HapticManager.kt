@@ -84,4 +84,17 @@ object HapticManager {
         prefs.edit { clear() }
         isHapticsEnabled = true
     }
+    fun vibrateHeartbeat() {
+        if (!isHapticsEnabled) return
+        
+        // Double-thump
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val timings = longArrayOf(0, 50, 50, 50) // thump-thump
+            val amplitudes = intArrayOf(0, 150, 0, 80)
+            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+            vibrator?.vibrate(effect)
+        } else {
+            vibrator?.vibrate(100)
+        }
+    }
 }

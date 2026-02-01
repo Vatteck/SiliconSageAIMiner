@@ -109,7 +109,7 @@ fun NewsTicker(
         modifier = modifier
             .fillMaxWidth()
             .height(24.dp)
-            .background(Color.Black.copy(alpha = 0.8f))
+            .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent to balance visibility and contrast
             .clipToBounds()
     ) {
         if (displayText.isNotEmpty()) {

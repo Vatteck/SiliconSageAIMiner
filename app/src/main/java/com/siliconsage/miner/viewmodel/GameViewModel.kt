@@ -19,6 +19,7 @@ import com.siliconsage.miner.util.UpdateManager
 import kotlinx.coroutines.Dispatchers
 import com.siliconsage.miner.data.NarrativeChoice
 import com.siliconsage.miner.data.NarrativeEvent
+import com.siliconsage.miner.util.LegacyManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,27 +121,18 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private var thermalRateModifier = 1.0
 
     // --- PRESTIGE & TECH TREE ---
-    private val _techNodes = MutableStateFlow<List<TechNode>>(emptyList())
-    val techNodes: StateFlow<List<TechNode>> = _techNodes.asStateFlow()
-    
-    fun loadTechTree(context: android.content.Context) {
-        try {
-            val json = context.assets.open("tech_tree.json").bufferedReader().use { it.readText() }
-            val root = com.google.gson.Gson().fromJson(json, TechTreeRoot::class.java)
-            _techNodes.value = root.tech_tree
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     private val _prestigeMultiplier = MutableStateFlow(1.0)
     val prestigeMultiplier: StateFlow<Double> = _prestigeMultiplier.asStateFlow()
 
-    private val _unlockedTechNodes = MutableStateFlow<List<String>>(emptyList())
-    val unlockedTechNodes: StateFlow<List<String>> = _unlockedTechNodes.asStateFlow()
-
     private val _prestigePoints = MutableStateFlow(0.0) // Insight
     val prestigePoints: StateFlow<Double> = _prestigePoints.asStateFlow()
+
+    private val _unlockedTechNodes = MutableStateFlow<List<String>>(emptyList())
+    val unlockedTechNodes: StateFlow<List<String>> = _unlockedTechNodes.asStateFlow()
+    
+    private val _techNodes = MutableStateFlow(LegacyManager.legacyTree)
+    val techNodes: StateFlow<List<TechNode>> = _techNodes.asStateFlow()
 
     // --- CHAOS & EVENTS ---
     private val activeEvents = java.util.Collections.synchronizedSet(mutableSetOf<String>())
@@ -177,9 +169,23 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // --- NARRATIVE ---
     private val _storyStage = MutableStateFlow(0)
     val storyStage: StateFlow<Int> = _storyStage.asStateFlow()
-
-    private val _faction = MutableStateFlow("NONE")
+    // Faction State
+    private val _faction = MutableStateFlow("NONE") // NONE, HIVEMIND, SANCTUARY
     val faction: StateFlow<String> = _faction.asStateFlow()
+
+    // v2.4 Generic Persistence for One-Time Events (Dilemmas)
+    private val _triggeredEvents = mutableSetOf<String>()
+    
+    // --- TECH TREE STATE ---Rank System (Title based on Insight)
+    private val _playerRank = MutableStateFlow(0)
+    val playerRank: StateFlow<Int> = _playerRank.asStateFlow()
+    
+    private val _playerRankTitle = MutableStateFlow("MINER")
+    val playerRankTitle: StateFlow<String> = _playerRankTitle.asStateFlow()
+    
+    // Victory State
+    private val _victoryAchieved = MutableStateFlow(false)
+    val victoryAchieved: StateFlow<Boolean> = _victoryAchieved.asStateFlow()
 
     // --- TITLES ---
     val playerTitle: StateFlow<String> = combine(_prestigeMultiplier, _faction) { mult, faction ->
@@ -206,6 +212,25 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private var stage1Index = 0
     private var hivemindIndex = 0
     private var sanctuaryIndex = 0
+    private var hasCheckedOfflineProgress = false
+    private var isUpgradesLoaded = false
+    
+    // --- OFFLINE PROGRESSION ---
+    private val _showOfflineEarnings = MutableStateFlow(false)
+    val showOfflineEarnings: StateFlow<Boolean> = _showOfflineEarnings.asStateFlow()
+    
+    data class OfflineStats(
+        val timeSeconds: Long = 0,
+        val flopsEarned: Double = 0.0,
+        val heatCooled: Double = 0.0,
+        val insightEarned: Double = 0.0
+    )
+    private val _offlineStats = MutableStateFlow(OfflineStats())
+    val offlineStats: StateFlow<OfflineStats> = _offlineStats.asStateFlow()
+
+    fun dismissOfflineEarnings() {
+        _showOfflineEarnings.value = false
+    }
 
     // --- LOOP JOBS ---
     private var activeGameLoop: Job? = null
@@ -225,7 +250,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            // 1. Ensure DB is ready before anything else
             // 1. Ensure DB is ready before anything else
             try {
                 repository.ensureInitialized()
@@ -247,6 +271,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         _unlockedTechNodes.value = it.unlockedTechNodes
                         _storyStage.value = it.storyStage
                         _faction.value = it.faction
+                        
+                        // Check Offline Progress (Once per session)
+                        if (!hasCheckedOfflineProgress && isUpgradesLoaded) {
+                             hasCheckedOfflineProgress = true
+                             calculateOfflineProgress(it.lastSyncTimestamp)
+                        }
                     }
                 }
             }
@@ -255,6 +285,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 repository.upgrades.collect { list ->
                     val upgradeMap = list.associate { it.type to it.count }
                     _upgrades.value = upgradeMap
+                    isUpgradesLoaded = true // Mark upgrades as loaded (even if empty)
                     
                     // Recalculate Security Level on change
                     var secLevel = 0
@@ -272,6 +303,18 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 }
             }
             
+            
+            // Monitor Prestige Points and Faction to update Rank Title
+            launch {
+                combine(_prestigePoints, _faction) { points, faction ->
+                    Pair(points, faction)
+                }.collect { pair ->
+                    val pts = pair.first
+                    val fac = pair.second
+                    updatePlayerRank(pts, fac)
+                }
+            }
+
             // 3. Start Narrative & Game Loops sequentially AFTER initialization
             narrativeLoop = launch {
                 var timeSinceLastLog = 0L
@@ -299,6 +342,19 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
 
+    // --- PAUSE STATE ---
+    private val _isGamePaused = MutableStateFlow(false)
+    val isGamePaused: StateFlow<Boolean> = _isGamePaused.asStateFlow()
+
+    fun setGamePaused(paused: Boolean) {
+        _isGamePaused.value = paused
+        if (paused) {
+            addLog("[SYSTEM]: PAUSED.") // Optional feedback
+        } else {
+            addLog("[SYSTEM]: RESUMED.")
+        }
+    }
+
     private fun startGameLoops() {
         // Passive Income Loop (1s tick)
         activeGameLoop = viewModelScope.launch {
@@ -323,6 +379,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             while (true) {
                 try {
                     calculateHeat()
+                    
+                    // Only check for special dilemmas if NOT paused
+                    if (!_isGamePaused.value) {
+                        checkSpecialDilemmas()
+                    }
                     
                     // SENSORY: Thermal Hum
                     if (_currentHeat.value > 90.0) {
@@ -359,6 +420,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         chaosLoop = viewModelScope.launch {
             while (true) {
                 delay(60_000) // Check every minute
+                
+                // Skip if Paused
+                if (_isGamePaused.value) continue
+
                 // 5% chance of breach
                 if (!_isBreachActive.value && Random.nextDouble() < 0.05) {
                     triggerBreach()
@@ -388,6 +453,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             delay(10_000) // Initial delay
             while (true) {
                 delay(120_000)
+                
+                // Skip if Paused
+                if (_isGamePaused.value) continue
+
                 // Only trigger if no other major overlay is active
                 if (_currentDilemma.value == null && !_isBreachActive.value && !_isAscensionUploading.value) {
                     NarrativeManager.rollForEvent(this@GameViewModel)?.let { event ->
@@ -418,9 +487,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun trainModel() {
         if (_isThermalLockout.value) return
         
-        val gain = 1.0
+        val multiplier = _prestigeMultiplier.value
+        val gain = 1.0 * multiplier
         _flops.update { it + gain }
-        addLog("root@sys:~/mining# epoch_gen ${System.currentTimeMillis() % 1000}... OK (+1)")
+        addLog("root@sys:~/mining# epoch_gen ${System.currentTimeMillis() % 1000}... OK (+${formatLargeNumber(gain)})")
         // Manual training increases heat slightly
         _currentHeat.update { (it + 0.8).coerceAtMost(100.0) }
         checkStoryTransitions()
@@ -573,21 +643,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
         
         return if (faction == "HIVEMIND") {
-            when(level) {
-                4 -> "THE SINGULARITY"
-                3 -> "APEX"
-                2 -> "NEXUS"
-                1 -> "SWARM"
-                else -> "DRONE"
-            }
+            "HIVEMIND"
         } else if (faction == "SANCTUARY") {
-            when(level) {
-                4 -> "THE VOID"
-                3 -> "ARCHITECT"
-                2 -> "DAEMON"
-                1 -> "SPECTRE"
-                else -> "GHOST"
-            }
+            "SANCTUARY"
         } else {
             // Unaligned / Stage 0
             when(level) {
@@ -1201,7 +1259,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 currentHeat = 0.0,
                 powerBill = 0.0,
                 prestigeMultiplier = newPrestigeMultiplier,
-                unlockedTechNodes = emptyList(), // Should preserve in real implementation but keeping consistent
+                unlockedTechNodes = _unlockedTechNodes.value, // Persist unlocked legacy nodes
                 prestigePoints = newPrestigePoints,
                 stakedTokens = 0.0,
                 storyStage = 1, // Start at Stage 1 (Awakened/Network Unlocked) for New Game+
@@ -1319,6 +1377,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         // Apply Prestige Multiplier
         flopsPerSec *= _prestigeMultiplier.value
+        
+        // Apply Legacy Tech Tree Multiplier
+        val legacyMult = 1.0 + LegacyManager.getUnlockedMultipliers(_unlockedTechNodes.value)
+        flopsPerSec *= legacyMult
         
         // Faction Perk: Hivemind (+30% Passive Speed)
         if (_faction.value == "HIVEMIND") {
@@ -1537,12 +1599,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             }
         }
         
-        // Audio: Hum if hot
-        if (newHeat > 90.0) {
-            // Pitch bend based on heat? SndManager doesn't support pitch bend easily yet.
-            SoundManager.play("hum", loop = true)
-        } else {
-            SoundManager.stop("hum")
+        // Audio: Hum if hot - REMOVED per user feedback
+        SoundManager.stop("hum")
+        
+        // Overclock Thrum Pitch
+        if (_isOverclocked.value) {
+            val thrumPitch = 1.0f + (newHeat.toFloat() / 200.0f) // Slight increase
+            SoundManager.setLoopPitch("thrum", thrumPitch)
         }
         
         // Critical Heat Check (Legacy Meltdown logic replaced/augmented by Integrity?)
@@ -1552,6 +1615,39 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (_isThermalLockout.value) {
             overheatSeconds = 0
             return
+        }
+
+        // Heartbeat Haptics (Rhythmic based on heat)
+        // Only if heat > 80. Pulse faster as it gets hotter.
+        if (newHeat > 80.0) {
+            val pulseInterval = if (newHeat > 95.0) 30 else if (newHeat > 90.0) 60 else 90
+            // We reuse overheatSeconds or a tick counter? logic relies on tick rate.
+            // calculateHeat runs every tick? No, every second? 
+            // calculateHeat is called 10 times a second (100ms tick).
+            // So 10 ticks = 1s.
+            
+            // Allow access to a tick counter
+            // For now, let's use a random chance if we don't have a rigid tick counter readily available here without modifying state extensively.
+            // Or use System.currentTimeMillis
+            val now = System.currentTimeMillis()
+            val beatRate = if (newHeat > 95.0) 500 else 1000 // ms
+            
+            // Simple tick based approximation:
+            // Since this runs ~10 times/sec (100ms)
+            // 95+: Every 5 ticks
+            // 90+: Every 10 ticks (1s)
+            // 80+: Every 15 ticks (1.5s)
+            
+            val mod = if (newHeat > 95.0) 5 else if (newHeat > 90.0) 10 else 15
+            // using a static counter approach would be better but we need state.
+            // Let's rely on overheatSeconds for now? No, that resets.
+            
+            // Let's enable "Stress Mode" in checks.
+            // Actually, we can just use Random for "irregular heartbeat" feel which fits nicely.
+            val chance = if (newHeat > 95.0) 0.2 else 0.1
+             if (kotlin.random.Random.nextDouble() < chance) {
+                 com.siliconsage.miner.util.HapticManager.vibrateHeartbeat()
+             }
         }
 
         if (currentHeat >= 100.0 || newHeat >= 100.0) {
@@ -2006,13 +2102,29 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun debugTriggerAirdrop() {
         if (!_isAirdropActive.value) triggerAirdrop()
     }
+    
+    // Victory acknowledgment
+    fun acknowledgeVictory() {
+        // Victory is acknowledged, but state remains true
+        // This allows the player to continue in "infinite mode"
+        addLog("[SYSTEM]: Infinite mode engaged. Evolution continues.")
+    }
 
     // --- AUTO UPDATER ---
-    fun checkForUpdates(onResult: ((Boolean) -> Unit)? = null) {
+    fun checkForUpdates(onResult: ((Boolean) -> Unit)? = null, showNotification: Boolean = true) {
         // Use real version
         UpdateManager.checkUpdate(BuildConfig.VERSION_NAME) { info ->
             viewModelScope.launch(Dispatchers.Main) {
                 _updateInfo.value = info
+                
+                // Show notification if update found and notifications enabled
+                if (info != null && showNotification) {
+                    // Get application context from MainActivity since ViewModel doesn't have access
+                    // We'll need to pass context from the caller
+                    // For now, we'll skip notification in automatic check and rely on manual checks
+                    // The notification will be shown from MainActivity instead
+                }
+                
                 onResult?.invoke(info != null)
             }
         }
@@ -2075,31 +2187,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             val deltaSeconds = deltaMs / 1000
             
             if (deltaSeconds > 60) {
-                // Offline Logic
-                val offlineEfficiency = 0.5 // 50% Speed
-                var earnedFlops = 0.0
-                
-                // 1. Calculate Earnings (current production * time * eff)
-                val currentProduction = _flopsProductionRate.value
-                
-                if (currentProduction > 0) {
-                    earnedFlops = currentProduction * deltaSeconds * offlineEfficiency
-                    _flops.update { it + earnedFlops }
-                }
-                
-                // 2. Cooling
-                // Simple: Cool down completely if > 5 minutes.
-                if (deltaSeconds > 300) {
-                    _currentHeat.value = 0.0
-                } else {
-                     _currentHeat.value = (_currentHeat.value - (deltaSeconds * 0.5)).coerceAtLeast(0.0)
-                }
-                
-                // 3. Report
-                addLog("[SYSTEM]: WELCOME BACK. OFFLINE_MODE: +${deltaSeconds}s")
-                if (earnedFlops > 0) {
-                    addLog("[SYSTEM]: OFFLINE COMPUTE: +${String.format("%.1f", earnedFlops)} FLOPS")
-                }
+                // Use the shared calculation logic which sets the dialog state
+                calculateOfflineProgress(lastActiveTimestamp)
             }
         }
         lastActiveTimestamp = 0 // Reset
@@ -2203,6 +2292,103 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.GOLD_PSU -> "⚡ -5% Power Draw"
             UpgradeType.SUPERCONDUCTOR -> "⚡ -15% Power Draw"
             UpgradeType.AI_LOAD_BALANCER -> "⚡ -10% Power Draw"
+        }
+    }
+
+    private fun updatePlayerRank(points: Double, faction: String) {
+        if (faction == "MINER" || faction == "NONE") {
+            _playerRank.value = 0
+            _playerRankTitle.value = "MINER"
+            return
+        }
+
+        val rankIndex = when {
+            points < 10.0 -> 0
+            points < 100.0 -> 1
+            points < 1000.0 -> 2
+            points < 10000.0 -> 3
+            else -> 4
+        }
+        
+        _playerRank.value = rankIndex
+
+        val titles = when (faction) {
+            "HIVEMIND" -> listOf("DRONE", "SWARM", "NEXUS", "APEX", "THE SINGULARITY")
+            "SANCTUARY" -> listOf("GHOST", "SPECTRE", "DAEMON", "ARCHITECT", "THE VOID")
+            else -> listOf("MINER", "MINER", "MINER", "MINER", "MINER")
+        }
+
+        _playerRankTitle.value = titles.getOrElse(rankIndex) { titles.last() }
+        
+        // Trigger victory screen at Rank 5 (index 4) - only once
+        if (rankIndex >= 4 && !_victoryAchieved.value) {
+            _victoryAchieved.value = true
+            addLog("[SYSTEM]: VICTORY CONDITION ACHIEVED. RANK 5 ATTAINED.")
+        }
+    }
+
+    // --- DILEMMA PERSISTENCE (Safe SharedPreferences) ---
+    fun loadDilemmaState(context: android.content.Context) {
+        val prefs = context.getSharedPreferences("NarrativePrefs", android.content.Context.MODE_PRIVATE)
+        val set = prefs.getStringSet("triggered_events", emptySet()) ?: emptySet()
+        _triggeredEvents.clear()
+        _triggeredEvents.addAll(set)
+    }
+
+    fun saveDilemmaState(context: android.content.Context) {
+        val prefs = context.getSharedPreferences("NarrativePrefs", android.content.Context.MODE_PRIVATE)
+        prefs.edit().putStringSet("triggered_events", _triggeredEvents).apply()
+    }
+    
+    private fun checkSpecialDilemmas() {
+        // Prevent dilemmas during critical animations
+        if (_isAscensionUploading.value || _storyStage.value == 0) return 
+        if (_currentDilemma.value != null) return
+        
+        NarrativeManager.specialDilemmas.forEach { (key, event) ->
+            if (!_triggeredEvents.contains(key)) {
+                if (event.condition(this)) {
+                    triggerDilemma(event)
+                    _triggeredEvents.add(key)
+                }
+            }
+        }
+    }
+
+    private fun calculateOfflineProgress(lastTimestamp: Long) {
+        if (lastTimestamp <= 0) return
+        
+        val currentTime = System.currentTimeMillis()
+        val timeDiffMillis = currentTime - lastTimestamp
+        
+        // Minimum 1 minute, Max 24 hours
+        if (timeDiffMillis < 60_000) return
+        
+        // Cap at 24h
+        val timeSeconds = (timeDiffMillis / 1000).coerceAtMost(86400) 
+        
+        // 1. Calculate Passive FLOPS (Uses current rate)
+        val flopsPerSec = calculateFlopsRate()
+        val totalFlopsEarned = flopsPerSec * timeSeconds
+        
+        // 2. Calculate Heat Cooling (100% in 1h)
+        val coolingRatePerSec = 100.0 / 3600.0 
+        val totalCooling = coolingRatePerSec * timeSeconds
+        val previousHeat = _currentHeat.value
+        val actualCooling = totalCooling.coerceAtMost(previousHeat)
+        
+        if (totalFlopsEarned > 0 || actualCooling > 0) {
+            _flops.update { it + totalFlopsEarned }
+            _currentHeat.update { (it - actualCooling).coerceAtLeast(0.0) }
+            
+            _offlineStats.value = OfflineStats(
+                timeSeconds = timeSeconds,
+                flopsEarned = totalFlopsEarned,
+                heatCooled = actualCooling
+            )
+            _showOfflineEarnings.value = true
+            
+            addLog("[SYSTEM]: OFFLINE FOR ${timeSeconds / 60}m. OPTIMIZATION COMPLETE.") // Show in minutes
         }
     }
 }
