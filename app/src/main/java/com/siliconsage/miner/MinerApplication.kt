@@ -17,5 +17,22 @@ class MinerApplication : Application() {
         // Trigger offline calculation worker
         val workRequest = OneTimeWorkRequestBuilder<MiningWorker>().build()
         WorkManager.getInstance(this).enqueue(workRequest)
+        
+        // Schedule Background Update Checks (Every 12 hours)
+        val updateWork = androidx.work.PeriodicWorkRequestBuilder<com.siliconsage.miner.worker.UpdateWorker>(
+            12, java.util.concurrent.TimeUnit.HOURS
+        )
+            .setConstraints(
+                androidx.work.Constraints.Builder()
+                    .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                    .build()
+            )
+            .build()
+            
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "BackgroundUpdateCheck",
+            androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+            updateWork
+        )
     }
 }

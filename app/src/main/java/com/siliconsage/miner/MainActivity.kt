@@ -25,6 +25,24 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         viewModel.loadDilemmaState(this) // Load History
         
+        // Request Notification Permission for Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val permissionRequest = registerForActivityResult(
+                androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                if (isGranted) {
+                    // Good to go
+                }
+            }
+            
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                permissionRequest.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        
         // Check for updates on startup and show notification if found
         viewModel.checkForUpdates(
             onResult = { found ->
