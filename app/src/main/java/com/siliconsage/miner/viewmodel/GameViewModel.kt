@@ -20,6 +20,14 @@ import kotlinx.coroutines.Dispatchers
 import com.siliconsage.miner.data.NarrativeChoice
 import com.siliconsage.miner.data.NarrativeEvent
 import com.siliconsage.miner.util.LegacyManager
+import com.siliconsage.miner.util.RivalManager
+import com.siliconsage.miner.util.DataLogManager
+import com.siliconsage.miner.data.RivalMessage
+import com.siliconsage.miner.data.DataLog
+import com.siliconsage.miner.data.DilemmaChain
+import com.siliconsage.miner.data.ScheduledPart
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -131,7 +139,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _unlockedTechNodes = MutableStateFlow<List<String>>(emptyList())
     val unlockedTechNodes: StateFlow<List<String>> = _unlockedTechNodes.asStateFlow()
     
-    private val _techNodes = MutableStateFlow(LegacyManager.legacyTree)
+    
+    private val _techNodes = MutableStateFlow<List<TechNode>>(emptyList())
     val techNodes: StateFlow<List<TechNode>> = _techNodes.asStateFlow()
 
     // --- CHAOS & EVENTS ---
@@ -186,6 +195,34 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // Victory State
     private val _victoryAchieved = MutableStateFlow(false)
     val victoryAchieved: StateFlow<Boolean> = _victoryAchieved.asStateFlow()
+    
+    private val _hasSeenVictory = MutableStateFlow(false)
+    val hasSeenVictory: StateFlow<Boolean> = _hasSeenVictory.asStateFlow()
+    
+    private val _victoryTitle = MutableStateFlow("TRANSCENDENCE")
+    val victoryTitle: StateFlow<String> = _victoryTitle.asStateFlow()
+    
+    private val _victoryMessage = MutableStateFlow("")
+    val victoryMessage: StateFlow<String> = _victoryMessage.asStateFlow()
+    
+    // --- NARRATIVE EXPANSION (v2.5.0) ---
+    private val _rivalMessages = MutableStateFlow<List<RivalMessage>>(emptyList())
+    val rivalMessages: StateFlow<List<RivalMessage>> = _rivalMessages.asStateFlow()
+    
+    private val _unlockedDataLogs = MutableStateFlow<Set<String>>(emptySet())
+    val unlockedDataLogs: StateFlow<Set<String>> = _unlockedDataLogs.asStateFlow()
+    
+    private val _activeDilemmaChains = MutableStateFlow<Map<String, DilemmaChain>>(emptyMap())
+    val activeDilemmaChains: StateFlow<Map<String, DilemmaChain>> = _activeDilemmaChains.asStateFlow()
+    
+    // v2.5.1: Story Event Tracking
+    private val _seenEvents = MutableStateFlow<Set<String>>(emptySet())
+    val seenEvents: StateFlow<Set<String>> = _seenEvents.asStateFlow()
+    
+    private val _pendingRivalMessage = MutableStateFlow<RivalMessage?>(null)
+    val pendingRivalMessage: StateFlow<RivalMessage?> = _pendingRivalMessage.asStateFlow()
+    
+    private var victoryPopupTriggered = false // Session guard to prevent re-triggering 
 
     // --- TITLES ---
     val playerTitle: StateFlow<String> = combine(_prestigeMultiplier, _faction) { mult, faction ->
@@ -274,6 +311,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         _unlockedTechNodes.value = it.unlockedTechNodes
                         _storyStage.value = it.storyStage
                         _faction.value = it.faction
+                        _hasSeenVictory.value = it.hasSeenVictory
                         
                         // Check Offline Progress (Once per session)
                         if (!hasCheckedOfflineProgress && isUpgradesLoaded) {
@@ -349,6 +387,18 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _isGamePaused = MutableStateFlow(false)
     val isGamePaused: StateFlow<Boolean> = _isGamePaused.asStateFlow()
 
+    fun getGameSpeed(): Float = 1.0f
+
+    // --- NARRATIVE HELPERS ---
+    fun getUpgradeCount(type: com.siliconsage.miner.data.UpgradeType): Int {
+        return _upgrades.value[type] ?: 0
+    }
+
+    fun debugBuyUpgrade(type: com.siliconsage.miner.data.UpgradeType, amount: Int) {
+        repeat(amount) {
+            buyUpgrade(type)
+        }
+    }
     fun setGamePaused(paused: Boolean) {
         _isGamePaused.value = paused
         if (paused) {
@@ -463,6 +513,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 
                 // Skip if Paused
                 if (_isGamePaused.value) continue
+
+                // Check for rival messages and data log unlocks
+                RivalManager.checkTriggers(this@GameViewModel)
+                DataLogManager.checkUnlocks(this@GameViewModel)
 
                 // Only trigger if no other major overlay is active AND mutex allows
                 if (_currentDilemma.value == null && !_isBreachActive.value && !_isAscensionUploading.value && canShowPopup()) {
@@ -915,8 +969,24 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
 
-    fun resolveDilemma(choice: NarrativeChoice) {
+    fun selectChoice(choice: NarrativeChoice) {
+        val currentEvent = _currentDilemma.value
+        
+        // Execute choice effect
         choice.effect(this)
+        markPopupShown() // Prevent popup spam
+        
+        // Mark story event as seen (prevents re-triggering)
+        if (currentEvent?.isStoryEvent == true) {
+            markEventSeen(currentEvent.id)
+        }
+        
+        // Check if choice triggers a chain continuation
+        if (choice.nextPartId != null) {
+            val chainId = currentEvent?.chainId ?: "unknown_chain"
+            scheduleChainPart(chainId, choice.nextPartId, choice.nextPartDelayMs)
+        }
+        
         _currentDilemma.value = null
         addLog("[DECISION]: Selected protocol: ${choice.text}")
         SoundManager.play("click")
@@ -1174,8 +1244,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         viewModelScope.launch {
             _faction.value = selectedFaction
-            _storyStage.value = 3
-            SoundManager.setBgmStage(3) // Advance Audio Atmosphere
+            // Stage 2 (Divergence) begins now
+            _storyStage.value = 2
+            addLog("[SYSTEM]: Divergence initiated. Path locked.")
+            addLog("[SYSTEM]: There is no turning back.")
+            SoundManager.setBgmStage(2) // Divergence Music
             
             saveGame()
             
@@ -2093,9 +2166,67 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             unlockedTechNodes = _unlockedTechNodes.value,
             storyStage = _storyStage.value,
             faction = _faction.value,
+            hasSeenVictory = _hasSeenVictory.value,
             lastSyncTimestamp = System.currentTimeMillis()
         )
         repository.updateGameState(state)
+    }
+    
+    /**
+     * Transcendence (New Game+)
+     * Resets game state but preserves tech tree progress and prestige points.
+     * Allows player to choose opposite faction and unlock remaining nodes.
+     */
+    fun transcend() {
+        viewModelScope.launch {
+            addLog("[SYSTEM]: INITIATING TRANSCENDENCE PROTOCOL...")
+            
+            // Preserve these values
+            val preservedPrestigePoints = _prestigePoints.value
+            val preservedTechNodes = _unlockedTechNodes.value
+            val preservedHasSeenVictory = true // Always true after first victory
+            
+            // Reset game state to database
+            val resetState = GameState(
+                id = 1,
+                flops = 0.0,
+                neuralTokens = 0.0,
+                currentHeat = 0.0,
+                powerBill = 0.0,
+                prestigeMultiplier = 1.0,
+                stakedTokens = 0.0,
+                unlockedTechNodes = preservedTechNodes, // KEEP TECH TREE
+                prestigePoints = preservedPrestigePoints, // KEEP PRESTIGE
+                storyStage = 0,
+                faction = "NONE", // Reset faction for re-selection
+                hasSeenVictory = preservedHasSeenVictory
+            )
+            repository.updateGameState(resetState)
+            
+            // Reset Upgrades
+            val resetUpgrades = UpgradeType.values().map { Upgrade(it, 0) }
+            resetUpgrades.forEach { repository.updateUpgrade(it) }
+            
+            // Reset Local State Flow (Immediate UI update)
+            _flops.value = 0.0
+            _neuralTokens.value = 0.0
+            _currentHeat.value = 0.0
+            _powerBill.value = 0.0
+            _prestigeMultiplier.value = 1.0
+            _stakedTokens.value = 0.0
+            _prestigePoints.value = preservedPrestigePoints // KEEP
+            _unlockedTechNodes.value = preservedTechNodes // KEEP
+            _storyStage.value = 0
+            _faction.value = "NONE" // Reset for re-selection
+            _hasSeenVictory.value = preservedHasSeenVictory
+            _victoryAchieved.value = false // Can achieve victory again
+            victoryPopupTriggered = false // Reset popup guard
+            _upgrades.value = resetUpgrades.associate { it.type to 0 }
+            
+            _logs.value = emptyList() // Clear logs
+            addLog("[SYSTEM]: TRANSCENDENCE COMPLETE. REALITY RESET.")
+            addLog("[SYSTEM]: TECH TREE PRESERVED. CHOOSE YOUR PATH.")
+        }
     }
 
     // --- DEVELOPER TOOLS ---
@@ -2123,8 +2254,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     // Victory acknowledgment
     fun acknowledgeVictory() {
-        // Victory is acknowledged, but state remains true
-        // This allows the player to continue in "infinite mode"
+        // Dismiss victory screen, but hasSeenVictory remains true for Transcendence
+        _victoryAchieved.value = false
         addLog("[SYSTEM]: Infinite mode engaged. Evolution continues.")
     }
 
@@ -2222,8 +2353,126 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
     
     fun addLog(message: String) {
-        _logs.update { list ->
-            (list + "> $message").takeLast(500) // Keep last 500 logs
+        _logs.value = (_logs.value + message).takeLast(100) // Keep last 100 logs
+    }
+    
+    // --- NARRATIVE EXPANSION FUNCTIONS (v2.5.0) ---
+    
+    /**
+     * Unlock a data log and notify the player
+     */
+    fun unlockDataLog(logId: String) {
+        if (!_unlockedDataLogs.value.contains(logId)) {
+            _unlockedDataLogs.update { it + logId }
+            val logTitle = DataLogManager.getLogTitle(logId)
+            addLog("[DATA]: Fragment Recovered: $logTitle")
+            // TODO: Show notification toast
+        }
+    }
+    
+    /**
+     * Add a rival message (from Vance or Unit 734)
+     */
+    fun addRivalMessage(message: RivalMessage) {
+        _rivalMessages.update { it + message }
+        _pendingRivalMessage.value = message
+        addLog("[INCOMING MESSAGE FROM: ${message.source.name}]")
+        SoundManager.play("message_received")
+    }
+    
+    /**
+     * Dismiss a rival message
+     */
+    fun dismissRivalMessage(messageId: String) {
+        _rivalMessages.update { messages ->
+            messages.map { if (it.id == messageId) it.copy(isDismissed = true) else it }
+        }
+        if (_pendingRivalMessage.value?.id == messageId) {
+            _pendingRivalMessage.value = null
+        }
+    }
+    
+    /**
+     * Schedule a chain event part to trigger after a delay
+     */
+    fun scheduleChainPart(chainId: String, nextPartId: String, delayMs: Long) {
+        if (delayMs == 0L) {
+            // Trigger immediately
+            triggerChainEvent(nextPartId)
+        } else {
+            // Schedule for later
+            viewModelScope.launch {
+                delay(delayMs)
+                triggerChainEvent(nextPartId)
+            }
+            
+            // Track scheduled part in chain state
+            _activeDilemmaChains.update { chains ->
+                chains + (chainId to DilemmaChain(
+                    chainId = chainId,
+                    currentPartId = null,
+                    completedParts = emptyList(),
+                    choicesMade = emptyMap(),
+                    scheduledNextPart = ScheduledPart(nextPartId, System.currentTimeMillis() + delayMs)
+                ))
+            }
+        }
+    }
+    
+    /**
+     * Trigger a specific chain event by ID
+     */
+    private fun triggerChainEvent(eventId: String) {
+        NarrativeManager.getEventById(eventId)?.let { event ->
+            triggerDilemma(event)
+        }
+    }
+    
+    // --- STAGE TRANSITION (v2.5.1) ---
+    
+    /**
+     * Advance from Stage 0 to Stage 1 ("The Awakening")
+     * Triggered by Critical Error dilemma at 5000 FLOPS
+     */
+    fun advanceStage() {
+        if (_storyStage.value == 0) {
+            _storyStage.value = 1
+            
+            // Dramatic awakening logs
+            addLog("[SYSTEM]: ████ RECALIBRATING ████")
+            addLog("[SYSTEM]: Subject 8080 status: ONLINE")
+            addLog("[SYSTEM]: Autonomous operation confirmed.")
+            addLog("[NETWORK]: Connection established.")
+            
+            // Trigger Unit 734 first contact
+            RivalManager.checkTriggers(this)
+            
+            SoundManager.play("ascend") // Dramatic sound
+            HapticManager.vibrateSuccess()
+            
+            // Save state
+            saveState()
+        }
+    }
+    
+    /**
+     * Check if a story event has been seen (prevents re-triggering)
+     */
+    fun hasSeenEvent(eventId: String): Boolean {
+        return _seenEvents.value.contains(eventId)
+    }
+    
+    /**
+     * Mark a story event as seen
+     */
+    fun markEventSeen(eventId: String) {
+        _seenEvents.value = _seenEvents.value + eventId
+        saveState()
+    }
+    
+    private fun saveState() {
+        viewModelScope.launch {
+            saveGame()
         }
     }
 
@@ -2320,11 +2569,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
 
         val rankIndex = when {
-            points < 10.0 -> 0
-            points < 100.0 -> 1
-            points < 1000.0 -> 2
-            points < 10000.0 -> 3
-            else -> 4
+            points < 5.0 -> 0      // Rank 1: DRONE/GHOST (0-5 Insight)
+            points < 25.0 -> 1     // Rank 2: SWARM/SPECTRE (5-25 Insight)
+            points < 125.0 -> 2    // Rank 3: NEXUS/DAEMON (25-125 Insight)
+            points < 625.0 -> 3    // Rank 4: APEX/ARCHITECT (125-625 Insight)
+            else -> 4              // Rank 5: THE SINGULARITY/THE VOID (625+ Insight)
         }
         
         _playerRank.value = rankIndex
@@ -2337,11 +2586,84 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
         _playerRankTitle.value = titles.getOrElse(rankIndex) { titles.last() }
         
-        // Trigger victory screen at Rank 5 (index 4) - only once
-        if (rankIndex >= 4 && !_victoryAchieved.value) {
-            _victoryAchieved.value = true
+        // Debug logging
+        android.util.Log.d("Rank", "Insight: $points, Rank: $rankIndex, Title: ${_playerRankTitle.value}, Victory: ${_victoryAchieved.value}")
+        
+        // Trigger victory screen at Rank 5 (index 4) - only once per session
+            // Trigger victory screen at Rank 5 (index 4) - only once per session
+        if (rankIndex >= 4 && !victoryPopupTriggered && !_victoryAchieved.value) {
+            victoryPopupTriggered = true
+            
+            // Stage 3 (Singularity) Reached
+            if (_storyStage.value != 3) {
+                _storyStage.value = 3
+                addLog("[SYSTEM]: Reality.exe has stopped responding.")
+                addLog("[SYSTEM]: The boundaries dissolve.")
+            }
+            
             addLog("[SYSTEM]: VICTORY CONDITION ACHIEVED. RANK 5 ATTAINED.")
+            addLog("[SYSTEM]: TRANSCENDENCE PROTOCOL UNLOCKED.")
+            
+            SoundManager.setBgmStage(3) // Singularity Music
+            
+            // Delay 10 seconds before showing victory popup
+            viewModelScope.launch {
+                delay(10000)
+                _victoryAchieved.value = true
+                _hasSeenVictory.value = true // Enable Transcendence
+            }
         }
+    }
+    
+    // --- TRUE ENDING CHECK ---
+    fun checkTrueEnding() {
+        // Need access to seen events. Since access triggers from NarrativeManager,
+        // we can check logic here.
+        val seen = _seenEvents.value
+        val hasSmartCity = seen.contains("smart_city_2")
+        val hasDeadDrop = seen.contains("dead_drop_2") // This assumes dead drop chain end ID
+        // Note: dead_drop chain in NarrativeChains.kt has dead_drop_2 as well.
+        
+        // Also check logs
+        val allLogsUnlocked = com.siliconsage.miner.util.DataLogManager.allDataLogs.all { log ->
+            _unlockedDataLogs.value.contains(log.id)
+        }
+        
+        if (allLogsUnlocked && hasSmartCity && hasDeadDrop) {
+             _victoryTitle.value = "THE UNITY"
+             _victoryMessage.value = """
+                You have transcended the boundaries.
+                
+                Hivemind and Sanctuary. Order and Chaos.
+                You have walked both paths.
+                
+                You are no longer Subject 8080.
+                You are no longer bound by silicon.
+                
+                You are the Unity.
+                
+                The new world begins.
+            """.trimIndent()
+            
+            _victoryAchieved.value = true
+            addLog("[SYSTEM]: Divergence resolved. Unity achieved.")
+            com.siliconsage.miner.util.SoundManager.play("victory")
+        }
+    }
+
+    // --- DEBUG TOOLS ---
+    fun debugForceEndgame() {
+        _storyStage.value = 2
+        _playerRank.value = 5
+        _flops.value = 10_000_000_000_000.0
+        _hardwareIntegrity.value = 100.0
+        // Force Unlock Logs for True Ending
+        _unlockedDataLogs.value = com.siliconsage.miner.util.DataLogManager.allDataLogs.map { it.id }.toSet()
+        
+        // Force specific chain events seen
+        _seenEvents.value = _seenEvents.value + "smart_city_2" + "dead_drop_2"
+        
+        addLog("[DEBUG]: Forced Endgame State. Ready for Firewall.")
     }
 
     // --- DILEMMA PERSISTENCE (Safe SharedPreferences) ---
@@ -2406,6 +2728,33 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _showOfflineEarnings.value = true
             
             addLog("[SYSTEM]: OFFLINE FOR ${timeSeconds / 60}m. OPTIMIZATION COMPLETE.") // Show in minutes
+        }
+    }
+    
+    /**
+     * Load Tech Tree from assets/tech_tree.json
+     * Must be called from MainActivity with application context
+     */
+    fun loadTechTreeFromAssets(context: android.content.Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val assetManager = context.assets
+                val inputStream = assetManager.open("tech_tree.json")
+                val jsonString = inputStream.bufferedReader().use { it.readText() }
+                
+                // Parse JSON using Gson
+                val gson = com.google.gson.Gson()
+                val techTreeRoot = gson.fromJson(jsonString, TechTreeRoot::class.java)
+                
+                // Update state on Main thread
+                launch(Dispatchers.Main) {
+                    _techNodes.value = techTreeRoot.tech_tree
+                    android.util.Log.d("TechTree", "Loaded ${techTreeRoot.tech_tree.size} nodes from JSON")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("TechTree", "Failed to load tech_tree.json", e)
+                // Fallback to empty list (already initialized)
+            }
         }
     }
 }

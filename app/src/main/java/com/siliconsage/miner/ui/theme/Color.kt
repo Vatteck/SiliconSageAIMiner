@@ -10,6 +10,8 @@ val TerminalText = Color(0xFF39FF14) // Same as NeonGreen for text
 val ErrorRed = Color(0xFFFF0033)
 
 val HivemindOrange = Color(0xFFFF8C00) // DarkOrange (Lighter than RedOrange)
+val SanctuaryPurple = Color(0xFF9D4EDD) // Faction-specific accent (Sanctuary)
+val ConvergenceGold = Color(0xFFFFD700) // Convergence node (Sentience Core)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

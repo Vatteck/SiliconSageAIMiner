@@ -289,6 +289,35 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 }
             )
     
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // --- DATA LOG ARCHIVE (v2.5.0) ---
+            var showArchive by remember { mutableStateOf(false) }
+            
+            Button(
+                onClick = {
+                    showArchive = true
+                    SoundManager.play("click")
+                    HapticManager.vibrateClick()
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.75f)),
+                shape = RoundedCornerShape(4.dp),
+                border = BorderStroke(1.dp, ElectricBlue)
+            ) {
+                Text("DATA LOG ARCHIVE", color = ElectricBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            
+            // Archive fullscreen overlay
+            if (showArchive) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    DataLogArchiveScreen(
+                        viewModel = viewModel,
+                        onBack = { showArchive = false }
+                    )
+                }
+            }
+    
             Spacer(modifier = Modifier.height(32.dp))
             
             // --- DANGER ZONE ---
@@ -393,6 +422,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     DevButton("TRIGGER DIAGNOSTICS") { viewModel.debugTriggerDiagnostics() }
                     DevButton("TRIGGER DILEMMA") { viewModel.debugTriggerDilemma() }
                     DevButton("RESET ASCENSION") { viewModel.debugResetAscension() }
+                    DevButton("FORCE ENDGAME") { viewModel.debugForceEndgame() }
 
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("HEADLINE TRIGGERS", color = NeonGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)

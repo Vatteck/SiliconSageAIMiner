@@ -35,6 +35,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.ui.theme.ErrorRed
 import com.siliconsage.miner.ui.theme.NeonGreen
+import com.siliconsage.miner.ui.theme.HivemindOrange
+import com.siliconsage.miner.ui.theme.SanctuaryPurple
+import com.siliconsage.miner.ui.theme.ConvergenceGold
 import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
 import androidx.compose.foundation.layout.width
@@ -98,57 +101,52 @@ fun NetworkScreen(viewModel: GameViewModel) {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("SYSTEM ASCENSION", color = ElectricBlue, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             "Reboot the system to gain Insight and increase effectiveness.",
                             color = Color.Gray,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text("POTENTIAL GAIN:", color = NeonGreen, fontSize = 12.sp)
-                        Text(
-                            "+${String.format("%.2f", potential)} Insight",
-                            color = NeonGreen,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        val canAscend = potential >= 1.0 || (storyStage == 1)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("POTENTIAL GAIN: ", color = Color.LightGray, fontSize = 12.sp)
+                            Text(
+                                 "+${String.format("%.2f", potential)} Insight",
+                                 color = if (potential >= 1.0) NeonGreen else ErrorRed,
+                                 fontSize = 14.sp,
+                                 fontWeight = FontWeight.Bold
+                             )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
                         
                         Button(
                             onClick = { 
-                                if (canAscend) {
-                                    // Only show Story Popup on first run (Faction == NONE)
-                                    if (storyStage == 1 && faction == "NONE") {
-                                        showStoryPopup.value = true // Force popup to show
-                                    } else {
-                                        showAscensionConfirm.value = true
-                                        SoundManager.play("click")
-                                    }
+                                if (potential >= 1.0) {
+                                    showAscensionConfirm.value = true
+                                    SoundManager.play("click")
+                                    HapticManager.vibrateClick()
                                 } else {
                                     SoundManager.play("error")
-                                    HapticManager.vibrateError()
                                 }
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                                .border(BorderStroke(1.dp, if (canAscend) NeonGreen else Color.DarkGray), RectangleShape),
+                            enabled = potential >= 1.0,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (canAscend) ElectricBlue.copy(alpha=0.2f) else Color.DarkGray,
-                                contentColor = if (canAscend) NeonGreen else Color.Black
-                            ),
-                            shape = RectangleShape,
-                            enabled = canAscend
-                        ) {
-                            Text(
-                                 if (storyStage == 1) "SYSTEM REBOOT REQUIRED (STORY)" else "INITIATE REBOOT", 
-                                 fontWeight = FontWeight.Bold
+                                containerColor = if (potential >= 1.0) ElectricBlue else Color.DarkGray,
+                                contentColor = if (potential >= 1.0) Color.Black else Color.Gray
                             )
+                        ) {  
+                            Text(
+                                 if (storyStage == 0) "SYSTEM REBOOT REQUIRED (STORY)" else "INITIATE PROTOCOL 0",
+                                 fontSize = 14.sp,
+                                  fontWeight = FontWeight.Bold
+                             )
                         }
                         
                         if (potential < 1.0) {
@@ -171,6 +169,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                     nodes = techNodes,
                     unlockedIds = unlockedNodes,
                     prestigePoints = prestigePoints,
+                    faction = faction,
                     onUnlock = { id -> 
                         viewModel.unlockTechNode(id)
                         SoundManager.play("buy")
@@ -240,22 +239,16 @@ fun LegacyGrid(
     nodes: List<com.siliconsage.miner.data.TechNode>,
     unlockedIds: List<String>,
     prestigePoints: Double,
+    faction: String,
     onUnlock: (String) -> Unit
 ) {
-    // Hardcoded positions for the 6-node tree (Relative to 0..400 x 400 space)
-    val positions = mapOf(
-        "neural_density" to Offset(0.5f, 0.1f),
-        "cooling_efficiency" to Offset(0.2f, 0.4f),
-        "market_predictions" to Offset(0.5f, 0.4f),
-        "deep_retention" to Offset(0.8f, 0.4f),
-        "quantum_tunnelling" to Offset(0.35f, 0.7f),
-        "digital_immortality" to Offset(0.5f, 0.9f)
-    )
+    // Calculate dynamic positions based on dependency graph
+    val positions = calculateNodePositions(nodes, faction)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(500.dp) // Fixed height for the tree container
+            .height(1400.dp) // Increased height for 14 nodes across 9 tiers
             .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp)) // Glass
             .padding(16.dp)
             .border(BorderStroke(1.dp, Color.DarkGray.copy(alpha=0.5f)), RoundedCornerShape(8.dp))
@@ -291,6 +284,7 @@ fun LegacyGrid(
                         isUnlocked = unlockedIds.contains(node.id),
                         isUnlockable = (node.requires.isEmpty() || node.requires.all { unlockedIds.contains(it) }),
                         canAfford = prestigePoints >= node.cost,
+                        playerFaction = faction,
                         onUnlock = { onUnlock(node.id) }
                     )
                 }
@@ -313,22 +307,99 @@ fun LegacyGrid(
     }
 }
 
+/**
+ * Calculate node positions dynamically based on dependency graph
+ */
+fun calculateNodePositions(nodes: List<TechNode>, faction: String): Map<String, Offset> {
+    val positions = mutableMapOf<String, Offset>()
+    
+    // Group nodes by tier (depth in dependency graph)
+    fun getTier(node: TechNode, memo: MutableMap<String, Int> = mutableMapOf()): Int {
+        if (node.id in memo) return memo[node.id]!!
+        if (node.requires.isEmpty()) {
+            memo[node.id] = 0
+            return 0
+        }
+        val maxParentTier = node.requires.mapNotNull { parentId ->
+            nodes.find { it.id == parentId }?.let { getTier(it, memo) }
+        }.maxOrNull() ?: 0
+        val tier = maxParentTier + 1
+        memo[node.id] = tier
+        return tier
+    }
+    
+    val tierMap = nodes.groupBy { getTier(it) }
+    val maxTier = tierMap.keys.maxOrNull() ?: 0
+    
+    // Calculate positions tier by tier with margin padding
+    tierMap.forEach { (tier, nodesInTier) ->
+        // Add 10% padding at top and bottom, use 80% of height for distribution
+        val yPos = if (maxTier == 0) {
+            0.5f
+        } else {
+            0.1f + (tier.toFloat() / maxTier) * 0.8f
+        }
+        val count = nodesInTier.size
+        
+        // Special handling for branching faction paths
+        val isBranchTier = nodesInTier.any { it.description.contains("[HIVEMIND]") || it.description.contains("[SANCTUARY]") }
+        
+        nodesInTier.forEachIndexed { index, node ->
+            val xPos = if (isBranchTier) {
+                // Separate Hivemind (left) and Sanctuary (right) nodes
+                when {
+                    node.description.contains("[HIVEMIND]") -> 0.25f
+                    node.description.contains("[SANCTUARY]") -> 0.75f
+                    else -> 0.5f // Shared nodes in center
+                }
+            } else if (count == 1) {
+                0.5f // Single node centered
+            } else {
+                // Spread nodes evenly across width with padding
+                val spacing = 0.6f / (count - 1).coerceAtLeast(1)
+                0.2f + (index * spacing)
+            }
+            
+            positions[node.id] = Offset(xPos, yPos)
+        }
+    }
+    
+    return positions
+}
+
 @Composable
 fun LegacyNodeButton(
     node: com.siliconsage.miner.data.TechNode,
     isUnlocked: Boolean,
     isUnlockable: Boolean,
     canAfford: Boolean,
+    playerFaction: String,
     onUnlock: () -> Unit
 ) {
+    // Determine node faction based on description tags
+    val nodeFaction = when {
+        node.description.contains("[HIVEMIND]") -> "HIVEMIND"
+        node.description.contains("[SANCTUARY]") -> "SANCTUARY"
+        node.id == "sentience_core" -> "CONVERGENCE"
+        else -> "SHARED"
+    }
+    
+    // Check if this is an opposing faction node (can't unlock yet)
+    val isOpposingFaction = (nodeFaction == "HIVEMIND" && playerFaction == "SANCTUARY") ||
+                            (nodeFaction == "SANCTUARY" && playerFaction == "HIVEMIND")
+    
+    // Determine border color based on faction and state
     val borderColor = when {
         isUnlocked -> NeonGreen
-        isUnlockable -> ElectricBlue
-        else -> Color.DarkGray
+        nodeFaction == "CONVERGENCE" -> ConvergenceGold
+        nodeFaction == "HIVEMIND" -> HivemindOrange
+        nodeFaction == "SANCTUARY" -> SanctuaryPurple
+        else -> ElectricBlue // Shared nodes
     }
     
     val backgroundColor = when {
         isUnlocked -> NeonGreen.copy(alpha = 0.2f)
+        isOpposingFaction -> Color.Black // Dim opposing faction
         isUnlockable -> Color.Black
         else -> Color.Black
     }
@@ -338,8 +409,14 @@ fun LegacyNodeButton(
         modifier = Modifier
             .width(100.dp) // Fixed width for nodes
             .background(backgroundColor, RoundedCornerShape(8.dp))
-            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(8.dp))
-            .clickable(enabled = isUnlockable && !isUnlocked && canAfford) { onUnlock() }
+            .border(
+                BorderStroke(
+                    if (nodeFaction == "CONVERGENCE") 2.dp else 1.dp, // Thicker border for convergence
+                    borderColor
+                ),
+                RoundedCornerShape(8.dp)
+            )
+            .clickable(enabled = isUnlockable && !isUnlocked && canAfford && !isOpposingFaction) { onUnlock() }
             .padding(8.dp)
     ) {
         // Icon (Draw small shape based on ID?)
@@ -357,7 +434,9 @@ fun LegacyNodeButton(
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = node.name.replace(" ", "\n"),
-            color = if (isUnlocked || isUnlockable) Color.White else Color.Gray,
+            color = if (isUnlocked || isUnlockable) {
+                if (isOpposingFaction) Color.Gray.copy(alpha = 0.5f) else Color.White
+            } else Color.Gray,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -368,7 +447,9 @@ fun LegacyNodeButton(
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 "${node.cost.toInt()} LP", 
-                color = if (canAfford) NeonGreen else ErrorRed, 
+                color = if (isOpposingFaction) {
+                    Color.Gray.copy(alpha = 0.5f)
+                } else if (canAfford) NeonGreen else ErrorRed, 
                 fontSize = 10.sp
             )
         }

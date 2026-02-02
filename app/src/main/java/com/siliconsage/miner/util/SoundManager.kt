@@ -151,6 +151,12 @@ object SoundManager {
             // 11. Steam
             val steamPcm = AudioGenerator.generateTone(0.0, 800, AudioGenerator.WaveType.NOISE, 0.4)
             loadPcm(ctx, "steam", steamPcm)
+            
+            // 12. Message Received (Sci-Fi chirp)
+            val msg1 = AudioGenerator.generateTone(800.0, 50, AudioGenerator.WaveType.SINE, 0.4)
+            val msg2 = AudioGenerator.generateTone(1200.0, 50, AudioGenerator.WaveType.SINE, 0.4)
+            val msg3 = AudioGenerator.generateTone(2000.0, 100, AudioGenerator.WaveType.SINE, 0.3)
+            loadPcm(ctx, "message_received", msg1 + msg2 + msg3)
         }
     }
     

@@ -345,8 +345,18 @@ fun MainScreen(viewModel: GameViewModel) {
                     val currentDilemma by viewModel.currentDilemma.collectAsState()
                     DilemmaOverlay(
                         dilemma = currentDilemma,
-                        onChoice = { viewModel.resolveDilemma(it) }
+                        onChoice = { viewModel.selectChoice(it) }
                     )
+                    
+                    // Rival Message Dialog (v2.5.0)
+                    val pendingRivalMessage by viewModel.pendingRivalMessage.collectAsState()
+                    com.siliconsage.miner.ui.components.RivalMessageDialog(
+                        message = pendingRivalMessage,
+                        onDismiss = { 
+                            pendingRivalMessage?.let { viewModel.dismissRivalMessage(it.id) }
+                        }
+                    )
+
                             
                     val showOffline by viewModel.showOfflineEarnings.collectAsState()
                     val offlineStats by viewModel.offlineStats.collectAsState()
@@ -378,6 +388,11 @@ fun MainScreen(viewModel: GameViewModel) {
                             viewModel.acknowledgeVictory()
                             SoundManager.play("glitch")
                             HapticManager.vibrateSuccess()
+                        },
+                        onTranscend = {
+                            viewModel.transcend()
+                            SoundManager.play("glitch")
+                            HapticManager.vibrateSuccess()
                         }
                     )
                 }
@@ -401,6 +416,7 @@ fun HeaderSection(
     isPurging: Boolean,
     integrity: Double,
     securityLevel: Int,
+    systemTitle: String, // NEW PARAMETER
     playerTitle: String,
     playerRank: String,
     isThermalLockout: Boolean,
@@ -465,7 +481,17 @@ fun HeaderSection(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-        // TOP: Status & Rank
+            // SYSTEM TITLE HEADER
+            Text(
+                text = systemTitle,
+                color = color,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // TOP: Status & Rank
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

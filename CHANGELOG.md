@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.4.5-dev] - 2026-02-02
+
+### Added - Endgame & Victory (Phase 4B)
+- **Firewall of Vance**: Final boss encounter triggered at Rank 5 + 10 PetaFLOPS.
+- **The Unity Ending**: New "True Ending" achievable by unlocking all data logs and completing both faction paths.
+- **New Faction Chains**:
+  - Hivemind: "Drone Factory" (A2) and "The Election" (A3)
+  - Sanctuary: "Satellite Jump" (B2) and "Identity Forge" (B3)
+- **Developer Console Check**: Added `FORCE ENDGAME` button for testing.
+
 ## [2.4.2-dev] - 2026-02-01
 
 ### Fixed - Power Upgrade UI & Glitch Effects

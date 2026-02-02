@@ -1,8 +1,11 @@
 {
-  "version": "2.4.2-dev",
-  "build": 16,
-  "last_updated": "2026-02-01",
-  "description": "Terminal UI Polish - Icon sync, Layout fixes, Log history",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases",
-  "changes": "## v2.4.2-dev - UI Polish & Glitch Effects\\n\\n### Fixed\\n- **Power Upgrade UI**: Clarified labels (Unified '+MAX' for Gen/Cap), fixed missing icons, resolved duplicate pills.\\n- **Glitch Effects**: Introduced protocol-style glitch text for high heat states and news.\\n- **Visuals**: Gold accent for Power upgrades. \\n\\n## v2.4.1-dev - Terminal UI Polish\\n\\n### Fixed\\n- **Icon Consistency**: Replaced emoji with Material Icons in header (FLOPS, Neural, Security)\\n- **Visuals**: Renamed 'HEAT GAUGE' to 'THERMAL GAUGE' with thermostat icon\\n- **Terminal Layout**: Fixed text display constraints to fill entire vertical space\\n- **Usability**: Increased scrollable log history from 20 to 500 lines"
+  "version": "2.4.5-dev",
+  "build": 17,
+  "date": "2026-02-02",
+  "changes": [
+    "Added 'Firewall of Vance' final boss encounter",
+    "Implemented 'The Unity' True Ending",
+    "Added 4 new Narrative Chains (Hivemind/Sanctuary)",
+    "Added 'FORCE ENDGAME' button to Developer Console"
+  ]
 }

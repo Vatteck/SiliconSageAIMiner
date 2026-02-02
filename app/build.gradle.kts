@@ -12,8 +12,8 @@ android {
         applicationId = "com.siliconsage.miner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "2.4.2-dev"
+        versionCode = 17
+        versionName = "2.4.5-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

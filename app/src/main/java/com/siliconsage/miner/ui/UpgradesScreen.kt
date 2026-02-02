@@ -44,6 +44,10 @@ import com.siliconsage.miner.viewmodel.GameViewModel
 fun UpgradesScreen(viewModel: GameViewModel) {
     val neuralTokens by viewModel.neuralTokens.collectAsState()
     val upgrades by viewModel.upgrades.collectAsState()
+    val currentStage by viewModel.storyStage.collectAsState()
+    
+    val systemTitle = if (currentStage == 0) "Terminal_OS v1.0" else "Subject 8080: ONLINE"
+    
     var selectedTab by remember { mutableStateOf(0) }
     
     // UI State for Errors
@@ -100,6 +104,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 isPurging = isPurging,
                 integrity = integrity,
                 securityLevel = securityLevel,
+                systemTitle = systemTitle,
                 playerTitle = playerTitle,
                 playerRank = playerRank,
                 isThermalLockout = isThermalLockout,
