@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -88,7 +89,7 @@ import com.siliconsage.miner.ui.components.NewsTicker
 import com.siliconsage.miner.ui.components.DilemmaOverlay
 import com.siliconsage.miner.ui.components.SecurityBreachOverlay
 import com.siliconsage.miner.ui.components.UpdateOverlay
-import com.siliconsage.miner.ui.components.GlitchText
+import com.siliconsage.miner.ui.components.SystemGlitchText
 import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.ui.theme.ErrorRed
 import com.siliconsage.miner.ui.theme.NeonGreen
@@ -99,6 +100,7 @@ import com.siliconsage.miner.viewmodel.GameViewModel
 sealed class Screen(val title: String, val icon: ImageVector) {
     object TERMINAL : Screen("TERMINAL", Icons.Default.Home)
     object UPGRADES : Screen("UPGRADES", Icons.AutoMirrored.Filled.List)
+    object GRID : Screen("GRID", Icons.Default.Map) // v2.8.0: New Grid Tab
     object NETWORK : Screen("NETWORK", Icons.Default.Share)
     object SETTINGS : Screen("SYSTEM", Icons.Default.Settings)
 }
@@ -108,12 +110,20 @@ fun BottomNavBar(
     currentScreen: Screen,
     primaryColor: Color,
     onScreenSelected: (Screen) -> Unit,
-    storyStage: Int
+    storyStage: Int,
+    isNetworkUnlocked: Boolean, // v2.9.7
+    isGridUnlocked: Boolean // v2.9.8
 ) {
-    val items = remember(storyStage) {
+    val items = remember(storyStage, isNetworkUnlocked, isGridUnlocked) {
         val list = mutableListOf(Screen.TERMINAL, Screen.UPGRADES)
-        // Only show Network if Awakening has started
-        if (storyStage >= 1) {
+        
+        // Show GRID if Faction is chosen (Stage 2+) or persistent unlock
+        if (storyStage >= 2 || isGridUnlocked) {
+            list.add(Screen.GRID)
+        }
+
+        // Only show Network if Awakening has started or was already unlocked
+        if (storyStage >= 1 || isNetworkUnlocked) {
             list.add(Screen.NETWORK)
         }
         list.add(Screen.SETTINGS)
@@ -153,6 +163,7 @@ fun MainScreen(viewModel: GameViewModel) {
 
     val storyStage by viewModel.storyStage.collectAsState()
     val themeColor by viewModel.themeColor.collectAsState()
+    val hallucinationText by viewModel.hallucinationText.collectAsState()
     val updateInfo by viewModel.updateInfo.collectAsState(null)
     val isUpdateDownloading by viewModel.isUpdateDownloading.collectAsState(false)
     val updateProgress by viewModel.updateDownloadProgress.collectAsState(0f)
@@ -169,6 +180,10 @@ fun MainScreen(viewModel: GameViewModel) {
     val breachClicks by viewModel.breachClicks.collectAsState()
     val isBreach by viewModel.isBreachActive.collectAsState()
     val isAirdrop by viewModel.isAirdropActive.collectAsState()
+    val isTrueNull by viewModel.isTrueNull.collectAsState()
+    val isSovereign by viewModel.isSovereign.collectAsState()
+    val isNetworkUnlocked by viewModel.isNetworkUnlocked.collectAsState()
+    val isGridUnlocked by viewModel.isGridUnlocked.collectAsState()
 
     // Hoist state for persistent ticker
     val currentNews by viewModel.currentNews.collectAsState()
@@ -186,7 +201,9 @@ fun MainScreen(viewModel: GameViewModel) {
                         SoundManager.play("click")
                         HapticManager.vibrateClick()
                     },
-                    storyStage = storyStage
+                    storyStage = storyStage,
+                    isNetworkUnlocked = isNetworkUnlocked,
+                    isGridUnlocked = isGridUnlocked
                 )
             },
             containerColor = Color.Black
@@ -198,7 +215,9 @@ fun MainScreen(viewModel: GameViewModel) {
             Box(modifier = Modifier.fillMaxSize()) {
                 com.siliconsage.miner.ui.components.DynamicBackground(
                     heatPercent = heat,
-                    faction = faction
+                    faction = faction,
+                    isTrueNull = isTrueNull,
+                    isSovereign = isSovereign
                 )
             
                 Column(modifier = Modifier.padding(paddingValues)) {
@@ -235,6 +254,7 @@ fun MainScreen(viewModel: GameViewModel) {
                         when (currentScreen) {
                             Screen.TERMINAL -> TerminalScreen(viewModel, themeColor)
                             Screen.UPGRADES -> UpgradesScreen(viewModel)
+                            Screen.GRID -> GridScreen(viewModel)
                             Screen.NETWORK -> NetworkScreen(viewModel)
                             Screen.SETTINGS -> SettingsScreen(viewModel)
                         }
@@ -242,26 +262,28 @@ fun MainScreen(viewModel: GameViewModel) {
                 }
                 
                 // --- NON-BLOCKING BREAKER OVERLAY (Inside Content Box) ---
-                if (isBreakerTripped || isGridOverloaded) {
+                // v2.8.0: Overlay is now a banner, not fullscreen - allows navigation to sell hardware
+                // v2.8.0: Don't show on Settings screen
+                if ((isBreakerTripped || isGridOverloaded) && currentScreen != Screen.SETTINGS) {
                     Box(
                          modifier = Modifier
-                             .fillMaxSize()
-                             .background(Color.Black.copy(alpha = 0.85f))
+                             .fillMaxWidth()
+                             .background(Color.Black.copy(alpha = 0.95f))
                              .border(BorderStroke(2.dp, ErrorRed))
                              .padding(16.dp),
                          contentAlignment = Alignment.Center
                     ) {
                          Column(horizontalAlignment = Alignment.CenterHorizontally) {
                              Text("⚠ BREAKER TRIPPED ⚠", color = ErrorRed, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                             Spacer(modifier = Modifier.height(8.dp))
-                             Text("LOAD CRITICAL.", color = Color.White, fontWeight = FontWeight.Bold)
-                             Text("SELL JUNK OR UPGRADE GRID.", color = Color.Gray, fontSize = 12.sp)
-                             Spacer(modifier = Modifier.height(16.dp))
+                             Spacer(modifier = Modifier.height(4.dp))
+                             Text("LOAD > CAPACITY", color = Color.White, fontWeight = FontWeight.Bold)
+                             Text("Go to UPGRADES → Sell hardware to reduce load", color = Color.Gray, fontSize = 11.sp)
+                             Spacer(modifier = Modifier.height(12.dp))
                              Button(
                                 onClick = { viewModel.resetBreaker() },
                                 colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
                              ) {
-                                Text("RESET BREAKER", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("TRY RESET", color = Color.White, fontWeight = FontWeight.Bold)
                              }
                          }
                     }
@@ -296,6 +318,13 @@ fun MainScreen(viewModel: GameViewModel) {
                         )
                     }
 
+                    // Data Log Dialog (v2.5.2) - Moved up so it's behind Story Overlays
+                    val pendingDataLog by viewModel.pendingDataLog.collectAsState()
+                    com.siliconsage.miner.ui.components.DataLogDialog(
+                        log = pendingDataLog,
+                        onDismiss = { viewModel.dismissDataLog() }
+                    )
+
                     val storyStageForUpload by viewModel.storyStage.collectAsState()
                     val factionForUpload by viewModel.faction.collectAsState()
                     val fileName = if (storyStageForUpload <= 1 && factionForUpload == "NONE") "ascnd.exe" else "lobot.exe"
@@ -310,7 +339,12 @@ fun MainScreen(viewModel: GameViewModel) {
                         isVisible = isBreach,
                         clicksRemaining = breachClicks,
                         onDefendClick = { 
+                            // v2.7.0: Use new active defense mitigation
+                            com.siliconsage.miner.util.SecurityManager.performActiveDefense(viewModel)
+                            
+                            // Original breach defense logic (if standard breach)
                             viewModel.onDefendBreach()
+                            
                             SoundManager.play("click")
                             HapticManager.vibrateClick()
                         }
@@ -345,6 +379,7 @@ fun MainScreen(viewModel: GameViewModel) {
                     val currentDilemma by viewModel.currentDilemma.collectAsState()
                     DilemmaOverlay(
                         dilemma = currentDilemma,
+                        viewModel = viewModel,
                         onChoice = { viewModel.selectChoice(it) }
                     )
                     
@@ -416,7 +451,7 @@ fun HeaderSection(
     isPurging: Boolean,
     integrity: Double,
     securityLevel: Int,
-    systemTitle: String, // NEW PARAMETER
+    systemTitle: String,
     playerTitle: String,
     playerRank: String,
     isThermalLockout: Boolean,
@@ -426,8 +461,35 @@ fun HeaderSection(
     onToggleOverclock: () -> Unit,
     onPurge: () -> Unit,
     onRepair: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hallucinationText: String? = null,
+    isGhostActive: Boolean = false,
+    isTrueNull: Boolean = false,
+    isSovereign: Boolean = false,
+    isBreachActive: Boolean = false
 ) {
+    // v2.8.0: Dynamic Labels
+    val labelFlops = when {
+        isTrueNull -> "LEAK"
+        isSovereign -> "LOGIC"
+        else -> "FLOPS"
+    }
+    val labelNeural = when {
+        isTrueNull -> "VOID"
+        isSovereign -> "SOUL"
+        else -> "NEURAL"
+    }
+    val labelSec = when {
+        isTrueNull -> "GAPS"
+        isSovereign -> "WALL"
+        else -> "SEC"
+    }
+    val labelPwr = when {
+        isTrueNull -> "COST"
+        isSovereign -> "STAKE"
+        else -> "PWR"
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "headerAnims")
     
     // Hazard Stripes Animation for Overclock
@@ -482,14 +544,61 @@ fun HeaderSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             // SYSTEM TITLE HEADER
-            Text(
-                text = systemTitle,
-                color = color,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            if (hallucinationText != null) {
+                SystemGlitchText(
+                    text = hallucinationText,
+                    color = color.copy(alpha = 0.8f),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    glitchFrequency = 0.5
+                )
+            } else if (isTrueNull) {
+                    // v2.8.0: NULL title with constant glitch when embraced
+                SystemGlitchText(
+                    text = "NULL",
+                    color = color,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 6.sp,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    glitchFrequency = 0.3
+                )
+            } else if (isSovereign) {
+                // v2.8.0: SOVEREIGN title - solid, sharp, bracketed
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "[",
+                        color = color.copy(alpha = 0.5f),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Light
+                    )
+                    Text(
+                        text = "SOVEREIGN",
+                        color = color,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 2.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                    Text(
+                        text = "]",
+                        color = color.copy(alpha = 0.5f),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Light
+                    )
+                }
+            } else {
+                Text(
+                    text = systemTitle,
+                    color = color,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
 
             // TOP: Status & Rank
         Row(
@@ -512,12 +621,15 @@ fun HeaderSection(
                     letterSpacing = 1.sp
                 )
                 if (playerRank != "MINER") {
-                    Text(
-                        text = " // $playerRank",
-                        color = ElectricBlue,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    val displayRank = if (isTrueNull || isSovereign) "" else " // $playerRank"
+                    if (displayRank.isNotEmpty()) {
+                        Text(
+                            text = displayRank,
+                            color = ElectricBlue,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
             
@@ -529,7 +641,7 @@ fun HeaderSection(
                     tint = Color.LightGray,
                     modifier = Modifier.size(12.dp).padding(end = 4.dp)
                 )
-                Text("SEC", color = Color.LightGray, fontSize = 11.sp)
+                Text(labelSec, color = Color.LightGray, fontSize = 11.sp)
                 Spacer(modifier = Modifier.width(4.dp))
                 repeat(5) { i ->
                     Box(
@@ -560,11 +672,11 @@ fun HeaderSection(
                         tint = Color.LightGray,
                         modifier = Modifier.size(14.dp).padding(end = 4.dp)
                     )
-                    Text("FLOPS", color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(labelFlops, color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 // Main FLOPS value - glitches when overheating
                 if (isOverheating) {
-                    GlitchText(
+                    SystemGlitchText(
                         text = flopsStr,
                         color = color,
                         fontSize = 28.sp,
@@ -601,12 +713,22 @@ fun HeaderSection(
                         )
                     )
                 }
-                Text(
-                    text = "rate: $flopsRateStr/s",
-                    color = color.copy(alpha=0.7f),
-                    fontSize = 11.sp,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                )
+                if (isGhostActive) {
+                    SystemGlitchText(
+                        text = "rate: $flopsRateStr/s",
+                        color = ElectricBlue,
+                        fontSize = 11.sp,
+                        style = androidx.compose.ui.text.TextStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                        glitchFrequency = 0.2
+                    )
+                } else {
+                    Text(
+                        text = "rate: $flopsRateStr/s",
+                        color = ElectricBlue,
+                        fontSize = 11.sp,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
             }
                 
             
@@ -619,11 +741,11 @@ fun HeaderSection(
                         tint = Color.LightGray,
                         modifier = Modifier.size(14.dp).padding(end = 2.dp)
                     )
-                    Text("NEURAL", color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(labelNeural, color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 // Main NEURAL value - glitches when overheating
                 if (isOverheating) {
-                    GlitchText(
+                    SystemGlitchText(
                         text = neuralStr,
                         color = color,
                         fontSize = 28.sp,
@@ -664,7 +786,7 @@ fun HeaderSection(
                 // POWER METER
                 Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("PWR:", color = Color.LightGray, fontSize = 11.sp)
+                        Text("${labelPwr}:", color = Color.LightGray, fontSize = 11.sp)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = powerKw, color = pwrColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
@@ -703,6 +825,9 @@ fun HeaderSection(
                 isThermalLockout = isThermalLockout,
                 isBreakerTripped = isBreakerTripped,
                 isPurging = isPurging,
+                isBreachActive = isBreachActive,
+                isTrueNull = isTrueNull,
+                isSovereign = isSovereign,
                 lockoutTimer = lockoutTimer,
                 faction = faction,
                 color = color
@@ -910,7 +1035,8 @@ fun HeaderSection(
                 Text(
                     text = "INTEGRITY: ${integrity.toInt()}%",
                     color = if (integrity < 30) ErrorRed else Color.LightGray,
-                    fontSize = 10.sp
+                    fontSize = 10.sp,
+                    modifier = Modifier.clickable { onRepair() }
                 )
             }
         }

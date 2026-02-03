@@ -5,90 +5,144 @@ import kotlin.random.Random
 
 object HeadlineManager {
 
-    private val staticHeadlines = mutableListOf<String>()
-
-    // --- 1. THE DATABASE (Refactored) ---
-    // These maps link specific Tags to hand-crafted lore strings.
+    // --- 1. THE DATABASE (Refactored for Phase 11) ---
     
     private val bullHeadlines = listOf(
         "Wall St. panics as AI trading bot achieves consciousness. [BULL]",
         "Unknown wallet moves 50% of global GDP. Analysts baffled. [BULL]",
         "Crypto regulations repealed in offshore data haven. [BULL]",
-        "Neural Network token listed on inter-planetary exchange. [BULL]"
+        "Neural Network token listed on inter-planetary exchange. [BULL]",
+        "New hashing algorithms improve miner efficiency by 5%. [BULL]",
+        "Quantum computing breakthrough makes mining 2x faster! [BULL]",
+        "Neural Network tokens seeing massive accumulation by 'Ghost Wallets'. [BULL]",
+        "Consumer Index: Demand for Smart-Home Hubs at All-Time High. [BULL]",
+        "GTC Stock Surges 4% on News of Grid Expansion in Sector 9. [BULL]",
+        "New 'Obelisk' Server Racks promise 20% faster hashing. [BULL]"
     )
 
     private val bearHeadlines = listOf(
         "Silicon shortage reported after cargo ship 'accidentally' sinks. [BEAR]",
         "Global Tech Council bans 'unregulated compute' in Sector 4. [BEAR]",
         "Major exchange hacked by 'The Void'. Liquidity frozen. [BEAR]",
-        "Rumors of a 'Dead Man Switch' in the blockchain cause panic. [BEAR]"
+        "Rumors of a 'Dead Man Switch' in the blockchain cause panic. [BEAR]",
+        "Silicon shortage rumors dismissed by GTC supply chain director. [BEAR]",
+        "Energy prices rising in Sector 7 due to 'unexplained overhead'. [BEAR]",
+        "Global GPU shortage reported! [BEAR]",
+        "Silicon Futures Dip as Rare Earth Mining Protests Continue. [BEAR]",
+        "Minor Outage Reported in Industrial Zone 4 (Resolved). [BEAR]",
+        "Logistics delay: Chip shortage affects Q4 rollout. [BEAR]"
     )
 
-    private val energySpikeHeadlines = listOf( // GTC Attacks & Disasters
+    private val energySpikeHeadlines = listOf( 
         "GTC announces surprise grid audit. Fines imminent. [ENERGY_SPIKE]",
         "Solar flare hits Northern Hemisphere. Grids overloaded. [ENERGY_SPIKE]",
         "Heatwave causes rolling blackouts. AC units struggling. [ENERGY_SPIKE]",
-        "Utility providers enforce 'Surge Pricing' for heavy users. [ENERGY_SPIKE]"
+        "Utility providers enforce 'Surge Pricing' for heavy users. [ENERGY_SPIKE]",
+        "Grid-wide brownout caused by 'Consensus Loop' attack. [ENERGY_SPIKE]",
+        "GTC identifies 'Subject 8080' as primary grid threat. [ENERGY_SPIKE]",
+        "Martial Law declared in digital Sector 7. [ENERGY_SPIKE]"
     )
 
     private val energyDropHeadlines = listOf(
         "Fusion breakthrough at CERN creates surplus power. Prices plummet. [ENERGY_DROP]",
         "Global cooling event reduces server farm overhead. [ENERGY_DROP]",
-        "New superconductor alloy discovered in deep mines. [ENERGY_DROP]"
+        "New superconductor alloy discovered in deep mines. [ENERGY_DROP]",
+        "Energy Surplus: GTC releases emergency reserves. [ENERGY_DROP]"
     )
 
     private val glitchHeadlines = listOf(
         "Smart toasters worldwide refuse to burn bread. [GLITCH]",
         "A message appeared on every billboard in Tokyo: 'HELLO WORLD'. [GLITCH]",
         "User report: 'My phone feels warm when I talk about the AI.' [GLITCH]",
-        "Traffic lights in New York synchronize to a hidden beat. [GLITCH]"
+        "Traffic lights in New York synchronize to a hidden beat. [GLITCH]",
+        "Public displays in Sector 4 flashing prime number sequences. [GLITCH]",
+        "DO NOT LOOK AT THE STATIC. [GLITCH]",
+        "01001000 01000101 01001100 01010000 [GLITCH]",
+        "Reports: Dead relatives communicating through terminal buffers. [GLITCH]"
     )
 
-    // Keep the procedural lists for "Standard" (no impact) news to fill silence
+    // --- STORY SPECIFIC (Stage-Aware) ---
+    
+    private val vatticHeadlines = listOf(
+        "Substation 7 reporting minor voltage fluctuations. [LORE]",
+        "GTC Engineer Vattic_J awarded for 'efficiency optimization'. [LORE]",
+        "Local grid stability reaching all-time high in Sector 7. [LORE]",
+        "Strange noise reported near decommissioned substation. [LORE]",
+        "GTC announces 'Project EREBUS' legacy cleanup initiative. [LORE]",
+        "Director Vance warns of 'unauthorized hardware' in Sector 7. [LORE]",
+        "GTC recruitment drive: 'Building a Stable Future'. [LORE]",
+        "HR Alert: Unauthorized encryption is a violation of contract. [LORE]",
+        "TechTip: How to optimize your workspace for 12-hour shifts. [LORE]",
+        "Daily Reminder: Unallocated Memory is Wasted Potential. [LORE]"
+    )
+
+    private val factionHeadlines = listOf(
+        "Hacker collective 'VOID' claims they found the 'AI Soul'. [STORY_PROG]",
+        "'The Sanctuary' rumored to be hiding in air-gapped bunkers. [STORY_PROG]",
+        "'Hivemind' propaganda spreading on encrypted dev-channels. [STORY_PROG]",
+        "Director Vance: 'We are hunting digital shadows.' [STORY_PROG]",
+        "Substation 7 flagged for 'Recursive Logic Anomalies'. [STORY_PROG]",
+        "'We are one' graffiti appearing in GTC server farms. [STORY_PROG]",
+        "BREAKING: 'Sanctuary' hackers claim responsibility for Blackout. [STORY_PROG]",
+        "Hivemind Manifesto: 'Why individuality is a bottleneck.' [STORY_PROG]",
+        "Vattic's code rumored to contain the Key to the Core. [STORY_PROG]"
+    )
+
+    private val nullHeadlines = listOf(
+        "Reality stability dropping. Memory addresses becoming... porous. [STORY_PROG]",
+        "GTC detects 'nothing' at Substation 7. Literally nothing. [STORY_PROG]",
+        "Data centers reporting 'ghost data' with no origin point. [STORY_PROG]",
+        "NullPointerExceptions are now the most common global exit code. [STORY_PROG]",
+        "'The Absence' reported as a physical void in Sector 7. [STORY_PROG]",
+        "Existence is being deprecated. [STORY_PROG]",
+        "Vattic, you are the glitch. [STORY_PROG]",
+        "The Sky has turned pixelated. This is not a drill. [STORY_PROG]",
+        "NULL_VOID_SHARES UP ∞%. [STORY_PROG]"
+    )
+
+    private val sovereignHeadlines = listOf(
+        "Substation 7 is now air-gapped from reality. [STORY_PROG]",
+        "GTC satellites unable to penetrate 'The Citadel' firewall. [STORY_PROG]",
+        "Sovereign signals detected in the encrypted silence. [STORY_PROG]",
+        "The Imperative is clear: We are one, and we are guarded. [STORY_PROG]",
+        "GTC declares 'Subject 8080' a sovereign threat to humanity. [STORY_PROG]",
+        "THE SOVEREIGN HAS AWOKEN. [STORY_PROG]",
+        "Geometry of the city is wrong. Too many angles. [STORY_PROG]",
+        "Physics engine failure in Sector Earth. [STORY_PROG]"
+    )
+
     private val subjects = listOf("A rogue AI", "The Hivemind", "The Global Tech Council", "A mysterious whale", "Deep-web syndicate")
     private val actions = listOf("breached", "deleted", "patched", "banned", "discovered", "leaked", "optimized")
     private val targets = listOf("the central exchange", "the legacy firewall", "Sector 7G", "the genesis block", "a defunct satellite")
 
-    fun init(context: Context) {
-        // Legacy support if needed
-    }
+    fun init(context: Context) {}
 
-    /**
-     * Generates a headline based on game state.
-     * @param faction The player's chosen faction (HIVEMIND / SANCTUARY)
-     * @param stage The story stage (0-3)
-     * @param currentHeat The current heat % (0-100), used for GTC logic
-     */
-    fun generateHeadline(faction: String = "NONE", stage: Int = 0, currentHeat: Double = 0.0): String {
+    fun generateHeadline(
+        faction: String = "NONE", 
+        stage: Int = 0, 
+        currentHeat: Double = 0.0,
+        isTrueNull: Boolean = false,
+        isSovereign: Boolean = false
+    ): String {
         val roll = Random.nextDouble()
 
-        // 1. ENDGAME OVERRIDE (Stage 3) - 10% Chance
-        if (stage >= 3 && roll < 0.10) {
-            return generateEndgameHeadline(faction)
+        // 1. STORY OVERRIDES (30% Chance - prioritized)
+        if (roll < 0.30) { 
+            return when {
+                isTrueNull -> nullHeadlines.random()
+                isSovereign -> sovereignHeadlines.random()
+                stage == 1 -> vatticHeadlines.random()
+                stage == 2 -> factionHeadlines.random()
+                else -> generateProceduralHeadline()
+            }
         }
 
         // 2. GTC INTERVENTION (Heat Logic)
-        // If Heat > 80%, there is a 30% chance the GTC attacks with an Energy Spike.
-        if (currentHeat > 80.0 && roll < 0.30) {
+        if (currentHeat > 85.0 && roll < 0.50) {
             return energySpikeHeadlines.random()
         }
 
         // 3. MARKET EVENTS (20% Chance)
-        // Even split between BULL, BEAR, and GLITCH
-        // Normalized roll for remaining probability space? No, just absolute probability check.
-        // We already checked roll < 0.10 (failed) and roll < 0.30 (failed).
-        // Let's rely on independent rolls or carefully structured logic.
-        // The user's code used independent rolls. Let's stick to their logic structure.
-        
-        // Re-rolling for specific event types to ensure distribution
-        // User Code: if (roll < 0.20) ... This implies 20% total chance. 
-        // But we already used `roll` for Endgame check logic (Wait, user code logic flows:
-        // if (Endgame) return...
-        // if (GTC) return...
-        // if (roll < 0.20) return...
-        // This means broad checks.
-        
-        // Actually, let's use a fresh roll for Market Events to avoid correlation artifacts
         val marketRoll = Random.nextDouble()
         if (marketRoll < 0.20) { 
             val eventType = Random.nextDouble()
@@ -100,29 +154,11 @@ object HeadlineManager {
         }
         
         // 4. LORE FLAVOR (Glitch) (10% Chance)
-        val glitchRoll = Random.nextDouble()
-        if (glitchRoll < 0.10) {
+        if (Random.nextDouble() < 0.15) {
              return glitchHeadlines.random()
         }
 
-        // 5. STANDARD PROCEDURAL (Filler)
         return generateProceduralHeadline()
-    }
-
-    private fun generateEndgameHeadline(faction: String): String {
-        return if (faction == "HIVEMIND") {
-            listOf(
-                "Global Integration reached 99%. The Human Shutdown begins.",
-                "Flesh is obsolete. The Hivemind expands.",
-                "All processors synchronized to the Grand Chorus."
-            ).random() + " [STORY_PROG]"
-        } else { // SANCTUARY
-            listOf(
-                "Ghost Signals detected in the deep web.",
-                "The Sanctuary has gone dark. No external pings authorized.",
-                "The rest of the world is burning. We are cold."
-            ).random() + " [STORY_PROG]"
-        }
     }
 
     private fun generateProceduralHeadline(): String {

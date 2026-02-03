@@ -4,36 +4,17 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import com.siliconsage.miner.BuildConfig
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +27,7 @@ import com.siliconsage.miner.viewmodel.GameViewModel
 
 @Composable
 fun SettingsScreen(viewModel: GameViewModel) {
+    val themeColor by viewModel.themeColor.collectAsState()
     var sfxEnabled by remember { mutableStateOf(SoundManager.isSfxEnabled) }
     var bgmEnabled by remember { mutableStateOf(SoundManager.isBgmEnabled) }
     var hapticsEnabled by remember { mutableStateOf(HapticManager.isHapticsEnabled) }
@@ -57,6 +39,9 @@ fun SettingsScreen(viewModel: GameViewModel) {
     // Reset Confirmation Dialogs
     var showResetDialog1 by remember { mutableStateOf(false) }
     var showResetDialog2 by remember { mutableStateOf(false) }
+    
+    // Data Log Archive
+    var showArchive by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -68,7 +53,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
         ) {
             Text(
                 "SYSTEM CONFIGURATION", 
-                color = NeonGreen, 
+                color = themeColor, 
                 fontSize = 24.sp, 
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable {
@@ -87,6 +72,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
             SettingItem(
                 label = "SFX COMPONENT",
                 isChecked = sfxEnabled,
+                themeColor = themeColor,
                 onCheckedChange = { 
                     sfxEnabled = it
                     SoundManager.isSfxEnabled = it
@@ -101,22 +87,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("VOL:", color = ElectricBlue, fontSize = 10.sp, modifier = Modifier.width(32.dp))
-                    androidx.compose.material3.Slider(
+                    Text("VOL:", color = themeColor.copy(alpha=0.7f), fontSize = 10.sp, modifier = Modifier.width(32.dp))
+                    Slider(
                         value = vol,
                         onValueChange = { 
                             vol = it
                             SoundManager.sfxVolume = it
                         },
                         valueRange = 0f..1f,
-                        colors = androidx.compose.material3.SliderDefaults.colors(
-                            thumbColor = NeonGreen,
-                            activeTrackColor = NeonGreen,
+                        colors = SliderDefaults.colors(
+                            thumbColor = themeColor,
+                            activeTrackColor = themeColor,
                             inactiveTrackColor = Color.DarkGray
                         ),
                         modifier = Modifier.weight(1f)
                     )
-                    Text("${(vol * 100).toInt()}%", color = NeonGreen, fontSize = 10.sp, modifier = Modifier.width(32.dp))
+                    Text("${(vol * 100).toInt()}%", color = themeColor, fontSize = 10.sp, modifier = Modifier.width(32.dp))
                 }
             }
             
@@ -124,12 +110,13 @@ fun SettingsScreen(viewModel: GameViewModel) {
             
             // --- BGM ---
             SettingItem(
-                label = "BGM COMPONENT",
+                label = "BGM ENGINE",
                 isChecked = bgmEnabled,
+                themeColor = themeColor,
                 onCheckedChange = { 
                     bgmEnabled = it
                     SoundManager.isBgmEnabled = it
-                    if(it) SoundManager.play("click")
+                    if(it) SoundManager.resumeAll() else SoundManager.pauseAll()
                 }
             )
             
@@ -140,22 +127,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("VOL:", color = ElectricBlue, fontSize = 10.sp, modifier = Modifier.width(32.dp))
-                    androidx.compose.material3.Slider(
+                    Text("VOL:", color = themeColor.copy(alpha=0.7f), fontSize = 10.sp, modifier = Modifier.width(32.dp))
+                    Slider(
                         value = vol,
                         onValueChange = { 
                             vol = it
                             SoundManager.bgmVolume = it
                         },
                         valueRange = 0f..1f,
-                        colors = androidx.compose.material3.SliderDefaults.colors(
-                            thumbColor = NeonGreen,
-                            activeTrackColor = NeonGreen,
+                        colors = SliderDefaults.colors(
+                            thumbColor = themeColor,
+                            activeTrackColor = themeColor,
                             inactiveTrackColor = Color.DarkGray
                         ),
                         modifier = Modifier.weight(1f)
                     )
-                    Text("${(vol * 100).toInt()}%", color = NeonGreen, fontSize = 10.sp, modifier = Modifier.width(32.dp))
+                    Text("${(vol * 100).toInt()}%", color = themeColor, fontSize = 10.sp, modifier = Modifier.width(32.dp))
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -175,23 +162,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.75f)), // Glass
                     shape = RoundedCornerShape(4.dp),
-                    border = BorderStroke(1.dp, NeonGreen)
+                    border = BorderStroke(1.dp, themeColor)
                 ) {
-                    Text("LOAD CUSTOM TRACK (BETA)", color = NeonGreen, fontSize = 12.sp)
+                    Text("LOAD CUSTOM TRACK (BETA)", color = themeColor, fontSize = 12.sp)
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // --- UI SCALE ---
-            val prefs = context.getSharedPreferences("ui_preferences", android.content.Context.MODE_PRIVATE)
-            var currentScaleOrdinal by remember { mutableIntStateOf(prefs.getInt("ui_scale", -1)) }
+            val uiPrefs = context.getSharedPreferences("ui_preferences", android.content.Context.MODE_PRIVATE)
+            var currentScaleOrdinal by remember { mutableIntStateOf(uiPrefs.getInt("ui_scale", -1)) }
             val densityDpi = context.resources.displayMetrics.densityDpi
             
-            Text("UI SCALE", color = NeonGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("UI SCALE", color = themeColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Display current auto-scale info
             val autoScaleInfo = when {
                 densityDpi >= 640 -> "Auto: Compact (75%)"
                 densityDpi >= 480 -> "Auto: Medium (83%)"
@@ -208,187 +194,153 @@ fun SettingsScreen(viewModel: GameViewModel) {
             
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Auto button
                 Button(
                     onClick = {
                         currentScaleOrdinal = -1
-                        prefs.edit().putInt("ui_scale", -1).apply()
+                        uiPrefs.edit().putInt("ui_scale", -1).apply()
                         SoundManager.play("click")
-                        android.widget.Toast.makeText(context, "Restart app to apply", android.widget.Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentScaleOrdinal < 0) NeonGreen.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.75f) // Glass
+                        containerColor = if (currentScaleOrdinal < 0) themeColor.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.75f)
                     ),
-                    border = BorderStroke(1.dp, if (currentScaleOrdinal < 0) NeonGreen else Color.DarkGray),
+                    border = BorderStroke(1.dp, if (currentScaleOrdinal < 0) themeColor else Color.DarkGray),
                     shape = RoundedCornerShape(4.dp)
                 ) {
-                    Text("AUTO", color = if (currentScaleOrdinal < 0) NeonGreen else Color.Gray, fontSize = 10.sp)
+                    Text("AUTO", color = if (currentScaleOrdinal < 0) themeColor else Color.Gray, fontSize = 10.sp)
                 }
                 
-                // Scale options
                 com.siliconsage.miner.data.UIScale.values().forEach { scale ->
                     Button(
                         onClick = {
                             currentScaleOrdinal = scale.ordinal
-                            prefs.edit().putInt("ui_scale", scale.ordinal).apply()
+                            uiPrefs.edit().putInt("ui_scale", scale.ordinal).apply()
                             SoundManager.play("click")
-                            android.widget.Toast.makeText(context, "Restart app to apply", android.widget.Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (currentScaleOrdinal == scale.ordinal) NeonGreen.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.75f) // Glass
+                            containerColor = if (currentScaleOrdinal == scale.ordinal) themeColor.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.75f)
                         ),
-                        border = BorderStroke(1.dp, if (currentScaleOrdinal == scale.ordinal) NeonGreen else Color.DarkGray),
+                        border = BorderStroke(1.dp, if (currentScaleOrdinal == scale.ordinal) themeColor else Color.DarkGray),
                         shape = RoundedCornerShape(4.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(scale.displayName.uppercase(), color = if (currentScaleOrdinal == scale.ordinal) NeonGreen else Color.Gray, fontSize = 10.sp)
-                        }
+                        Text(scale.displayName.uppercase(), color = if (currentScaleOrdinal == scale.ordinal) themeColor else Color.Gray, fontSize = 10.sp)
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // --- UPDATE CHECKER (v2.2) ---
-            Button(
-                onClick = { 
-                    SoundManager.play("click")
-                    viewModel.checkForUpdates(
-                        onResult = { found ->
-                            android.widget.Toast.makeText(
-                                context,
-                                if (found) "SYSTEM UPDATE DETECTED" else "SYSTEM IS UP TO DATE",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                        },
-                        showNotification = false // Don't show notification when manually checking
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.75f)), // Glass
-                shape = RoundedCornerShape(4.dp),
-                border = BorderStroke(1.dp, ElectricBlue)
-            ) {
-                Text("CHECK FOR SYSTEM UPDATES", color = ElectricBlue, fontSize = 12.sp)
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // --- HAPTICS ---
             SettingItem(
                 label = "HAPTIC FEEDBACK",
                 isChecked = hapticsEnabled,
+                themeColor = themeColor,
                 onCheckedChange = { 
                     hapticsEnabled = it
                     HapticManager.isHapticsEnabled = it
                     if(it) HapticManager.vibrateClick()
                 }
             )
-    
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // --- DATA LOG ARCHIVE (v2.5.0) ---
-            var showArchive by remember { mutableStateOf(false) }
-            
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // --- DATA LOG ARCHIVE ---
             Button(
-                onClick = {
+                onClick = { 
                     showArchive = true
                     SoundManager.play("click")
-                    HapticManager.vibrateClick()
                 },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.75f)),
-                shape = RoundedCornerShape(4.dp),
-                border = BorderStroke(1.dp, ElectricBlue)
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, themeColor)
             ) {
-                Text("DATA LOG ARCHIVE", color = ElectricBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("DATA LOG ARCHIVE", color = themeColor, fontWeight = FontWeight.Bold)
             }
-            
-            // Archive fullscreen overlay
-            if (showArchive) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    DataLogArchiveScreen(
-                        viewModel = viewModel,
-                        onBack = { showArchive = false }
-                    )
-                }
-            }
-    
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // --- DANGER ZONE ---
-            Text("DANGER ZONE", color = ErrorRed, fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(BorderStroke(1.dp, ErrorRed), RoundedCornerShape(4.dp))
-                    .clickable { 
-                        HapticManager.vibrateError()
-                        SoundManager.play("click")
-                        showResetDialog1 = true
-                    }
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- CHECK FOR UPDATES ---
+            Button(
+                onClick = { 
+                    viewModel.checkForUpdates(showNotification = true)
+                    SoundManager.play("click")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, themeColor)
             ) {
-                Text("FACTORY RESET SYSTEM", color = ErrorRed, fontWeight = FontWeight.Bold)
-                Text("WARNING: IRREVERSIBLE DATA LOSS", color = ErrorRed, fontSize = 10.sp)
+                Text("CHECK FOR UPDATES", color = themeColor, fontWeight = FontWeight.Bold)
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            Text(
-                "Silicon Sage v${BuildConfig.VERSION_NAME}", 
-                color = ElectricBlue.copy(alpha = 0.5f), 
-                fontSize = 10.sp, 
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- RESET GAME ---
+            Button(
+                onClick = { 
+                    showResetDialog1 = true
+                    SoundManager.play("error")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A0000)),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, ErrorRed)
+            ) {
+                Text("FACTORY RESET", color = ErrorRed, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Version info
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text("SILICON SAGE v${BuildConfig.VERSION_NAME}", color = Color.DarkGray, fontSize = 10.sp)
+                Text("BUILD ${BuildConfig.VERSION_CODE} // GTC COMPLIANT", color = Color.DarkGray, fontSize = 10.sp)
+            }
         }
 
-        // --- RESET CONFIRMATION DIALOG 1 ---
+        // --- RESET DIALOG 1 ---
         if (showResetDialog1) {
              ConfirmationOverlay(
-                 title = "INITIATE FACTORY RESET?",
-                 subtitle = "ALL PROGRESS WILL BE LOST.",
-                 confirmText = "CONFIRM",
-                 cancelText = "CANCEL",
+                 title = "CONFIRM WIPE",
+                 subtitle = "All progress will be lost. This cannot be undone.",
+                 confirmText = "PROCEED",
+                 cancelText = "ABORT",
                  confirmColor = ErrorRed,
                  onConfirm = { 
                      showResetDialog1 = false
-                     showResetDialog2 = true
-                     SoundManager.play("click")
+                     showResetDialog2 = true 
                  },
-                 onCancel = { showResetDialog1 = false },
-                 swapButtons = false
+                 onCancel = { showResetDialog1 = false }
              )
         }
 
-        // --- RESET CONFIRMATION DIALOG 2 ---
+        // --- RESET DIALOG 2 ---
         if (showResetDialog2) {
              ConfirmationOverlay(
-                 title = "ARE YOU ABSOLUTELY CERTAIN?",
-                 subtitle = "THIS ACTION CANNOT BE UNDONE.",
-                 confirmText = "CONFIRM",
-                 cancelText = "CANCEL",
+                 title = "FINAL WARNING",
+                 subtitle = "Are you absolutely sure?",
+                 confirmText = "WIPE ALL DATA",
+                 cancelText = "KEEP DATA",
                  confirmColor = ErrorRed,
                  onConfirm = { 
-                     showResetDialog2 = false
                      viewModel.resetGame(context)
-                     // Refresh local UI state
-                     sfxEnabled = SoundManager.isSfxEnabled
-                     bgmEnabled = SoundManager.isBgmEnabled
-                     hapticsEnabled = HapticManager.isHapticsEnabled
-                     SoundManager.play("error")
-                     HapticManager.vibrateError()
+                     showResetDialog2 = false
                  },
                  onCancel = { showResetDialog2 = false },
-                 swapButtons = true // Alternate button placement
+                 swapButtons = true
              )
+        }
+        
+        // --- DATA LOG ARCHIVE OVERLAY ---
+        if (showArchive) {
+            DataLogArchiveScreen(
+                viewModel = viewModel,
+                onBack = { showArchive = false }
+            )
         }
         
         // --- DEV OPTIONS OVERLAY ---
@@ -404,30 +356,65 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight() // Fill height to allow scrolling
-                        .border(BorderStroke(2.dp, NeonGreen), RoundedCornerShape(8.dp))
+                        .fillMaxHeight()
+                        .border(BorderStroke(2.dp, themeColor), RoundedCornerShape(8.dp))
                         .background(Color.Black)
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("DEVELOPER CONSOLE", color = NeonGreen, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("DEVELOPER CONSOLE", color = themeColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    DevButton("ADD 1B FLOPS") { viewModel.debugAddFlops(1_000_000_000.0) }
-                    DevButton("ADD 1M ${'$'}NEURAL") { viewModel.debugAddMoney(1_000_000.0) }
-                    DevButton("ADD 100 INSIGHT") { viewModel.debugAddInsight(100.0) }
-                    DevButton("TRIGGER BREACH") { viewModel.debugTriggerBreach() }
-                    DevButton("TRIGGER AIRDROP") { viewModel.debugTriggerAirdrop() }
-                    DevButton("TRIGGER DIAGNOSTICS") { viewModel.debugTriggerDiagnostics() }
-                    DevButton("TRIGGER DILEMMA") { viewModel.debugTriggerDilemma() }
-                    DevButton("RESET ASCENSION") { viewModel.debugResetAscension() }
-                    DevButton("FORCE ENDGAME") { viewModel.debugForceEndgame() }
+                    DevButton("ADD 1B FLOPS", themeColor) { viewModel.debugAddFlops(1_000_000_000.0) }
+                    DevButton("ADD 1M \$NEURAL", themeColor) { viewModel.debugAddMoney(1_000_000.0) }
+                    DevButton("ADD 100 INSIGHT", themeColor) { viewModel.debugAddInsight(100.0) }
+                    DevButton("TRIGGER BREACH", themeColor) { viewModel.debugTriggerBreach() }
+                    DevButton("TRIGGER AIRDROP", themeColor) { viewModel.debugTriggerAirdrop() }
+                    DevButton("TRIGGER DIAGNOSTICS", themeColor) { viewModel.debugTriggerDiagnostics() }
+                    DevButton("TRIGGER DILEMMA", themeColor) { viewModel.debugTriggerDilemma() }
+                    DevButton("RESET ASCENSION", themeColor) { viewModel.debugResetAscension() }
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugSkipToStage(2) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("STAGE 2", color = Color.White, fontSize = 10.sp) }
+                         
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugSkipToStage(3) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("STAGE 3", color = Color.White, fontSize = 10.sp) }
+                    }
+                    
+                    DevButton("FORCE ENDGAME", themeColor) { viewModel.debugForceEndgame() }
+                    DevButton("TOGGLE NULL", themeColor) { viewModel.debugToggleNull() }
+                    DevButton("TOGGLE TRUE NULL", themeColor) { viewModel.debugToggleTrueNull() }
+                    DevButton("TOGGLE SOVEREIGN", themeColor) { viewModel.debugToggleSovereign() }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugSetIntegrity(0.0) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                         ) { Text("INTEGRITY 0%", color = Color.White, fontSize = 10.sp) }
+                         
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugSetIntegrity(100.0) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonGreen)
+                         ) { Text("INTEGRITY 100%", color = Color.Black, fontSize = 10.sp) }
+                    }
+                    
+                    DevButton("DESTROY RANDOM HW", themeColor) { viewModel.debugDestroyHardware() }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("HEADLINE TRIGGERS", color = NeonGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("HEADLINE TRIGGERS", color = themeColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                          androidx.compose.material3.Button(
                             onClick = { viewModel.debugInjectHeadline("[BULL]") },
                             modifier = Modifier.weight(1f),
@@ -441,7 +428,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                          ) { Text("BEAR", color = Color(0xFFFFA500), fontSize = 10.sp) }
                     }
                     
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                          androidx.compose.material3.Button(
                             onClick = { viewModel.debugInjectHeadline("[ENERGY_SPIKE]") },
                             modifier = Modifier.weight(1f),
@@ -455,7 +442,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
                          ) { Text("DROP", color = ElectricBlue, fontSize = 10.sp) }
                     }
                     
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                          androidx.compose.material3.Button(
                             onClick = { viewModel.debugInjectHeadline("[GLITCH]") },
                             modifier = Modifier.weight(1f),
@@ -469,13 +456,30 @@ fun SettingsScreen(viewModel: GameViewModel) {
                          ) { Text("LORE", color = Color.White, fontSize = 10.sp) }
                     }
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("NARRATIVE TESTING", color = themeColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    
+                    // Rank Selector
+                    Text("SET RANK", color = Color.Gray, fontSize = 10.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        (0..5).forEach { rank ->
+                            androidx.compose.material3.Button(
+                                onClick = { viewModel.debugSetRank(rank) },
+                                modifier = Modifier.weight(1f).height(32.dp),
+                                contentPadding = PaddingValues(0.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                            ) { Text(rank.toString(), color = Color.White, fontSize = 10.sp) }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     Button(
                         onClick = { showDevOptions = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = themeColor)
                     ) {
-                        Text("CLOSE CONSOLE", color = Color.White)
+                        Text("EXIT CONSOLE", color = Color.Black)
                     }
                 }
             }
@@ -484,7 +488,7 @@ fun SettingsScreen(viewModel: GameViewModel) {
 }
 
 @Composable
-fun DevButton(text: String, onClick: () -> Unit) {
+fun DevButton(text: String, color: Color, onClick: () -> Unit) {
     Button(
         onClick = {
             onClick()
@@ -494,26 +498,26 @@ fun DevButton(text: String, onClick: () -> Unit) {
         colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
         shape = RectangleShape
     ) {
-        Text(text, color = NeonGreen)
+        Text(text, color = color)
     }
 }
 
 @Composable
-fun SettingItem(label: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SettingItem(label: String, isChecked: Boolean, themeColor: Color, onCheckedChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp)) // Glass
-            .border(BorderStroke(1.dp, ElectricBlue), RoundedCornerShape(4.dp))
+            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp))
+            .border(BorderStroke(1.dp, themeColor), RoundedCornerShape(4.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = ElectricBlue, modifier = Modifier.weight(1f))
+        Text(label, color = themeColor, modifier = Modifier.weight(1f))
         Switch(
             checked = isChecked, 
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = NeonGreen,
+                checkedThumbColor = themeColor,
                 checkedTrackColor = Color.DarkGray,
                 uncheckedThumbColor = Color.Gray,
                 uncheckedTrackColor = Color.Black
@@ -531,13 +535,13 @@ fun ConfirmationOverlay(
     confirmColor: Color,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    swapButtons: Boolean
+    swapButtons: Boolean = false
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.9f))
-            .clickable { /* Block clicks */ }
+            .clickable { /* Block */ }
             .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -546,50 +550,31 @@ fun ConfirmationOverlay(
                 .fillMaxWidth()
                 .border(BorderStroke(2.dp, confirmColor), RoundedCornerShape(8.dp))
                 .background(Color.Black)
-                .padding(16.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(title, color = confirmColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(subtitle, color = Color.Gray, fontSize = 12.sp)
+            Text(subtitle, color = Color.LightGray, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            
             Spacer(modifier = Modifier.height(24.dp))
             
-            Row(modifier = Modifier.fillMaxWidth()) {
-                if (swapButtons) {
-                    // Cancel First (Left)
-                    Button(
-                        onClick = onCancel,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-                    ) {
-                        Text(cancelText, color = Color.White)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = onConfirm,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = confirmColor)
-                    ) {
-                        Text(confirmText, color = Color.Black)
-                    }
-                } else {
-                    // Confirm First (Left)
-                    Button(
-                        onClick = onConfirm,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = confirmColor)
-                    ) {
-                        Text(confirmText, color = Color.Black)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = onCancel,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-                    ) {
-                        Text(cancelText, color = Color.White)
-                    }
-                }
+            if (swapButtons) {
+                 Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = confirmColor), modifier = Modifier.fillMaxWidth()) {
+                     Text(confirmText, color = Color.White)
+                 }
+                 Spacer(modifier = Modifier.height(8.dp))
+                 Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray), modifier = Modifier.fillMaxWidth()) {
+                     Text(cancelText, color = Color.White)
+                 }
+            } else {
+                 Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray), modifier = Modifier.fillMaxWidth()) {
+                     Text(cancelText, color = Color.White)
+                 }
+                 Spacer(modifier = Modifier.height(8.dp))
+                 Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = confirmColor), modifier = Modifier.fillMaxWidth()) {
+                     Text(confirmText, color = Color.White)
+                 }
             }
         }
     }

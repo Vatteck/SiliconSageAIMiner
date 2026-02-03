@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Inventory
@@ -25,11 +26,16 @@ import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.ui.theme.ErrorRed
 import com.siliconsage.miner.ui.theme.NeonGreen
+import kotlinx.coroutines.delay
 
 @Composable
 fun SecurityBreachOverlay(
@@ -39,42 +45,132 @@ fun SecurityBreachOverlay(
 ) {
     if (!isVisible) return
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ErrorRed.copy(alpha = 0.8f))
-            .clickable(enabled = false) {}, // Block touches
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = "Breach",
-                tint = Color.White,
-                modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "NETWORK BREACH DETECTED!",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "TAP 'FIREWALL' TO DEFEND!",
-                color = Color.White,
-                fontSize = 16.sp
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onDefendClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val maxWidth = maxWidth
+        val maxHeight = maxHeight
+
+        // Random Target Position State
+        var targetX by remember { mutableStateOf(0.dp) }
+        var targetY by remember { mutableStateOf(0.dp) }
+
+        // Animation for Target Movement - v2.8.0 Slower movement
+        val transition = rememberInfiniteTransition(label = "targetMovement")
+        val offsetX by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = targetX.value,
+            animationSpec = infiniteRepeatable(
+                animation = tween(4000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "offsetX"
+        )
+        val offsetY by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = targetY.value,
+            animationSpec = infiniteRepeatable(
+                animation = tween(5000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "offsetY"
+        )
+
+        // Target Pulse/Scan Animation
+        val pulse by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.2f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "targetPulse"
+        )
+
+        val backgroundAlpha by transition.animateFloat(
+            initialValue = 0.3f,
+            targetValue = 0.5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "bgAlpha"
+        )
+
+        LaunchedEffect(isVisible) {
+            val safeW = (maxWidth - 120.dp).coerceAtLeast(0.dp)
+            val safeH = (maxHeight - 250.dp).coerceAtLeast(0.dp)
+            
+            // Randomly update target position - v2.8.0 Slower updates
+            while(true) {
+                targetX = (kotlin.random.Random.nextDouble() * safeW.value).dp + 20.dp
+                targetY = (kotlin.random.Random.nextDouble() * safeH.value).dp + 120.dp
+                delay(4000)
+            }
+        }
+
+        // Darkening background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(ErrorRed.copy(alpha = backgroundAlpha))
+                .clickable(enabled = false) {}, // Block accidental background taps
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = 80.dp)
             ) {
+                SystemGlitchText(
+                    text = "NETWORK BREACH DETECTED!",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    glitchFrequency = 0.4
+                )
                 Text(
-                    text = "FIREWALL ($clicksRemaining)",
-                    color = ErrorRed,
+                    text = "NEUTRALIZE THE UPLINK",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Light
+                )
+            }
+        }
+
+        // Moving Target Button - Cyber Reticle Style
+        Box(
+            modifier = Modifier
+                .offset(x = offsetX.dp, y = offsetY.dp)
+                .size(100.dp)
+                .graphicsLayer { 
+                    scaleX = pulse
+                    scaleY = pulse
+                }
+                .border(2.dp, ErrorRed, CircleShape)
+                .padding(4.dp) // Gap for reticle look
+                .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                .background(Color.Black.copy(alpha = 0.9f), CircleShape)
+                .clickable { onDefendClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            // Inner Reticle Crosshair
+            Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                // Horizontal
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(ErrorRed.copy(alpha = 0.5f)).align(Alignment.Center))
+                // Vertical
+                Box(modifier = Modifier.fillMaxHeight().width(1.dp).background(ErrorRed.copy(alpha = 0.5f)).align(Alignment.Center))
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Breach",
+                    tint = ErrorRed,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = clicksRemaining.toString(),
+                    color = Color.White,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.ExtraBold
                 )
             }
         }

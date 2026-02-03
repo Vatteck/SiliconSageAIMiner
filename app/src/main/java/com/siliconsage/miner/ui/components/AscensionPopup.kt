@@ -47,7 +47,7 @@ fun AscensionPopup(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Glitchy Header
-                GlitchText(
+                SystemGlitchText(
                     text = "PROTOCOL 0: THE GREAT FORK",
                     color = ErrorRed,
                     fontSize = 24.sp,

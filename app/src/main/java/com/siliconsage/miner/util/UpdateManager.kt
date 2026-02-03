@@ -5,7 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
-import com.google.gson.Gson
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -15,16 +16,19 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
+@Serializable
 data class UpdateInfo(
     val version: String,
-    val url: String,
-    val changes: String
+    val build: Int = 0,
+    val date: String = "",
+    val changes: List<String> = emptyList(),
+    val url: String = "" // Optional for manual redirect
 )
 
 object UpdateManager {
     private const val UPDATE_URL = "https://raw.githubusercontent.com/Vatteck/SiliconSageAIMiner/refs/heads/master/version.json"
     private val client = OkHttpClient()
-    private val gson = Gson()
+    private val jsonConfig = Json { ignoreUnknownKeys = true }
 
     fun checkUpdate(currentVersion: String, onResult: (UpdateInfo?) -> Unit) {
         val request = Request.Builder().url(UPDATE_URL).build()
@@ -42,9 +46,9 @@ object UpdateManager {
                         return
                     }
                     try {
-                        val json = response.body?.string()
-                        if (json != null) {
-                            val info = gson.fromJson(json, UpdateInfo::class.java)
+                        val jsonString = response.body?.string()
+                        if (jsonString != null) {
+                            val info = jsonConfig.decodeFromString<UpdateInfo>(jsonString)
                             if (isNewer(currentVersion, info.version)) {
                                 onResult(info)
                             } else {

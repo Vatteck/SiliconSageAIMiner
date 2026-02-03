@@ -1,9 +1,13 @@
 package com.siliconsage.miner.data
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TechTreeRoot(
     val tech_tree: List<TechNode>
 )
 
+@Serializable
 data class TechNode(
     val id: String,
     val name: String,

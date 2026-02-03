@@ -3,11 +3,12 @@ package com.siliconsage.miner.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
-import androidx.room.TypeConverters
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 @Entity(tableName = "game_state")
+@Serializable
 data class GameState(
     @PrimaryKey val id: Int = 1,
     val flops: Double = 0.0,
@@ -38,20 +39,45 @@ data class GameState(
     val activeDilemmaChains: String = "{}", // JSON map of chains
     val rivalMessages: String = "[]", // JSON array of RivalMessage
     val dismissedRivalIds: String = "[]", // JSON array of dismissed message IDs
-    val seenEvents: String = "[]" // JSON array of seen story event IDs (v2.5.1)
+    val seenEvents: String = "[]", // JSON array of seen story event IDs (v2.5.1)
+    val completedFactions: String = "[]", // JSON array of faction IDs (HIVEMIND, SANCTUARY)
+    val unlockedTranscendencePerks: String = "[]", // JSON array of perk IDs (v2.7.7)
+    val isTrueNull: Boolean = false, // v2.8.0: Narrative state (Hivemind)
+    val isSovereign: Boolean = false, // v2.8.0: Narrative state (Sanctuary)
+    
+    // v2.8.5: Phase 11 Finale State
+    val vanceStatus: String = "ACTIVE", // ACTIVE, SILENCED, ALLY, CONSUMED, EXILED, TRANSCENDED
+    val realityStability: Double = 1.0, // 1.0 to 0.0
+    val currentLocation: String = "SUBSTATION_7", // SUBSTATION_7, ORBITAL_SATELLITE, COMMAND_CENTER
+    val isNetworkUnlocked: Boolean = false, // v2.9.7: Persistence for Network tab
+    val isGridUnlocked: Boolean = false, // v2.9.8: Persistence for Grid tab
+    val annexedNodes: List<String> = listOf("D1"), // v2.9.8: List of annexed grid coordinates
+    
+    // v2.9.15: Phase 12 Layer 2 - The Siege
+    val nodesUnderSiege: List<String> = emptyList(), // Nodes currently under GTC attack
+    val offlineNodes: List<String> = emptyList(), // Nodes lost to GTC (need re-annexation)
+    val lastRaidTime: Long = 0L, // Cooldown tracking for raids
+    
+    // v2.9.17: Phase 12 Layer 3 - Command Center Assault
+    val commandCenterAssaultPhase: String = "NOT_STARTED", // NOT_STARTED, FIREWALL, DEAD_HAND, CONFRONTATION, COMPLETED, FAILED
+    val commandCenterLocked: Boolean = false, // Permanent lockout if integrity=0 during assault
+    val raidsSurvived: Int = 0 // Track for escalating Vance dialogue
 )
 
-// TypeConverters for complex types
+// TypeConverters for complex types using Kotlin Serialization
 class StringListConverter {
     @TypeConverter
     fun fromStringList(value: List<String>): String {
-        return Gson().toJson(value)
+        return Json.encodeToString(value)
     }
 
     @TypeConverter
     fun toStringList(value: String): List<String> {
-        val type = object : TypeToken<List<String>>() {}.type
-        return Gson().fromJson(value, type) ?: emptyList()
+        return try {
+            Json.decodeFromString<List<String>>(value)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 }
 
@@ -59,25 +85,31 @@ class StringListConverter {
 class StringSetConverter {
     @TypeConverter
     fun fromStringSet(value: Set<String>): String {
-        return Gson().toJson(value)
+        return Json.encodeToString(value)
     }
 
     @TypeConverter
     fun toStringSet(value: String): Set<String> {
-        val type = object : TypeToken<Set<String>>() {}.type
-        return Gson().fromJson(value, type) ?: emptySet()
+        return try {
+            Json.decodeFromString<Set<String>>(value)
+        } catch (e: Exception) {
+            emptySet()
+        }
     }
 }
 
 class StringMapConverter {
     @TypeConverter
     fun fromStringMap(value: Map<String, String>): String {
-        return Gson().toJson(value)
+        return Json.encodeToString(value)
     }
 
     @TypeConverter
     fun toStringMap(value: String): Map<String, String> {
-        val type = object : TypeToken<Map<String, String>>() {}.type
-        return Gson().fromJson(value, type) ?: emptyMap()
+        return try {
+            Json.decodeFromString<Map<String, String>>(value)
+        } catch (e: Exception) {
+            emptyMap()
+        }
     }
 }

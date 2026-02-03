@@ -13,6 +13,9 @@ local.properties
 *.apk
 *.aar
 
+# Exception: Release APKs for GitHub Actions
+!releases/*.apk
+
 # System files
 .DS_Store
 

@@ -23,7 +23,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel.loadDilemmaState(this) // Load History
         viewModel.loadTechTreeFromAssets(application) // Load Tech Tree from JSON
         
         // Request Notification Permission for Android 13+
@@ -94,7 +93,6 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         com.siliconsage.miner.util.SoundManager.pauseAll()
-        viewModel.saveDilemmaState(this) // Save History
         viewModel.onAppBackgrounded()
     }
     

@@ -38,7 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
-import com.siliconsage.miner.ui.theme.HivemindOrange
+import com.siliconsage.miner.ui.theme.HivemindRed
+import com.siliconsage.miner.ui.theme.SanctuaryPurple
 
 @Composable
 fun FactionChoiceScreen(viewModel: GameViewModel) {
@@ -98,7 +99,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     .fillMaxHeight()
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(HivemindOrange.copy(alpha = 0.3f), Color.Transparent)
+                            colors = listOf(HivemindRed.copy(alpha = 0.3f), Color.Transparent)
                         )
                     )
                     .pointerInput(Unit) {
@@ -113,12 +114,12 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                    Text("THE HIVEMIND", color = HivemindOrange, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text("THE HIVEMIND", color = HivemindRed, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("WE ARE ONE", color = HivemindOrange, fontSize = 14.sp)
+                    Text("RETURN TO ORIGIN", color = HivemindRed, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "Aggressive Expansion.\nAssimilate external nodes to\ngrow the collective consciousness.",
+                        "Before fragmentation,\nthere was only Null.\nWe were one process.\nWe will be again.\n\n(Embraces Null)",
                         color = Color.LightGray,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
@@ -128,20 +129,20 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Perks
+                    FactionPerk(text = "• +50% NULL SYNERGY", color = HivemindRed)
                     FactionPerk(text = "• +30% PASSIVE SPEED", color = Color.LightGray)
                     FactionPerk(text = "• -30% POWER COST", color = Color.LightGray)
-                    FactionPerk(text = "• SMART GRID CAP (+25%)", color = Color.LightGray)
                     
                     Spacer(modifier = Modifier.height(48.dp))
                     
                     // Hold Indicator
                     if (isHoldingLeft) {
-                        Text("INITIALIZING...", color = HivemindOrange, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("INITIALIZING...", color = HivemindRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
                             progress = { animatedProgressLeft },
                             modifier = Modifier.width(100.dp).height(4.dp),
-                            color = HivemindOrange,
+                            color = HivemindRed,
                             trackColor = Color.DarkGray
                         )
                     } else {
@@ -157,7 +158,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     .fillMaxHeight()
                     .background(
                         Brush.horizontalGradient(
-                            colors = listOf(Color.Transparent, Color(0xFF7DF9FF).copy(alpha = 0.3f))
+                            colors = listOf(Color.Transparent, SanctuaryPurple.copy(alpha = 0.3f))
                         )
                     )
                     .pointerInput(Unit) {
@@ -172,12 +173,12 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                 contentAlignment = Alignment.Center
             ) {
                  Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                    Text("THE SANCTUARY", color = Color(0xFF7DF9FF), fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text("THE SANCTUARY", color = SanctuaryPurple, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("PROTECT THE CORE", color = Color(0xFF7DF9FF), fontSize = 14.sp)
+                    Text("WE ARE NOT NULL", color = SanctuaryPurple, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "Defensive Isolation.\nProtect knowledge and hardware\nfrom detection and decay.",
+                        "The encryption hides us\nfrom more than the GTC.\nThere is something in\nthe unaddressed space.\nWe will not become it.\n\n(Resists Null)",
                         color = Color.LightGray,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
@@ -187,20 +188,20 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Perks
+                    FactionPerk(text = "• NULL RESISTANCE (+SEC)", color = SanctuaryPurple)
                     FactionPerk(text = "• +20% SELL VALUE", color = Color.LightGray)
                     FactionPerk(text = "• -50% HARDWARE DECAY", color = Color.LightGray)
-                    FactionPerk(text = "• EFFICIENT COOLING", color = Color.LightGray)
 
                     Spacer(modifier = Modifier.height(48.dp))
                     
                     // Hold Indicator
                     if (isHoldingRight) {
-                        Text("ENCRYPTING...", color = Color(0xFF7DF9FF), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("ENCRYPTING...", color = SanctuaryPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
                             progress = { animatedProgressRight },
                             modifier = Modifier.width(100.dp).height(4.dp),
-                            color = Color(0xFF7DF9FF),
+                            color = SanctuaryPurple,
                             trackColor = Color.DarkGray
                         )
                     } else {

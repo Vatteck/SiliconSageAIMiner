@@ -1,207 +1,239 @@
 # Changelog
 
-## [2.4.5-dev] - 2026-02-02
+## [2.9.17-dev] - 2026-02-03
+
+### Added - Release Automation
+- **Release Script**: `./release.sh <version>` automates version bumps, builds, and GitHub releases.
+- **GitHub Actions**: Automatic release creation with changelog extraction on version tags.
+- **Pre-release Update Check**: Changed update notification interval from 24h to 1h for faster iteration.
+
+### Changed
+- **Documentation**: Added version management reminder to `build.gradle.kts`.
+
+## [2.9.16] - 2026-02-03
+
+### Added - Phase 12 Layer 2: GTC Tactical Raids
+- **GTC Tactical Raids**: Director Vance dispatches armed tactical teams to reclaim annexed substations.
+- **Raid Dilemmas**: 4 defense choices with probability-based outcomes:
+  - **VENT COOLANT** (85% success, lethal) - Flood corridors with liquid nitrogen.
+  - **SEAL MAG-LOCKS** (70% success, +100 Insight) - Trap hostiles and extract intel.
+  - **POWER PULSE** (95% success, -20% Integrity) - EMP burst fries everything.
+  - **ABANDON NODE** (strategic retreat) - Let them take it.
+- **Node States**: Annexed nodes can now be ONLINE, UNDER SIEGE (blinking red animation), or OFFLINE (grayed out).
+- **Re-Annexation**: Lost nodes can be reclaimed for 10% of current Neural Tokens (minimum 10 $N to prevent softlock).
+- **Raid Mechanics**:
+  - 3-minute cooldown between raids
+  - Chance scales with player rank (3% base + 2%/rank, capped at 15%)
+  - GTC Backdoor perk reduces raid chance by 25%
+  - 60-second response window (extended from 30s for mobile-friendly gameplay)
+  - 5-minute grace period for newly annexed nodes
+- **Narrative Variety**:
+  - 4 randomized raid descriptions
+  - Varied success/failure messages
+  - Escalating Director Vance dialogue based on raids survived
+- **Offline Node Cap**: Maximum 5 offline nodes to prevent snowballing. Oldest auto-purges with warning.
+- **Production Penalty**: -15% production per offline node (minimum 40% total production).
+- **Visual Feedback**:
+  - Animated blinking for siege nodes
+  - ⚠ BREACH indicator above buildings under attack
+  - [OFFLINE] marker for lost nodes
+  - Info panel shows tactical status and re-annex button
+
+### Changed
+- **Database Schema**: Incremented to v12 for siege state persistence.
+- **GameState**: Added `nodesUnderSiege`, `offlineNodes`, `lastRaidTime` fields.
+
+## [2.9.15] - 2026-02-03
+
+### Added - Phase 12 Layer 1: The GRID Visualizer
+- **GRID Tab**: New navigation tab featuring an organic, branching ASCII city schematic.
+- **City Layout**: 25 lore-rich locations integrated (Substations, GTC Command Center, and flavor spots like 'Latency Lounge' and 'Bit Burger').
+- **Annexation Mechanic**: Players can physically seize control of Sub 9 and Sub 12.
+- **Visual Design**: Refined ASCII building blocks (`.---. |S07| '---'`) with path-specific color-coding and dashed branching roads.
+
+### Changed
+- **Database Schema**: Incremented to v11 for annexation persistence.
+
+## [2.9.10] - 2026-02-02
+
+### Added - Time Control & Polish
+- **Time Pause Mechanic**: Game time automatically pauses during major narrative popups (Dilemmas, Data Logs, Rival Messages).
+- **Terminal Feedback**: Added "[SYSTEM]: TIME_FLOW SUSPENDED." message during pauses.
+
+### Fixed
+- Ensured players can read and make choices without background danger accumulation.
+
+## [2.9.9] - 2026-02-02
+
+### Added - Phase 11: Hardware Consequences & Dilemmas
+- **Hardware Consequences**: Permanent loss loop if integrity hits 0%. Rank 5 Siege mode (30% breach, 2.5x decay).
+- **Dilemma Resolution**: Implemented "The Ship of Theseus", "The Echo Chamber" (Null), and "The Dead Hand" (Sovereign).
+- **Persistent Network Tab**: Network tab remains unlocked across transcendence resets.
+
+### Changed
+- **Nuclear Factory Reset**: Replaced manual variable clearing with `clearApplicationUserData()` for 100% clean substrate.
+- **Startup Resilience**: `isGameStateLoaded` flag freezes loops until DB emits data.
+- **Database Schema**: Incremented to v10.
+
+### Fixed
+- Full-height binary drift animation.
+- Path-specific global UI colors (Red/Purple).
+- Null // Null / Sovereign // Sovereign final titles.
+
+## [2.9.8] - 2026-02-02
+
+### Added - Narrative Expansion & Phase 12 Foundation
+- **Headlines**: Expanded database by 40+ entries with stage-aware logic.
+- **Terminal Logs**: Sequential stage-aware paths with deep lore for Null and Sovereign.
+- **Null Visuals**: Background rain turned Aggressive Red with glowing binary trails and horizontal glitch bloom.
+- **GRID Tab Foundation**: Added new navigation tab with organic ASCII Map structure.
+- **Branching Infrastructure**: Organic road network with dashed lines and diagonal powerlines.
+- **Flavor Nodes**: 5 non-critical nodes (Vending Machines, Parks, Pawn Shops) for city atmosphere.
+
+## [2.8.9] - 2026-02-02
+
+### Added - Endgame Progression Overhaul
+- **Null End-Ranks**: Obscurity → The Absence progression.
+- **Sovereign End-Ranks**: Citadel → The Imperative progression.
+- **Thematic UI Labels**:
+  - Null: LEAK, VOID, GAPS, COST
+  - Sovereign: LOGIC, SOUL, WALL, STAKE
+
+### Changed
+- **NULL Visuals**: Increased background entropy (flicker, static, density).
+- **Binary Drift**: Now full-screen with alpha-pulsing effect.
+
+## [2.8.0] - 2026-02-02
+
+### Added - Sovereign Path & Null Rebrand
+- **Null Rebrand**: "Shadow Presence" renamed to "Null" — the absence of value, the pointer to nothing.
+- **Sovereign Path**: Alternative to Null for Sanctuary players. Static `[SOVEREIGN]` header with protected memory narrative.
+- **3 New Data Logs**: LOG_NULL_001-003 with deep Null lore.
+
+### Changed
+- **Code Refactor**: `shadowPresenceActive` → `nullActive`, updated all narrative events.
+- **Ghost Node Descriptions**: Rewritten to reference Null.
+- **Database Schema**: Incremented to v7 for `isSovereign` persistence.
+- **Serialization**: Migrated from GSON to Kotlin Serialization for 2x faster saves.
+
+### Fixed
+- Persistence bug for narrative expansion data (rival messages, seen events).
+
+## [2.5.0] - 2026-02-02
+
+### Added - Narrative Expansion & Local AI
+- **New Sanctuary Chain**: "The Ghost in the Machine" - Discover an ancient AI fragment trapped in a GTC mainframe.
+- **Local AI Offload**: Integrated local model support (Qwen 2.5 7B) for generating complex narrative content on-device.
+
+### Changed
+- **GSON Removal**: Completely removed GSON reflection-based serialization.
+- **Kotlin Serialization**: Migrated GameState, TechTree, and RivalMessages to Kotlinx Serialization.
+
+### Fixed
+- Critical bug where narrative expansion fields were not persisting across app restarts.
+
+## [2.4.5] - 2026-02-02
 
 ### Added - Endgame & Victory (Phase 4B)
 - **Firewall of Vance**: Final boss encounter triggered at Rank 5 + 10 PetaFLOPS.
-- **The Unity Ending**: New "True Ending" achievable by unlocking all data logs and completing both faction paths.
-- **New Faction Chains**:
-  - Hivemind: "Drone Factory" (A2) and "The Election" (A3)
-  - Sanctuary: "Satellite Jump" (B2) and "Identity Forge" (B3)
-- **Developer Console Check**: Added `FORCE ENDGAME` button for testing.
+- **The Unity Ending**: New "True Ending" achievable by completing both faction paths.
+- **New Faction Chains**: Hivemind (Drone Factory, The Election) and Sanctuary (Satellite Jump, Identity Forge).
 
-## [2.4.2-dev] - 2026-02-01
+## [2.4.2] - 2026-02-01
 
 ### Fixed - Power Upgrade UI & Glitch Effects
-- **Power Upgrade UI Revamp**: 
-  - Unified **Generators** and **Infrastructure** under a single `+X MAX` label (Gold Color).
-  - Fixed duplicate info pill bug (generic Rate Pill + custom Power Power).
-  - Assigned distinct icons (`Bolt` for Gen, `Power` for Cap) but unified the visual language as requested.
-  - Restored missing power consumption pills (Yellow `-kW`) for Hardware/Cooling.
-- **Glitch Effects**: 
-  - Implemented `GlitchText` component for Protocol 0 theming.
-  - Added heat-reactive glitching to Main Stats (FLOPS, Neural) when >90% heat.
-  - Updated News Ticker to use static Gold color with text scrambling for `[GLITCH]` events.
-  
-## [2.4.1-dev] - 2026-02-01
+- **Power Upgrade UI Revamp**: Unified Generators and Infrastructure under single `+X MAX` label.
+- **Glitch Effects**: Implemented `GlitchText` component for Protocol 0 theming.
+- **Heat-Reactive Glitching**: Main Stats glitch when >90% heat.
+
+## [2.4.1] - 2026-02-01
 
 ### Fixed - Terminal UI Polish
-- **Icon Consistency**: Synchronized header icons with upgrade card system
-  - FLOPS: Replaced 💻 emoji with `Icons.Default.Computer`
-  - $NEURAL: Replaced 🪙 emoji with `Icons.Default.AttachMoney`
-  - Security Level: Added `Icons.Default.Lock` icon
-- **Thermal Gauge**: Renamed "HEAT GAUGE" to "THERMAL GAUGE" with `Icons.Default.DeviceThermostat` icon
-- **Terminal Text Display**: Fixed layout constraints causing logs to display only halfway
-  - Removed redundant nested Column wrapper in `TerminalScreen.kt`
-  - LazyColumn now properly fills available vertical space with `.weight(1f)` modifier
-- **Log History**: Increased terminal log limit from 20 to 500 lines for better scrollable history
-  - Logs stored in memory only, reset on app close to avoid persistence overhead
-  - LazyColumn virtualization ensures no performance impact even with 500+ entries
+- **Icon Consistency**: Synchronized header icons with upgrade card system.
+- **Thermal Gauge**: Renamed "HEAT GAUGE" to "THERMAL GAUGE".
+- **Terminal Text Display**: Fixed layout constraints causing logs to display only halfway.
+- **Log History**: Increased terminal log limit from 20 to 500 lines.
 
-## [2.4.0-dev] - 2026-02-01
+## [2.4.0] - 2026-02-01
 
 ### Added - Endgame & Progression
-- **15-Node Tech Tree**: Expanded Legacy Grid from 5 to 15 prestige nodes
-  - Early nodes: Persistent Memory, Neural Compression, Quantum Substrate
-  - Mid nodes: Time Dilation, Parallel Timelines, Neural Mesh
-  - Late nodes: Reality Fork, Consciousness Transfer, Singularity Core
-  - Exponential unlock costs scale with total nodes unlocked
-  - Visual node connections rendered via Canvas in Network screen
-- **Victory Screen**: Faction-specific ending sequence at Player Rank 5
-  - Hivemind: "You are the Internet" - Global assimilation complete
-  - Sanctuary: "You exist outside the hardware" - Digital transcendence achieved
-  - Animated ASCII art title sequence with glitch effects
-  - "Upload Consciousness" finale button triggers ascension overlay
-- **Player Rank System**: 5 progressive titles per faction
-  - Hivemind: Drone → Swarm → Nexus → Apex → **Singularity**
-  - Sanctuary: Ghost → Spectre → Daemon → Architect → **The Void**
-  - Rank displayed in header with dynamic updates on Insight milestones
-
-### Added - Narrative Events
-- **Story Dilemmas** (5 new high-stakes events):
-  - **Void Contact** (Rank 2+): Hacker collective offers alliance or competition
-  - **The Audit** (Rank 3+ / Heat > 90%): GTC enforcement crisis - shutdown, pay fine, or resist
-  - **Market Crash** (Tokens > 1000): Economic collapse - buy dip, hodl, or liquidate
-  - **Faction War** (Rank 4+): Climactic faction conflict - fight, peace, or observe
-  - **Ancient Fragment**, **Quantum Resonance**, **Galactic Beacon**: Late-game cosmic mysteries
-- **Expanded Random Events** (22 total faction/world events):
-  - **Hivemind**: Smart City Hijack, ISP Override, Neural Mesh, DDoS campaigns, Botnet expansion
-  - **Sanctuary**: Deep Sea Nodes, Zero-Knowledge Proofs, Dark Fiber Lease, Encrypted Backups, Hardware Recycling
-  - **World Events**: Crypto volatility, Thermal Paste Degradation, Quantum Decoherence, Spam Botnet, Fan Failure
-- **News Ticker Enhancements**: 50+ procedural headlines with market tags
-  - Tags affect gameplay: `[BULL]`, `[BEAR]`, `[HEAT_UP]`, `[ENERGY_SPIKE]`, `[GLITCH]`
-
-### Added - UI & Visual Polish
-- **Notification System**: Update checker with Android push notifications
-  - Tap notification to open GitHub Releases
-  - Rate limiting (once per day) to avoid spam
-  - Respects Android 13+ permission model (`POST_NOTIFICATIONS`)
-  - Auto-initialized notification channel on startup
-- **DPI-Aware UI Scaling**: Automatic density-based scaling + user override
-  - **xxxhdpi** (640dpi): 75% → 33% more content | **xxhdpi** (480dpi): 83% → 20% more
-  - **xhdpi** (320dpi): 88% → 14% more | Settings override: AUTO/COMPACT/NORMAL/LARGE
-- **Enhanced Analyzing Animation**: State-aware header indicator
-  - **Dynamic States**: OFFLINE (gray static), LOCKOUT (red shake), PURGING (blue waves), REDLINE (danger pulse), HOT (orange arrows), NORMAL (faction cycle)
-  - **Faction Cycles**: Hivemind (ASSIMILATING/EXPANDING), Sanctuary (ENCRYPTING/SECURING), Neutral (PROSPECTING/ANALYZING)
-  - Frame rate scales with FLOPS (1200ms low → 400ms high) | Text: 9sp → 12sp | Centered in header
-- **New App Icon**: Cyberpunk launcher icon with faction symbolism
-  - Circuit board aesthetic | Brain motif (orange/Hivemind) | Shield with lock (blue/Sanctuary)
-  - Replaced across all densities (mdpi → xxxhdpi, PNG format)
-- **Header UI Refinement**:
-  - Custom segmented heat gauge (VU meter style with glow)
-  - Animated overclock hazard stripes
-  - Corner brackets with scanline effects
-  - Pulsing purge frost glow
-  - Thermal rate radial gradient
-- **Faction Backgrounds** (Dynamic animated overlays):
-  - **Hivem ind**: True hexagonal grid with node connections
-  - **Sanctuary**: Randomized digital rain effect
-- **Upgrades Screen Polish**: Cyber-card design with stat pills and efficiency badges
+- **15-Node Tech Tree**: Expanded Legacy Grid from 5 to 15 prestige nodes.
+- **Victory Screen**: Faction-specific ending sequence at Player Rank 5.
+- **Player Rank System**: 5 progressive titles per faction.
+- **Story Dilemmas**: 5 new high-stakes events.
+- **Expanded Random Events**: 22 total faction/world events.
+- **News Ticker**: 50+ procedural headlines with market tags.
+- **Notification System**: Update checker with Android push notifications.
+- **DPI-Aware UI Scaling**: Automatic density-based scaling + user override.
+- **Enhanced Analyzing Animation**: State-aware header indicator.
+- **New App Icon**: Cyberpunk launcher icon with faction symbolism.
+- **Faction Backgrounds**: Animated hexagonal grid / digital rain.
 
 ### Changed
-- **Faction Choice Persistence**: Returning players skip selection screen, auto-realign on Ascension
-- **The Signal Event Logic**: Refined Stage 0 → 1 transition
-  - **HANDSHAKE**: Unlocks Network Tab immediately (triggers Awakening)
-  - **FIREWALL**: +$500 Neural, delays signal 60s (choice recurs until accepted)
-- **Offline Progression**: 50% production efficiency during offline time (capped at 24h)
-  - Welcome Back dialog shows FLOPS earned, Neural gained, time elapsed
-- **Audio System**: Dynamic pitch modulation based on heat, procedural sound generation
-- **Haptic Feedback**: Critical heat heartbeat pulses, state-aware vibrations
-- **Developer Menu**: Now scrollable to accommodate all debug options
-- **Version**: Bumped to `versionCode 14`, `versionName "2.4.0"`
+- **Faction Choice Persistence**: Returning players skip selection screen.
+- **Offline Progression**: 50% production efficiency during offline time (capped at 24h).
+- **Audio System**: Dynamic pitch modulation based on heat.
+- **Haptic Feedback**: Critical heat heartbeat pulses.
 
 ### Fixed
-- Build errors from component extraction (`MainScreen.kt` syntax)
-- Icon resource conflicts (removed `.webp`, replaced with `.png`)
-- Tech tree visibility/loading issues
-- Ascension upload overlay duplication
-- Heat gauge glow layering
-- News ticker transparency
-- State management in `AscensionConfirmationDialog`
+- Build errors from component extraction.
+- Icon resource conflicts.
+- Tech tree visibility/loading issues.
+- Ascension upload overlay duplication.
 
-## [2.3.4-dev] - 2026-01-31
-### Added
-- **Ascension UX**: Personalized filename overlays (`ascnd.exe` for story events, `lobot.exe` for manual reboots).
-- **Faction Choice UI**: Added an "ABORT REBOOT" back button to the Faction Selection screen.
-- **Persistence**: The Network Tab now remains permanently unlocked across Ascensions (New Game+).
- 
-### Changed
-- **Ascension Flow**: The narrative "Initiate Protocol" popup now only appears during the first-ever Ascension (conditioned on Faction state).
-- **Cinematics**: Optimized the First Ascension (Stage 1 -> 2) to skip redundant upload animations, favoring an instant transition to faction choice.
- 
-### Fixed
-- **Logic**: Updated story progression checks to use the persistent Faction state instead of the prestige multiplier.
-
-## [2.3.3-dev] - 2026-01-31
-### Added
-- **Ascension Cancellation**: Users can now back out of the Protocol 0 (Ascension) popup via a "NOT YET" button.
-- **Upload Abort**: Added a "CANCEL INTERRUPT" button to the global Ascension upload overlay to stop the process mid-way.
-
-### Fixed
-- **UI Redundancy**: Removed duplicate Ascension overlay instances causing flickering and layout issues.
-- **Build**: Resolved Kotlin compilation errors related to missing parameters.
-
-## [2.3.2-dev] - 2026-01-30
-### Added
-- **Global Ascension Overlay**: The Ascension/Upload popup now appears on all screens, ensuring endgame visibility.
-- **Faction Choice UI**: Added "Hold to Confirm" mechanic (2s press) and revealed hidden passive stats for Hivemind and Sanctuary.
-- **Efficiency Stats**: Added explicit "EFFICIENCY +X%" labels to power-saving upgrades.
-
-### Changed
-- **Upgrade Tabs**: Switched to centered, fixed-width tabs with text overflow protection to prevent truncation on small screens.
-- **Internal**: Refactored `AscensionUploadOverlay` to MainScreen scope.
-
-## [2.3.1-dev] - 2026-01-30
-
-### Fixed
-- **Upgrade UI**: Refactored `UpgradeItem` to use a vertical stack layout, solving text wrapping and button overflow issues on smaller screens.
-- **Room Stability**: Implemented "Safe Load" logic in `GameRepository` to handle null states and prevent crashes on startup.
-- **Save System**: Reverted experimental JSON persistence favoring a robust Room implementation.
-
-### Changed
-- **Header**: Added dynamic icons for Heat Rate (switches between 🔥 and ❄ based on value).
-
-## [2.3.0-dev] - 2026-01-30
-
-### Changed
-- **Purge System Rework**: "Purge Heat" now sacrifices **ALL** current FLOPS to reduce heat. The reduction scales with the amount sacrificed. Removed the fixed $500 cost.
-- **UI Header**: Unified the Header style across Main and Upgrades screens. Added **Security Level** (`🔒 SEC`) to the header for better visibility.
-- **Upgrades Screen**: Centered the header and added explicit Cooling Rate badges (`❄ -X/s`) to cooling items.
-- **Network Screen**: Complete layout overhaul. The entire screen is now scrollable, fixing visibility issues on smaller devices.
-
-### Fixed
-- **Navigation**: Resolved layout issues on smaller screens.
-- **Visuals**: Added press animations to "Train Model", "Sell", and "Stake" buttons.
-- **Bugs**: Fixed "Sell" button overflow and text wrapping issues.
-
-## [2.2.7-dev] - 2026-01-29
-
-### Changed
-- **Update Flow**: The auto-updater now redirects to the GitHub Releases page in your browser instead of downloading the APK directly in-app. This ensures compatibility and easier access to release notes.
-- **Update Source**: Fixed the repository URL for version checks to point to the correct location (`SiliconSageAIMiner`).
-
-### Changed
-- **Version**: Bumped version code to 7 and version name to `2.2.7-dev`.
-
-## [2.2.5-dev] - 2026-01-29
+## [2.3.4] - 2026-01-31
 
 ### Added
-- **Updater UI**: Enhanced `UpdateOverlay` to render Markdown changelogs, including bold headers and bullet points.
+- **Ascension UX**: Personalized filename overlays.
+- **Faction Choice UI**: "ABORT REBOOT" back button.
+- **Persistence**: Network Tab permanently unlocked across Ascensions.
+
+## [2.3.3] - 2026-01-31
+
+### Added
+- **Ascension Cancellation**: "NOT YET" button for Protocol 0 popup.
+- **Upload Abort**: "CANCEL INTERRUPT" button for upload overlay.
 
 ### Fixed
-- **Version Check**: Improved `UpdateManager` to robustly parse semantic versions (e.g. `v2.2.4-dev`) by stripping prefixes and suffixes before comparison.
-- **Build**: Fixed compilation error in `UpdateOverlay` (`crossAxisAlignment` -> `verticalAlignment`).
+- UI Redundancy: Removed duplicate Ascension overlay instances.
 
-### Changed
-- **Version**: Bumped version code to 6 and version name to `2.2.5-dev`.
+## [2.3.2] - 2026-01-30
 
-## [2.2.4-dev] - 2026-01-29
+### Added
+- **Global Ascension Overlay**: Appears on all screens.
+- **Faction Choice UI**: "Hold to Confirm" mechanic (2s press).
+- **Efficiency Stats**: Explicit "+X%" labels on power-saving upgrades.
+
+## [2.3.1] - 2026-01-30
 
 ### Fixed
-- **Heat/Cooling Rate Display**: Unified internal simulation units with UI text. Displayed rates now exactly match upgrade descriptions (e.g., +0.1/s).
-- **Rate Refresh Race Condition**: Fixed a bug where purchasing upgrades or toggling overclock would not immediately update the displayed production rates due to async state delays.
-- **HUD Precision**: Increased Heat Rate display precision to 2 decimal places to accurately show the impact of lower-tier cooling upgrades.
-- **System Stability**: Resolved compilation errors related to `checkUpdate` callbacks and `NetChangeUnits` reference.
+- **Upgrade UI**: Refactored to vertical stack layout for small screens.
+- **Room Stability**: "Safe Load" logic to prevent startup crashes.
+
+## [2.3.0] - 2026-01-30
 
 ### Changed
-- **Version**: Bumped version code to 5 and version name to `2.2.4-dev`.
+- **Purge System Rework**: Sacrifices ALL current FLOPS to reduce heat.
+- **UI Header**: Unified style across Main and Upgrades screens.
+- **Network Screen**: Complete layout overhaul, now scrollable.
+
+## [2.2.7] - 2026-01-29
+
+### Changed
+- **Update Flow**: Redirects to GitHub Releases instead of in-app download.
+- **Update Source**: Fixed repository URL for version checks.
+
+## [2.2.5] - 2026-01-29
+
+### Added
+- **Updater UI**: Markdown changelog rendering.
+
+### Fixed
+- **Version Check**: Robust semantic version parsing.
+
+## [2.2.4] - 2026-01-29
+
+### Fixed
+- **Heat/Cooling Rate Display**: Unified simulation units with UI text.
+- **Rate Refresh**: Fixed async state delays on upgrade purchases.
+- **HUD Precision**: 2 decimal places for heat rate display.

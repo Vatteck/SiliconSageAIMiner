@@ -89,50 +89,14 @@ fun UpdateOverlay(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         
-                        // Basic Markdown Parsing
-                        val lines = updateInfo.changes.split("\n")
-                        lines.forEach { line ->
-                            when {
-                                line.startsWith("###") -> {
-                                    Text(
-                                        text = line.removePrefix("###").trim(),
-                                        color = NeonGreen,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(vertical = 4.dp)
-                                    )
-                                }
-                                line.startsWith("##") -> {
-                                    Text(
-                                        text = line.removePrefix("##").trim(),
-                                        color = NeonGreen,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(vertical = 4.dp)
-                                    )
-                                }
-                                line.startsWith("-") -> {
-                                    Row(modifier = Modifier.padding(start = 8.dp, bottom = 2.dp), verticalAlignment = Alignment.Top) {
-                                        Text("•", color = ElectricBlue, fontSize = 12.sp, modifier = Modifier.padding(end = 4.dp))
-                                        Text(
-                                            text = line.removePrefix("-").trim(),
-                                            color = Color.LightGray,
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                }
-                                else -> {
-                                    if (line.isNotBlank()) {
-                                        Text(
-                                            text = line,
-                                            color = Color.Gray,
-                                            fontSize = 12.sp,
-                                            modifier = Modifier.padding(bottom = 2.dp)
-                                        )
-                                    } else {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                    }
-                                }
+                        updateInfo.changes.forEach { line ->
+                            Row(modifier = Modifier.padding(start = 8.dp, bottom = 2.dp), verticalAlignment = Alignment.Top) {
+                                Text("•", color = ElectricBlue, fontSize = 12.sp, modifier = Modifier.padding(end = 4.dp))
+                                Text(
+                                    text = line,
+                                    color = Color.LightGray,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
                     }

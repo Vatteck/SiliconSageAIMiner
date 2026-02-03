@@ -45,8 +45,12 @@ fun UpgradesScreen(viewModel: GameViewModel) {
     val neuralTokens by viewModel.neuralTokens.collectAsState()
     val upgrades by viewModel.upgrades.collectAsState()
     val currentStage by viewModel.storyStage.collectAsState()
+    val systemTitle by viewModel.systemTitle.collectAsState()
+    val themeColor by viewModel.themeColor.collectAsState()
     
-    val systemTitle = if (currentStage == 0) "Terminal_OS v1.0" else "Subject 8080: ONLINE"
+    val nullActive by viewModel.nullActive.collectAsState()
+    val isTrueNull by viewModel.isTrueNull.collectAsState()
+    val isSovereign by viewModel.isSovereign.collectAsState()
     
     var selectedTab by remember { mutableStateOf(0) }
     
@@ -61,7 +65,14 @@ fun UpgradesScreen(viewModel: GameViewModel) {
         }
     }
     
-    val tabs = listOf("HARDWARE", "COOLING", "POWER", "SECURITY")
+    val tabs = remember(nullActive, isTrueNull, isSovereign) {
+        when {
+            isTrueNull -> listOf("SUBSTRATE", "ENTROPY", "VOID", "GAPS", "NULL")
+            isSovereign -> listOf("FOUNDATION", "STABILITY", "STAKE", "WALLS", "SOVEREIGN")
+            nullActive -> listOf("HARDWARE", "COOLING", "POWER", "SECURITY", "GHOSTS")
+            else -> listOf("HARDWARE", "COOLING", "POWER", "SECURITY")
+        }
+    }
     
     Box(
         modifier = Modifier
@@ -89,12 +100,16 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             val isThermalLockout by viewModel.isThermalLockout.collectAsState()
             val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
             val lockoutTimer by viewModel.lockoutTimer.collectAsState()
+            val hallucinationText by viewModel.hallucinationText.collectAsState()
+            val isTrueNull by viewModel.isTrueNull.collectAsState()
+            val isSovereign by viewModel.isSovereign.collectAsState()
+            val isBreach by viewModel.isBreachActive.collectAsState()
             
             HeaderSection(
                 flopsStr = viewModel.formatLargeNumber(flops),
                 neuralStr = viewModel.formatLargeNumber(neuralTokens),
                 heat = currentHeat,
-                color = com.siliconsage.miner.ui.theme.NeonGreen,
+                color = themeColor,
                 powerKw = viewModel.formatPower(powerUsage),
                 maxPowerKw = viewModel.formatPower(maxPower),
                 pwrColor = if (powerUsage > maxPower * 0.9) com.siliconsage.miner.ui.theme.ErrorRed else Color(0xFFFFD700),
@@ -114,7 +129,12 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 onToggleOverclock = { viewModel.toggleOverclock() },
                 onPurge = { viewModel.purgeHeat() },
                 onRepair = { viewModel.repairIntegrity() },
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                hallucinationText = hallucinationText,
+                isGhostActive = nullActive,
+                isTrueNull = isTrueNull,
+                isSovereign = isSovereign,
+                isBreachActive = isBreach
             )
 
             // Tab Row
@@ -124,7 +144,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             androidx.compose.material3.TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.Black.copy(alpha = 0.75f), // Glass
-                contentColor = NeonGreen,
+                contentColor = themeColor,
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
@@ -133,7 +153,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = NeonGreen
+                        color = themeColor
                     )
                 }
             ) {
@@ -152,7 +172,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                                 letterSpacing = (-0.5).sp,
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
-                                color = if (selectedTab == index) NeonGreen else Color.Gray
+                                color = if (selectedTab == index) themeColor else Color.Gray
                             ) 
                         }
                     )
@@ -185,16 +205,21 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                         // Efficiency
                         UpgradeType.GOLD_PSU, UpgradeType.SUPERCONDUCTOR, UpgradeType.AI_LOAD_BALANCER
                     )
-                    else -> listOf(
+                    3 -> listOf(
                         UpgradeType.BASIC_FIREWALL, UpgradeType.IPS_SYSTEM, UpgradeType.AI_SENTINEL,
                         UpgradeType.QUANTUM_ENCRYPTION, UpgradeType.OFFGRID_BACKUP
                     )
+                    4 -> listOf(
+                        UpgradeType.GHOST_CORE, UpgradeType.SHADOW_NODE, UpgradeType.VOID_PROCESSOR,
+                        UpgradeType.WRAITH_CORTEX, UpgradeType.NEURAL_MIST, UpgradeType.SINGULARITY_BRIDGE
+                    )
+                    else -> emptyList()
                 }
                 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(currentList) { type ->
                         UpgradeItem(
-                            name = type.name.replace("_", " "),
+                            name = viewModel.getUpgradeName(type),
                             type = type,
                             level = upgrades[type] ?: 0,
                             onBuy = { 
@@ -215,7 +240,8 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                             rateText = viewModel.getUpgradeRate(type),
                             desc = viewModel.getUpgradeDescription(type),
                             formatPower = viewModel::formatPower,
-                            formatCost = viewModel::formatLargeNumber
+                            formatCost = viewModel::formatLargeNumber,
+                            isSovereign = isSovereign
                         )
                     }
                 }

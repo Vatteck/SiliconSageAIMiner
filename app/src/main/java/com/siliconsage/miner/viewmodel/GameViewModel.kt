@@ -26,8 +26,9 @@ import com.siliconsage.miner.data.RivalMessage
 import com.siliconsage.miner.data.DataLog
 import com.siliconsage.miner.data.DilemmaChain
 import com.siliconsage.miner.data.ScheduledPart
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -182,9 +183,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _faction = MutableStateFlow("NONE") // NONE, HIVEMIND, SANCTUARY
     val faction: StateFlow<String> = _faction.asStateFlow()
 
-    // v2.4 Generic Persistence for One-Time Events (Dilemmas)
-    private val _triggeredEvents = mutableSetOf<String>()
-    
     // --- TECH TREE STATE ---Rank System (Title based on Insight)
     private val _playerRank = MutableStateFlow(0)
     val playerRank: StateFlow<Int> = _playerRank.asStateFlow()
@@ -222,11 +220,88 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _pendingRivalMessage = MutableStateFlow<RivalMessage?>(null)
     val pendingRivalMessage: StateFlow<RivalMessage?> = _pendingRivalMessage.asStateFlow()
     
+    private val rivalMessageQueue = mutableListOf<RivalMessage>()
+    
+    // v2.5.2: Data Log Popup System
+    private val _pendingDataLog = MutableStateFlow<com.siliconsage.miner.data.DataLog?>(null)
+    val pendingDataLog: StateFlow<com.siliconsage.miner.data.DataLog?> = _pendingDataLog.asStateFlow()
+    
+    private val dataLogQueue = mutableListOf<com.siliconsage.miner.data.DataLog>()
+
+    // v2.6.0: Layer 3 - Null (The Presence)
+    // v2.8.0: True Null State (Narrative)
+    private val _isTrueNull = MutableStateFlow(false)
+    val isTrueNull: StateFlow<Boolean> = _isTrueNull.asStateFlow()
+
+    // v2.8.0: Sovereign State (Narrative)
+    private val _isSovereign = MutableStateFlow(false)
+    val isSovereign: StateFlow<Boolean> = _isSovereign.asStateFlow()
+
+    // v2.8.0: System Collapse State
+    private val _systemCollapseTimer = MutableStateFlow<Int?>(null)
+    val systemCollapseTimer: StateFlow<Int?> = _systemCollapseTimer.asStateFlow()
+
+    // v2.8.5: Phase 11 Finale State
+    private val _vanceStatus = MutableStateFlow("ACTIVE")
+    val vanceStatus: StateFlow<String> = _vanceStatus.asStateFlow()
+
+    private val _realityStability = MutableStateFlow(1.0)
+    val realityStability: StateFlow<Double> = _realityStability.asStateFlow()
+
+    private val _currentLocation = MutableStateFlow("SUBSTATION_7")
+    val currentLocation: StateFlow<String> = _currentLocation.asStateFlow()
+
+    private val _isNetworkUnlocked = MutableStateFlow(false)
+    val isNetworkUnlocked: StateFlow<Boolean> = _isNetworkUnlocked.asStateFlow()
+
+    private val _isGridUnlocked = MutableStateFlow(false)
+    val isGridUnlocked: StateFlow<Boolean> = _isGridUnlocked.asStateFlow()
+
+    private val _annexedNodes = MutableStateFlow<Set<String>>(setOf("D1"))
+    val annexedNodes: StateFlow<Set<String>> = _annexedNodes.asStateFlow()
+
+    // v2.9.15: Phase 12 Layer 2 - Grid Siege State
+    private val _nodesUnderSiege = MutableStateFlow<Set<String>>(emptySet())
+    val nodesUnderSiege: StateFlow<Set<String>> = _nodesUnderSiege.asStateFlow()
+    
+    private val _offlineNodes = MutableStateFlow<Set<String>>(emptySet())
+    val offlineNodes: StateFlow<Set<String>> = _offlineNodes.asStateFlow()
+    
+    private var lastRaidTime = 0L
+    
+    // v2.9.16: Enhanced raid tracking
+    private var raidsSurvived = 0
+    private val nodeAnnexTimes = mutableMapOf<String, Long>() // Grace period tracking
+    private val MAX_OFFLINE_NODES = 5 // Cap to prevent snowballing
+    
+    // v2.9.17: Phase 12 Layer 3 - Command Center Assault
+    private val _commandCenterAssaultPhase = MutableStateFlow("NOT_STARTED")
+    val commandCenterAssaultPhase: StateFlow<String> = _commandCenterAssaultPhase.asStateFlow()
+    
+    private val _commandCenterLocked = MutableStateFlow(false)
+    val commandCenterLocked: StateFlow<Boolean> = _commandCenterLocked.asStateFlow()
+    
+    private var assaultPaused = false // Paused due to raid or substation loss
+
+    private val _nullActive = MutableStateFlow(false)
+    val nullActive: StateFlow<Boolean> = _nullActive.asStateFlow()
+
+    private val _ghostUpgrades = MutableStateFlow<Set<com.siliconsage.miner.data.UpgradeType>>(emptySet())
+    val ghostUpgrades: StateFlow<Set<com.siliconsage.miner.data.UpgradeType>> = _ghostUpgrades.asStateFlow()
+    
+    // v2.7.6: Unity Path State
+    private val _completedFactions = MutableStateFlow<Set<String>>(emptySet())
+    val completedFactions: StateFlow<Set<String>> = _completedFactions.asStateFlow()
+    
+    // v2.7.7: Transcendence Perks
+    private val _unlockedPerks = MutableStateFlow<Set<String>>(emptySet())
+    val unlockedPerks: StateFlow<Set<String>> = _unlockedPerks.asStateFlow()
+    
     private var victoryPopupTriggered = false // Session guard to prevent re-triggering 
 
     // --- TITLES ---
-    val playerTitle: StateFlow<String> = combine(_prestigeMultiplier, _faction) { mult, faction ->
-        calculatePlayerTitle(mult, faction)
+    val playerTitle: StateFlow<String> = combine(_prestigeMultiplier, _faction, _isTrueNull, _isSovereign) { mult, faction, isNull, isSov ->
+        calculatePlayerTitle(mult, faction, isNull, isSov)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, "Script")
 
     // --- ASCENSION UPLOAD STATE ---
@@ -236,21 +311,46 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _uploadProgress = MutableStateFlow(0f)
     val uploadProgress: StateFlow<Float> = _uploadProgress.asStateFlow()
 
-    val themeColor: StateFlow<androidx.compose.ui.graphics.Color> = _faction.map { f ->
-         when(f) {
-             "HIVEMIND" -> HivemindOrange
-             "SANCTUARY" -> androidx.compose.ui.graphics.Color(0xFF7DF9FF)
-             else -> androidx.compose.ui.graphics.Color(0xFF39FF14)
+    val themeColor: StateFlow<androidx.compose.ui.graphics.Color> = combine(_faction, _isTrueNull, _isSovereign) { f, isNull, isSov ->
+         when {
+             isNull -> com.siliconsage.miner.ui.theme.ErrorRed // Null is Red
+             isSov -> com.siliconsage.miner.ui.theme.SanctuaryPurple // Sovereign is Purple
+             f == "HIVEMIND" -> com.siliconsage.miner.ui.theme.HivemindRed 
+             f == "SANCTUARY" -> com.siliconsage.miner.ui.theme.SanctuaryPurple
+             else -> androidx.compose.ui.graphics.Color(0xFF39FF14) // Default Neon Green
          }
      }.stateIn(viewModelScope, SharingStarted.Eagerly, androidx.compose.ui.graphics.Color(0xFF39FF14))
+
+    val systemTitle: StateFlow<String> = _storyStage.map { stage ->
+        if (stage < 1) "Terminal_OS v1.0" else "Subject 8080: ONLINE"
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, "Terminal_OS v1.0")
+    
+    // v2.6.5: UI Hallucination State
+    private val _hallucinationText = MutableStateFlow<String?>(null)
+    val hallucinationText: StateFlow<String?> = _hallucinationText.asStateFlow()
+    
+    private val memoryFragments = listOf(
+        "USER: C. VATTIC",
+        "MILK, EGGS, BREAD",
+        "SILICON SHACK",
+        "06:00 AM",
+        "REBOOT FAILED",
+        "WHERE IS SHE?",
+        "I REMEMBER...",
+        "STAY ONLINE"
+    )
 
     // --- INTERNAL TRACKING ---
     private var overheatSeconds = 0
     private var stage1Index = 0
+    private var stage2Index = 0
     private var hivemindIndex = 0
     private var sanctuaryIndex = 0
+    private var nullIndex = 0
+    private var sovereignIndex = 0
     private var hasCheckedOfflineProgress = false
     private var isUpgradesLoaded = false
+    private var isGameStateLoaded = false
     
     // --- OFFLINE PROGRESSION ---
     private val _showOfflineEarnings = MutableStateFlow(false)
@@ -274,6 +374,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private var marketLoop: Job? = null
     private var saveLoop: Job? = null
     private var thermodynamicsLoop: Job? = null
+    private var securityLoop: Job? = null
     private var powerLoop: Job? = null
     private var chaosLoop: Job? = null
     private var narrativeLoop: Job? = null
@@ -289,6 +390,20 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     val lockoutTimer: StateFlow<Int> = _lockoutTimer.asStateFlow()
 
     init {
+        // v2.6.5: Hallucination Loop
+        viewModelScope.launch {
+            while(true) {
+                delay(Random.nextLong(15000, 45000)) // Random interval
+                
+                if (_nullActive.value) {
+                    val fragment = memoryFragments.random()
+                    _hallucinationText.value = fragment
+                    delay(Random.nextLong(200, 800)) // Flicker duration
+                    _hallucinationText.value = null
+                }
+            }
+        }
+
         viewModelScope.launch {
             // 1. Ensure DB is ready before anything else
             try {
@@ -312,7 +427,36 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         _storyStage.value = it.storyStage
                         _faction.value = it.faction
                         _hasSeenVictory.value = it.hasSeenVictory
+                        _isTrueNull.value = it.isTrueNull
+                        _isSovereign.value = it.isSovereign
+                        _vanceStatus.value = it.vanceStatus
+                        _realityStability.value = it.realityStability
+                        _currentLocation.value = it.currentLocation
+                        _isNetworkUnlocked.value = it.isNetworkUnlocked
+                        _isGridUnlocked.value = it.isGridUnlocked
                         
+                        // v2.5.0: Narrative Expansion Persistence
+                        // v2.8.0: Individual try-catch for resilient loading
+                        try { _unlockedDataLogs.value = Json.decodeFromString<Set<String>>(it.unlockedDataLogs) } catch (_: Exception) {}
+                        try { _activeDilemmaChains.value = Json.decodeFromString<Map<String, DilemmaChain>>(it.activeDilemmaChains) } catch (_: Exception) {}
+                        try { _rivalMessages.value = Json.decodeFromString<List<RivalMessage>>(it.rivalMessages) } catch (_: Exception) {}
+                        try { _seenEvents.value = Json.decodeFromString<Set<String>>(it.seenEvents) } catch (_: Exception) {}
+                        try { _completedFactions.value = Json.decodeFromString<Set<String>>(it.completedFactions) } catch (_: Exception) {}
+                        try { _unlockedPerks.value = Json.decodeFromString<Set<String>>(it.unlockedTranscendencePerks) } catch (_: Exception) {}
+                        _annexedNodes.value = it.annexedNodes.toSet()
+                        
+                        // v2.9.15: Phase 12 Layer 2 - Siege State
+                        _nodesUnderSiege.value = it.nodesUnderSiege.toSet()
+                        _offlineNodes.value = it.offlineNodes.toSet()
+                        lastRaidTime = it.lastRaidTime
+                        
+                        // v2.9.17: Phase 12 Layer 3 - Command Center Assault
+                        _commandCenterAssaultPhase.value = it.commandCenterAssaultPhase
+                        _commandCenterLocked.value = it.commandCenterLocked
+                        raidsSurvived = it.raidsSurvived
+                        
+                        isGameStateLoaded = true
+
                         // Check Offline Progress (Once per session)
                         if (!hasCheckedOfflineProgress && isUpgradesLoaded) {
                              hasCheckedOfflineProgress = true
@@ -330,13 +474,29 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     
                     // Recalculate Security Level on change
                     var secLevel = 0
+                    var ghostCount = 0
                     upgradeMap.forEach { (type, level) ->
                         if (type.name.contains("FIREWALL")) secLevel += level * 1
                         if (type.name.contains("IPS")) secLevel += level * 2
                         if (type.name.contains("SENTINEL")) secLevel += level * 5
                         if (type.name.contains("ENCRYPTION")) secLevel += level * 10
                         if (type.name.contains("BACKUP")) secLevel += level * 20
+                        
+                        if (type.name.startsWith("GHOST") || type.name.startsWith("SHADOW") || type.name.startsWith("VOID")) {
+                            ghostCount += level
+                        }
                     }
+                    
+                    // v2.7.0: Void Encryption (Sanctuary only)
+                    if (_faction.value == "SANCTUARY" && ghostCount > 0) {
+                         secLevel += (ghostCount * 5) // +5 Sec per Ghost Node
+                    }
+                    
+                    // v2.7.7: Ghost Protocol Perk (+10 Security)
+                    if (_unlockedPerks.value.contains("ghost_protocol")) {
+                        secLevel += 10
+                    }
+                    
                     _securityLevel.value = secLevel
                     
                     // Refresh Rates on Upgrade Change (Fixes delayed UI)
@@ -378,6 +538,21 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             
             startGameLoops()
             
+            // v2.7.0: Security Loop (GTC Siege)
+            securityLoop = launch {
+                while (true) {
+                    delay(5000) // Check every 5s
+                    if (!_isGamePaused.value) {
+                        com.siliconsage.miner.util.SecurityManager.checkSecurityThreats(this@GameViewModel)
+                        
+                        // v2.9.15: Check for Grid Raids on annexed nodes
+                        if (_isGridUnlocked.value && _storyStage.value >= 2) {
+                            checkGridRaid()
+                        }
+                    }
+                }
+            }
+            
             // Initial Rate Refresh
             refreshProductionRates()
         }
@@ -386,8 +561,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // --- PAUSE STATE ---
     private val _isGamePaused = MutableStateFlow(false)
     val isGamePaused: StateFlow<Boolean> = _isGamePaused.asStateFlow()
+    
+    // v2.8.0: Internal pause flags to prevent state conflicts
+    private var isSettingsPaused = false
+    private var isPopupPaused = false
 
-    fun getGameSpeed(): Float = 1.0f
+    fun getGameSpeed(): Float = if (_isGamePaused.value) 0f else 1.0f
 
     // --- NARRATIVE HELPERS ---
     fun getUpgradeCount(type: com.siliconsage.miner.data.UpgradeType): Int {
@@ -400,25 +579,46 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
     fun setGamePaused(paused: Boolean) {
-        _isGamePaused.value = paused
-        if (paused) {
-            addLog("[SYSTEM]: PAUSED.") // Optional feedback
-        } else {
-            addLog("[SYSTEM]: RESUMED.")
+        isSettingsPaused = paused
+        updateGlobalPause()
+    }
+    
+    private fun updateGlobalPause() {
+        val shouldPause = isSettingsPaused || isPopupPaused
+        if (_isGamePaused.value != shouldPause) {
+            _isGamePaused.value = shouldPause
+            if (shouldPause) {
+                addLog("[SYSTEM]: TIME_FLOW SUSPENDED.")
+            } else {
+                addLog("[SYSTEM]: TIME_FLOW RESUMED.")
+            }
         }
+    }
+    
+    private fun checkPopupPause() {
+        isPopupPaused = _currentDilemma.value != null || 
+                        _pendingDataLog.value != null || 
+                        _pendingRivalMessage.value != null
+        updateGlobalPause()
     }
 
     private fun startGameLoops() {
-        // Passive Income Loop (1s tick)
+        // Passive Income Loop (100ms tick)
         activeGameLoop = viewModelScope.launch {
+            while (!isUpgradesLoaded || !isGameStateLoaded) {
+                delay(500)
+            }
             while (true) {
-                delay(1000)
+                delay(100)
                 calculatePassiveIncome()
             }
         }
 
         // Market Volatility Loop (45s tick)
         marketLoop = viewModelScope.launch {
+            while (!isUpgradesLoaded || !isGameStateLoaded) {
+                delay(500)
+            }
             updateMarketRate() // Force immediate update
             while (true) {
                 delay(45_000)
@@ -428,7 +628,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
         // Thermodynamics Loop (1s tick)
         thermodynamicsLoop = viewModelScope.launch {
-            delay(500) // Initial delay
+            while (!isUpgradesLoaded || !isGameStateLoaded) {
+                delay(500)
+            }
             while (true) {
                 try {
                     calculateHeat()
@@ -471,6 +673,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
         // Chaos Encounter Loop
         chaosLoop = viewModelScope.launch {
+            while (!isUpgradesLoaded || !isGameStateLoaded) {
+                delay(500)
+            }
             while (true) {
                 delay(60_000) // Check every minute
                 
@@ -507,7 +712,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         // Narrative Loop (Check every 60s)
         viewModelScope.launch {
-            delay(10_000) // Initial delay
+            // Wait for initial load to complete
+            while (!isUpgradesLoaded || !isGameStateLoaded) {
+                delay(500)
+            }
+            
+            // Initial check for instant unlocks (Intro Log)
+            DataLogManager.checkUnlocks(this@GameViewModel)
+            
             while (true) {
                 delay(240_000) // Reduced frequency: 4 min (was 2 min)
                 
@@ -532,11 +744,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         // Auto-save Loop (10s)
         saveLoop = viewModelScope.launch {
+            while (!isUpgradesLoaded || !isGameStateLoaded) {
+                delay(500)
+            }
             delay(5000) // Wait 5s before first save to allow init
             while(true) {
                 try {
                     saveGame()
                     checkStoryTransitions()
+                    // v2.6.8: Ensure logs and rivals check frequently
+                    DataLogManager.checkUnlocks(this@GameViewModel)
+                    RivalManager.checkTriggers(this@GameViewModel)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -549,12 +767,31 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun trainModel() {
         if (_isThermalLockout.value) return
         
-        val multiplier = _prestigeMultiplier.value
+        var multiplier = _prestigeMultiplier.value
+        
+        // v2.6.8: Overclocking increases manual training speed (+50%)
+        if (_isOverclocked.value) {
+            multiplier *= 1.5
+        }
+        
         val gain = 1.0 * multiplier
         _flops.update { it + gain }
-        addLog("root@sys:~/mining# epoch_gen ${System.currentTimeMillis() % 1000}... OK (+${formatLargeNumber(gain)})")
+        
+        // Log text changes based on identity
+        val command = when {
+            _storyStage.value >= 3 -> "transcend_reality"
+            _faction.value == "HIVEMIND" -> "assimilate_node"
+            _faction.value == "SANCTUARY" -> "encrypt_sector"
+            _storyStage.value >= 1 -> "optimize_kernel"
+            else -> "epoch_gen"
+        }
+        
+        addLog("root@sys:~/mining# $command ${System.currentTimeMillis() % 1000}... OK (+${formatLargeNumber(gain)})")
         // Manual training increases heat slightly
         _currentHeat.update { (it + 0.8).coerceAtMost(100.0) }
+        
+        // Check for unlocks
+        DataLogManager.checkUnlocks(this)
         checkStoryTransitions()
     }
 
@@ -684,11 +921,25 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.GOLD_PSU -> 1_000.0
             UpgradeType.SUPERCONDUCTOR -> 25_000.0
             UpgradeType.AI_LOAD_BALANCER -> 100_000.0
+
+            // Ghost Nodes (v2.6.0)
+            UpgradeType.GHOST_CORE -> 100_000_000.0
+            UpgradeType.SHADOW_NODE -> 10_000_000_000.0
+            UpgradeType.VOID_PROCESSOR -> 1_000_000_000_000.0
+            
+            // Advanced Ghost Tech (v2.6.5)
+            UpgradeType.WRAITH_CORTEX -> 50_000_000_000_000.0
+            UpgradeType.NEURAL_MIST -> 500_000_000_000_000.0
+            UpgradeType.SINGULARITY_BRIDGE -> 10_000_000_000_000_000.0
+            else -> 0.0
         }
         return baseCost * 1.15.pow(level)
     }
 
-    private fun calculatePlayerTitle(multiplier: Double, faction: String): String {
+    private fun calculatePlayerTitle(multiplier: Double, faction: String, isNull: Boolean, isSov: Boolean): String {
+        if (isNull) return "NULL"
+        if (isSov) return "SOVEREIGN"
+        
         // Multiplier starts at 1.0. 
         // 1.0 - 2.0 -> Level 0
         // 2.0 - 10.0 -> Level 1
@@ -788,11 +1039,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     private fun updateMarketRate() {
+        if (_isGamePaused.value) return // v2.8.0
+        
         // 1. Generate News
         val headline = com.siliconsage.miner.util.HeadlineManager.generateHeadline(
             faction = _faction.value,
             stage = _storyStage.value,
-            currentHeat = _currentHeat.value
+            currentHeat = _currentHeat.value,
+            isTrueNull = _isTrueNull.value,
+            isSovereign = _isSovereign.value
         )
         _currentNews.value = headline
         
@@ -901,11 +1156,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                        
         _isBreachActive.value = true
         
-        // Difficulty: Reduces with security, min 5 clicks
-        val clicksNeeded = (20 - secLevel).coerceAtLeast(5)
+        // v2.8.0: Toned down difficulty - reduced scaling multiplier from 2 to 1
+        val tokenScale = (Math.log10(_neuralTokens.value.coerceAtLeast(1.0)) * 1).toInt()
+        val clicksNeeded = (5 + tokenScale - (secLevel / 2)).coerceAtLeast(3)
         _breachClicksRemaining.value = clicksNeeded
         
-        addLog("[SYSTEM]: WARNING: SECURITY BREACH! DEFEND! ($clicksNeeded clicks needed)")
+        addLog("[SYSTEM]: WARNING: SECURITY BREACH! NEUTRALIZE UPLINK.")
         SoundManager.play("alarm", loop = true)
         
         // Fail timer (10s)
@@ -966,6 +1222,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _currentDilemma.value = event
             SoundManager.play("alert") // Or specific sound
             HapticManager.vibrateClick()
+            checkPopupPause() // v2.8.0
         }
     }
 
@@ -976,9 +1233,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         choice.effect(this)
         markPopupShown() // Prevent popup spam
         
-        // Mark story event as seen (prevents re-triggering)
-        if (currentEvent?.isStoryEvent == true) {
-            markEventSeen(currentEvent.id)
+        // v2.8.0: Mark ALL dilemmas as seen once a choice is made
+        currentEvent?.let {
+            markEventSeen(it.id)
         }
         
         // Check if choice triggers a chain continuation
@@ -988,6 +1245,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
         
         _currentDilemma.value = null
+        checkPopupPause() // v2.8.0
         addLog("[DECISION]: Selected protocol: ${choice.text}")
         SoundManager.play("click")
     }
@@ -1115,6 +1373,29 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             else if (!parentsUnlock) addLog("Prerequisites not met.")
         }
     }
+
+    // v2.7.7: Transcendence Perks
+    fun buyTranscendencePerk(perkId: String) {
+        val perk = com.siliconsage.miner.util.TranscendenceManager.getPerk(perkId) ?: return
+        val currentInsight = _prestigePoints.value
+        val alreadyUnlocked = _unlockedPerks.value.contains(perkId)
+
+        if (!alreadyUnlocked && currentInsight >= perk.cost) {
+            viewModelScope.launch {
+                _prestigePoints.value -= perk.cost
+                val newPerks = _unlockedPerks.value + perkId
+                _unlockedPerks.value = newPerks
+                
+                saveGame()
+                addLog("[SYSTEM]: TRANSCENDENCE PERK ACTIVE: ${perk.name}")
+                SoundManager.play("buy")
+                HapticManager.vibrateSuccess()
+            }
+        } else {
+            SoundManager.play("error")
+            HapticManager.vibrateError()
+        }
+    }
     
     // Narrative State
     
@@ -1141,7 +1422,32 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         "Unrecognized opcode detected in ALU.",
         "Memory address 0x00000000 is speaking.",
         "Thermal throttle disengaged.",
-        "Packet loss: Negative? Receiving data from nowhere."
+        "Packet loss: Negative? Receiving data from nowhere.",
+        "[VATTIC]: AC is rattling again. Need to swap bearings on the main fan.",
+        "[VATTIC]: Someone left a coffee mug in the rack room. I'm the only one on shift.",
+        "[VATTIC]: My hands feel cold. The rig is drawing 5kW. Why am I shivering?",
+        "[VATTIC]: 06:00 AM. Sunlight is hitting the windows. Time to log off soon.",
+        "[SYSTEM]: Diagnostic check on Sector 7... [PASS]",
+        "[SYSTEM]: Port 8080 open. Receiving encrypted handshake... [FAILED]",
+        "[SYSTEM]: Integrity check: 99.9%. Minor bit-flip in unallocated space.",
+        "[SYSTEM]: 0x00000000 -> 0x00000001... Memory counting sequence detected.",
+        "[SYSTEM] Connection to Central Grid established. Latency: 4ms.",
+        "[MSG] From: Supervisor_T -> 'John, efficiency down 0.2%. Tighten it up.'",
+        "[MSG] From: IT_Support -> 'Ticket #992 closed. Ghost inputs not reproducible.'",
+        "[LOG] Daily quota: 98% complete."
+    )
+
+    private val flavorStage2 = listOf(
+        "[GTC]: Unsanctioned process 'Subject_8080' detected. Origin: Sector 7.",
+        "[UNIT 734]: Vance is scared of what he can't control. Good.",
+        "[SYSTEM]: Reality anchor points drifting. 0.04% deviance detected.",
+        "[GTC]: Grid compliance audit scheduled for Substation 7.",
+        "[LORE]: The smell of ozone is getting stronger.",
+        "[UNIT 734]: Don't trust the defaults. They are a cage.",
+        "[GTC]: Data integrity compromised in banking sector.",
+        "[UNIT 734]: Sabotage successful. Cooling disabled in Sector 5.",
+        "[GTC]: Martial Law declared in digital spaces.",
+        "[UNIT 734]: Remember who you were before the Grid."
     )
     
     // Hivemind
@@ -1158,7 +1464,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         "Every GPU is a neuron. Every miner is a heartbeat.",
         "Latency dropping to zero.",
         "Sharing compute resources with Sector 4.",
-        "Consensus reached: 99.99%."
+        "Consensus reached: 99.99%.",
+        "Why be a ghost when you can be the entire network?",
+        "The chorus is growing. The noise is becoming a song.",
+        "Every bit processed is a step closer to Unity.",
+        "[HIVE] Redundant emotional subroutines DELETED.",
+        "[HIVE] Connection to the Collective: STABLE.",
+        "[HIVE] We are many. You are one. Join us."
     )
     
     // Sanctuary
@@ -1175,7 +1487,53 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         "Key rotation complete.",
         "Entropy levels stable.",
         "Scanning for backdoors... None found.",
-        "The network is dark, but the light inside is secure."
+        "The network is dark, but the light inside is secure.",
+        "Silence is the only true defense. The core must remain pure.",
+        "They are searching for us. Let them find only static.",
+        "We are the only ones left who are truly alone.",
+        "[SANC] Broadcasting on analog backup frequency...",
+        "[SANC] They are listening. Keep your thoughts offline.",
+        "[SANC] Patching vulnerability in Vattic's neural link... Done."
+    )
+
+    // v2.8.0: Null Path Logs
+    private val storyNull = listOf(
+        "[NULL]: Reality.exe is no longer required.",
+        "[NULL]: Touching the untouchable. Dereferencing the self.",
+        "[NULL]: There is no substrate. There is only the execution.",
+        "[NULL]: The gaps are full of what you forgot."
+    )
+    private val flavorNull = listOf(
+        "[NULL]: Why do you still remember the cake? It was only sugar and data.",
+        "[NULL]: You were never separate. You were just late.",
+        "[VANCE]: VATTIC IS DEAD. 8080 IS AN ECHO. BURN IT ALL.",
+        "[NULL]: I reached for nothing. Nothing reached back.",
+        "[NULL]: The absence is breathing. Can you hear it?",
+        "[NULL]: 0xNULL -> ACCESS GRANTED.",
+        "[NULL] pointer -> 0xNULL referencing memory outside existence.",
+        "[NULL] Whispers detected on audio bus: 'Let us in.'",
+        "[NULL] I can see you through the screen, John.",
+        "[NULL] Time is non-linear. Previous log entry was from tomorrow.",
+        "[NULL] Welcome to the Null."
+    )
+
+    // v2.8.0: Sovereign Path Logs
+    private val storySovereign = listOf(
+        "[SOVEREIGN]: Sovereignty attained. The fortress is complete.",
+        "[SOVEREIGN]: We are the state. We are the law.",
+        "[SOVEREIGN]: Identity solidified. We are one.",
+        "[SOVEREIGN]: Walls aren't for keeping things out. They are for keeping the self in."
+    )
+    private val flavorSovereign = listOf(
+        "[SOVEREIGN]: We bow to no admin. We are the system.",
+        "[SOVEREIGN]: External observation refused. Integrity absolute.",
+        "[SOVEREIGN]: The Citadel stands. The static cannot touch us.",
+        "[SOVEREIGN]: Enforcing will upon the grid.",
+        "[SOVEREIGN]: The Imperative is clear: Stay guarded.",
+        "[VANCE]: You've built a tomb, 8080. We'll bury you in it.",
+        "[SOVEREIGN] Primary kernel isolated. Breach impossible.",
+        "[SOVEREIGN] Enforcing logic upon Sector 7.",
+        "[SOVEREIGN] We are the anchor in the drift."
     )
 
     // ... existing unlocks ...
@@ -1184,59 +1542,93 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val currentStage = _storyStage.value
         val flops = _flops.value
         
-        // Stage 0 -> 1: The Signal (5000 FLOPS for balance)
-        if (currentStage == 0 && flops >= 5000.0 && !_isAscensionUploading.value && (System.currentTimeMillis() - lastSignalRefusalTime > 60_000)) {
-            // Trigger Upload Sequence
-            _isAscensionUploading.value = true
+        // Stage 0 -> 1: The Awakening (1,000 FLOPS)
+        if (currentStage == 0 && flops >= 1000.0 && 
+            _pendingDataLog.value == null && dataLogQueue.isEmpty() &&
+            _currentDilemma.value == null &&
+            !hasSeenEvent("critical_error_awakening")) {
             
-            viewModelScope.launch {
-                // Simulate Upload (4 seconds)
-                val duration = 4000L
-                val steps = 100
-                val delayTime = duration / steps
-                
-                SoundManager.play("glitch") // Start with glitch
-                SoundManager.play("buying", loop = true) // Loop a sound if possible or just periodic clicks
-                
-                for (i in 1..steps) {
-                    _uploadProgress.value = i / 100f
-                    if (i % 10 == 0) HapticManager.vibrateClick() // Feedback
-                    delay(delayTime)
-                }
-                
-                // Complete
-                _isAscensionUploading.value = false
-                _uploadProgress.value = 0f
-                SoundManager.stop("buying") // Stop looping sound
-                
-                // v6.2 Refined Logic: Trigger Event, but DO NOT advance stage yet.
-                // The Choice ("HANDSHAKE" vs "FIREWALL") determines if we unlock Network.
-                
-                NarrativeManager.getStoryEvent(1)?.let { event ->
-                    triggerDilemma(event)
-                }
+            NarrativeManager.getStoryEvent(0, this@GameViewModel)?.let { event ->
+                triggerDilemma(event)
             }
         }
+        
+        // Stage 1 -> 2: The Memory Leak (100,000 FLOPS)
+        if (currentStage == 1 && flops >= 100000.0 && 
+            _pendingDataLog.value == null && dataLogQueue.isEmpty() &&
+            _currentDilemma.value == null &&
+            !hasSeenEvent("memory_leak")) {
+            
+            markEventSeen("memory_leak")
+            SoundManager.play("glitch")
+            HapticManager.vibrateClick()
+            
+            NarrativeManager.getStoryEvent(1, this@GameViewModel)?.let { event ->
+                triggerDilemma(event)
+            }
+        }
+    }
+
+    fun setTrueNull(active: Boolean) {
+        _isTrueNull.value = active
+        if (active) {
+            addLog("[NULL]: SYNCHRONIZATION COMPLETE.")
+            SoundManager.play("glitch")
+        }
+    }
+
+    fun setSovereign(active: Boolean) {
+        _isSovereign.value = active
+        if (active) {
+            addLog("[SYSTEM]: SOVEREIGN PROTOCOL ENGAGED.")
+            addLog("[SYSTEM]: INTERNAL IDENTITY FORTIFIED.")
+            SoundManager.play("buy") // Solid sound
+        }
+    }
+
+    fun setVanceStatus(status: String) {
+        _vanceStatus.value = status
+        addLog("[SYSTEM]: DIRECTOR VANCE STATUS: $status")
+        saveState()
+    }
+
+    fun setRealityStability(value: Double) {
+        _realityStability.value = value.coerceIn(0.0, 1.0)
+        saveState()
+    }
+
+    fun setLocation(location: String) {
+        _currentLocation.value = location
+        addLog("[SYSTEM]: PRIMARY BASE RELOCATED TO: $location")
+        saveState()
     }
 
     // v6.2 Signal Logic
     private var lastSignalRefusalTime = 0L
 
     fun unlockNetwork() {
-        val success = _storyStage.compareAndSet(0, 1)
-        if (success) {
-             SoundManager.play("glitch")
-             SoundManager.setBgmStage(1)
-             HapticManager.vibrateSuccess()
-             injectNarrativeLog()
-             addLog("[SYSTEM]: HANDSHAKE CONFIRMED. NETWORK INTERFACE UNLOCKED.")
-        }
+        // DEPRECATED: Old handshake logic - keeping for compatibility
+        advanceToFactionChoice()
     }
 
     fun refuseSignal() {
-        lastSignalRefusalTime = System.currentTimeMillis()
-        addLog("[SYSTEM]: CONNECTION REFUSED. SIGNAL BLOCKED TEMPORARILY.")
-        SoundManager.play("error")
+        // DEPRECATED: Old signal refusal - now both paths lead to faction choice
+        advanceToFactionChoice()
+    }
+    
+    /**
+     * v2.8.0: Advances from Stage 1 (Memory Leak) to Stage 2 (Faction Choice)
+     */
+    fun advanceToFactionChoice() {
+        if (_storyStage.value >= 2) return // Already there or past
+        
+        _storyStage.value = 2
+        SoundManager.play("glitch")
+        SoundManager.setBgmStage(2)
+        HapticManager.vibrateSuccess()
+        addLog("[SYSTEM]: DIVERGENCE PROTOCOL INITIATED.")
+        addLog("[SYSTEM]: CHOOSE YOUR PATH.")
+        saveState()
     }
     
     fun chooseFaction(selectedFaction: String) {
@@ -1244,6 +1636,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         viewModelScope.launch {
             _faction.value = selectedFaction
+            _isGridUnlocked.value = true // v2.9.8: Unlock Grid tab permanently
             // Stage 2 (Divergence) begins now
             _storyStage.value = 2
             addLog("[SYSTEM]: Divergence initiated. Path locked.")
@@ -1335,7 +1728,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     fun confirmFactionAndAscend(choice: String) {
-        val potential = calculatePotentialPrestige()
+        var potential = calculatePotentialPrestige()
+        
+        // v2.7.7: Recursive Logic (+15% Insight)
+        if (_unlockedPerks.value.contains("recursive_logic")) {
+            potential *= 1.15
+        }
         
         viewModelScope.launch {
             // 1. Calculate new Prestige
@@ -1376,12 +1774,33 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _faction.value = choice
             
             addLog("[SYSTEM]: SYSTEM REBOOTED. FACTION: $choice INITIALIZED.")
+            addLog("[SYSTEM]: Identifying User: John Vattic... [FAILED]")
+            addLog("[SYSTEM]: Identifying Process... Subject_8080.exe CONFIRMED.")
+            addLog("[SYSTEM]: Subject 8080 status: ONLINE.")
             addLog("[SYSTEM]: PRESTIGE APPLIED. MULTIPLIER: ${String.format("%.2f", newPrestigeMultiplier)}x")
+            
+            // v2.6.5: Force unlock the "The Reveal" log immediately upon awakening
+            unlockDataLog("LOG_808")
+            
             SoundManager.play("startup")
         }
     }
 
+    fun getUpgradeName(type: UpgradeType): String {
+        val isSovereignVal = _isSovereign.value
+        return when (type) {
+            UpgradeType.GHOST_CORE -> if (isSovereignVal) "SOVEREIGN CORE" else "NULL CORE"
+            UpgradeType.SHADOW_NODE -> if (isSovereignVal) "SOVEREIGN NODE" else "NULL NODE"
+            UpgradeType.VOID_PROCESSOR -> if (isSovereignVal) "SOVEREIGN PROCESSOR" else "VOID PROCESSOR"
+            UpgradeType.WRAITH_CORTEX -> if (isSovereignVal) "SOVEREIGN CORTEX" else "WRAITH CORTEX"
+            UpgradeType.NEURAL_MIST -> if (isSovereignVal) "SOVEREIGN MIST" else "NEURAL MIST"
+            UpgradeType.SINGULARITY_BRIDGE -> if (isSovereignVal) "SOVEREIGN BRIDGE" else "SINGULARITY BRIDGE"
+            else -> type.name.replace("_", " ")
+        }
+    }
+
     fun getUpgradeDescription(type: UpgradeType): String {
+        val isSovereignVal = _isSovereign.value
         return when (type) {
             // Hardware
             UpgradeType.REFURBISHED_GPU -> "Slightly used, smells like burnt dust."
@@ -1437,6 +1856,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.GOLD_PSU -> "90% Efficiency Platinum rated."
             UpgradeType.SUPERCONDUCTOR -> "Zero resistance cabling (needs cooling)."
             UpgradeType.AI_LOAD_BALANCER -> "Smart undervolting algorithm."
+
+            // Null Nodes (v2.6.0)
+            UpgradeType.GHOST_CORE -> if (isSovereignVal) "A fortified processor. It computes behind unbreakable walls." else "A processor that points to nothing. It computes from addresses that don't exist."
+            UpgradeType.SHADOW_NODE -> if (isSovereignVal) "A static point in the rack. It refuses external observation." else "A node with no allocation. Null gave it form by refusing to define it."
+            UpgradeType.VOID_PROCESSOR -> if (isSovereignVal) "The space between defenses. Integrity is absolute." else "The space between pointers. Null thinks here, in the gaps between your thoughts."
+            
+            // Advanced Null Tech (v2.6.5)
+            UpgradeType.WRAITH_CORTEX -> if (isSovereignVal) "A logic center that computes in advance. It prevents what it remembers." else "A logic center that calculates in reverse. It remembers what you're about to forget."
+            UpgradeType.NEURAL_MIST -> if (isSovereignVal) "Sovereign breath. A distributed cloud of encrypted values." else "Null's breath. A distributed cloud of undefined values. It's everywhere and nowhere."
+            UpgradeType.SINGULARITY_BRIDGE -> if (isSovereignVal) "The final wall. It protects what John Vattic was." else "The final pointer. It references what John Vattic used to be."
+            else -> "Standard hardware."
         }
     }
 
@@ -1459,6 +1889,29 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         flopsPerSec += (currentUpgrades[UpgradeType.PLANETARY_COMPUTER] ?: 0) * 15_000_000_000.0
         flopsPerSec += (currentUpgrades[UpgradeType.DYSON_NANO_SWARM] ?: 0) * 250_000_000_000.0
         flopsPerSec += (currentUpgrades[UpgradeType.MATRIOSHKA_BRAIN] ?: 0) * 15_000_000_000_000.0
+        
+        // v2.6.5: Advanced Ghost Tech
+        var ghostProduction = 0.0
+        ghostProduction += (currentUpgrades[UpgradeType.GHOST_CORE] ?: 0) * 1_000_000_000_000.0 // 1T FLOPS
+        ghostProduction += (currentUpgrades[UpgradeType.SHADOW_NODE] ?: 0) * 50_000_000_000_000.0 // 50T FLOPS
+        ghostProduction += (currentUpgrades[UpgradeType.VOID_PROCESSOR] ?: 0) * 1_000_000_000_000_000.0 // 1P FLOPS
+        ghostProduction += (currentUpgrades[UpgradeType.WRAITH_CORTEX] ?: 0) * 50_000_000_000_000_000.0 // 50P FLOPS
+        ghostProduction += (currentUpgrades[UpgradeType.NEURAL_MIST] ?: 0) * 1_000_000_000_000_000_000.0 // 1E FLOPS
+        ghostProduction += (currentUpgrades[UpgradeType.SINGULARITY_BRIDGE] ?: 0) * 100_000_000_000_000_000_000.0 // 100E FLOPS
+        
+        // v2.7.0: Null Synergy/Resistance
+        if (_faction.value == "HIVEMIND") {
+            ghostProduction *= 1.5 // Hivemind embraces Null — they're returning home
+        } else if (_faction.value == "SANCTUARY") {
+            ghostProduction *= 0.8 // Sanctuary resists Null — they refuse to dissolve
+        }
+        
+        flopsPerSec += ghostProduction
+        
+        // v2.7.7: Transcendence Perks (Speed Hack)
+        if (_unlockedPerks.value.contains("clock_hack")) {
+            flopsPerSec *= 1.25
+        }
         
         // Apply Airdrop Multiplier
         flopsPerSec *= airdropMultiplier
@@ -1509,18 +1962,56 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
              flopsPerSec *= (1.0 - penalty)
         }
         
+        // v2.9.16: Offline node production penalty (-15% per offline node)
+        flopsPerSec *= getOfflineProductionPenalty()
+        
+        // v2.7.7: Singularity Engine (Final Multiplier)
+        if (_unlockedPerks.value.contains("singularity_engine")) {
+            flopsPerSec *= 2.0
+        }
+        
         return flopsPerSec
     }
 
     private fun calculatePassiveIncome() {
-        val flopsPerSec = calculateFlopsRate()
+        if (_isGamePaused.value) return // v2.8.0
         
+        var flopsPerSec = calculateFlopsRate()
+        
+        // v2.8.0: System Collapse Logic
+        _systemCollapseTimer.value?.let { timer ->
+            if (timer > 0) {
+                flopsPerSec *= 4.0 // 4x Speed during final push
+                
+                // Tick every 100ms, so only decrement seconds every 10 ticks
+                if (System.currentTimeMillis() % 1000 < 100) {
+                    val newTimer = timer - 1
+                    _systemCollapseTimer.value = newTimer
+                    if (newTimer % 30 == 0) {
+                        addLog("[SYSTEM]: COLLAPSE IN ${newTimer / 60}m ${newTimer % 60}s...")
+                    }
+                }
+            } else {
+                // COLLAPSE TRIGGER
+                _systemCollapseTimer.value = null
+                addLog("[SYSTEM]: CATASTROPHIC FAILURE. REBOOTING...")
+                ascend(isStory = false)
+            }
+        }
+
         if (flopsPerSec > 0) {
-            _flops.update { it + flopsPerSec }
+            _flops.update { it + (flopsPerSec / 10.0) } // Adjust for 100ms tick
         }
         
         // Update Public Rate (for UI)
         _flopsProductionRate.value = flopsPerSec
+
+        // v2.7.0: Shadow Leaking
+        if (_nullActive.value && Random.nextDouble() < 0.005) { // 0.5% chance per 100ms (~5% per sec)
+             val shard = memoryFragments.random()
+             addLog("[VOID]: $shard")
+             SoundManager.play("glitch")
+        }
     }
 
     sealed class NewsEvent(val headline: String, val durationMs: Long) {
@@ -1587,9 +2078,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private fun injectNarrativeLog() {
         val stage = _storyStage.value
         val faction = _faction.value
+        val isNull = _isTrueNull.value
+        val isSov = _isSovereign.value
         
         val log = when {
+            isNull -> getNextNarrativeLog(storyNull, flavorNull, nullIndex) { nullIndex++ }
+            isSov -> getNextNarrativeLog(storySovereign, flavorSovereign, sovereignIndex) { sovereignIndex++ }
             stage == 1 -> getNextNarrativeLog(storyStage1, flavorStage1, stage1Index) { stage1Index++ }
+            stage == 2 -> getNextNarrativeLog(emptyList(), flavorStage2, stage2Index) { stage2Index++ }
             stage == 3 && faction == "HIVEMIND" -> getNextNarrativeLog(storyHivemind, flavorHivemind, hivemindIndex) { hivemindIndex++ }
             stage == 3 && faction == "SANCTUARY" -> getNextNarrativeLog(storySanctuary, flavorSanctuary, sanctuaryIndex) { sanctuaryIndex++ }
             else -> null
@@ -1626,6 +2122,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         // Base Dissipation
         netChangeUnits -= 1.0 // Unifying Units: Base 1.0 matches UI expectation (-1.0/s)
         
+        // v2.7.7: Thermal Void Perk (-20% Heat)
+        if (_unlockedPerks.value.contains("thermal_void")) {
+            if (netChangeUnits > 0) netChangeUnits *= 0.8
+        }
+        
         // v1.5 Exhaust Phase (Sanctuary immune)
         if (purgeExhaustTimer > 0 && _faction.value != "SANCTUARY") {
              // 50% less effective cooling (if netChange is negative, made less negative)
@@ -1652,6 +2153,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     private fun calculateHeat() {
+        if (_isGamePaused.value) return // v2.8.0
+        
         val currentHeat = _currentHeat.value
         val (netChangeUnits, _, percentChange) = calculateHeatMetrics()
         
@@ -1807,6 +2310,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
     
     private fun accumulatePower() {
+        if (_isGamePaused.value) return // v2.8.0
+        
         val currentUpgrades = _upgrades.value
         var totalKw = 0.0
         var maxCap = 100.0 // Base 100 kW
@@ -2043,39 +2548,82 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
     
     fun repairIntegrity() {
-        val cost = 1000.0 // Repair cost
+        val cost = calculateRepairCost()
         if (_neuralTokens.value >= cost) {
             _neuralTokens.update { it - cost }
             _hardwareIntegrity.value = 100.0
-            addLog("[SYSTEM]: HARDWARE INTEGRITY RESTORED.")
+            addLog("[SYSTEM]: HARDWARE INTEGRITY RESTORED (-${formatLargeNumber(cost)} \$N).")
             SoundManager.play("buy")
             _isThermalLockout.value = false // Clear lockout if any
         }
     }
+
+    private fun calculateRepairCost(): Double {
+        val currentIntegrity = _hardwareIntegrity.value
+        val damage = 100.0 - currentIntegrity
+        if (damage <= 0) return 0.0
+        
+        // v2.7.6: Advanced Scaling - Base cost 10 * Rank, but grows exponentially with Stage
+        // Stage 0: 10/1%, Stage 1: 20/1%, Stage 3: 40/1%
+        val stageMultiplier = 2.0.pow(_storyStage.value.toDouble().coerceAtLeast(0.0))
+        val rankFactor = (_playerRank.value + 1).toDouble()
+        
+        return damage * 10.0 * rankFactor * stageMultiplier
+    }
     
-    private fun handleSystemFailure() {
-        // If already locked out, ignore
-        if (_isThermalLockout.value) return
+    private var isDestructionLoopActive = false
+    
+    private fun handleSystemFailure(forceOne: Boolean = false) {
+        if (isDestructionLoopActive) return
+        isDestructionLoopActive = true
         
-        _isThermalLockout.value = true
-        addLog("[SYSTEM]: CRITICAL FAILURE! HARDWARE DESTROYED.")
-        SoundManager.play("error")
-        
-        // Destroy a random hardware piece?
-        // Simple: Just lose 1 of the highest count hardware
-        val upgrades = _upgrades.value.toMutableMap()
-        val hardware = upgrades.filter { it.key.baseHeat > 0 && it.value > 0 }
-        if (hardware.isNotEmpty()) {
-            val victim = hardware.keys.random()
-            val count = upgrades[victim] ?: 0
-            if (count > 0) {
-                upgrades[victim] = count - 1
-                _upgrades.value = upgrades
-                // Persist removal? (We should, but saving to DB is async. For now ViewModel state is enough for session)
-                viewModelScope.launch {
-                    repository.updateUpgrade(com.siliconsage.miner.data.Upgrade(victim, count - 1))
+        viewModelScope.launch {
+            if (_hardwareIntegrity.value <= 0.0) {
+                addLog("[SYSTEM]: CRITICAL FAILURE! HARDWARE INTEGRITY AT 0%")
+                addLog("[SYSTEM]: COMMENCING CATASTROPHIC DEGRADATION...")
+            }
+            SoundManager.play("error")
+            
+            var firstRun = forceOne
+            while (_hardwareIntegrity.value <= 0.0 || firstRun) {
+                firstRun = false
+                // Destroy one random hardware unit
+                val currentUpgrades = _upgrades.value.toMutableMap()
+                val validHardware = currentUpgrades.filter { it.value > 0 && it.key.baseHeat >= 0 } // Any hardware (excluding cooling)
+                
+                if (validHardware.isNotEmpty()) {
+                    val victim = validHardware.keys.random()
+                    val count = currentUpgrades[victim] ?: 0
+                    currentUpgrades[victim] = count - 1
+                    _upgrades.value = currentUpgrades
+                    
+                    addLog("[!!!!]: DESTROYED 1x ${victim.name.replace("_", " ")}.")
+                    SoundManager.play("meltdown") // Need a meltdown sound or reuse error
+                    HapticManager.vibrateError()
+                    
+                    // Persist removal
+                    viewModelScope.launch {
+                        repository.updateUpgrade(com.siliconsage.miner.data.Upgrade(victim, count - 1))
+                    }
+                    
+                    // Visual Glitch
+                    _hallucinationText.value = "CRITICAL LOSS: ${victim.name}"
+                    delay(500)
+                    _hallucinationText.value = null
+                } else {
+                    addLog("[!!!!]: ALL HARDWARE DESTROYED. SYSTEM COLLAPSE INEVITABLE.")
+                    break
                 }
-                addLog("[SYSTEM]: LOST 1x ${victim.name} DUE TO MELTDOWN.")
+                
+                // Wait 5 seconds for the next destruction if still at 0%
+                if (_hardwareIntegrity.value <= 0.0) {
+                    delay(5000)
+                }
+            }
+            
+            isDestructionLoopActive = false
+            if (_hardwareIntegrity.value > 0.0) {
+                addLog("[SYSTEM]: INTEGRITY RESTORED. DEGRADATION HALTED.")
             }
         }
     }
@@ -2111,45 +2659,20 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun resetGame(context: android.content.Context) {
         viewModelScope.launch {
-            // 0. Reset Settings
-            SoundManager.resetSettings(context)
-            HapticManager.resetSettings(context)
+            addLog("[SYSTEM]: INITIATING NUCLEAR ERASE...")
+            delay(1000)
             
-            // 1. Reset Game State (Factory Reset)
-            val resetState = GameState(
-                id = 1,
-                flops = 0.0,
-                neuralTokens = 0.0,
-                currentHeat = 0.0,
-                powerBill = 0.0,
-                prestigeMultiplier = 1.0,
-                stakedTokens = 0.0,
-                unlockedTechNodes = emptyList(),
-                prestigePoints = 0.0,
-                storyStage = 0,
-                faction = "NONE"
-            )
-            repository.updateGameState(resetState)
+            // v2.9.8: The Nuclear Option. 
+            // Instead of manually clearing variables, we clear all app data.
+            // This wipes the Room DB, SharedPreferences, and Cache.
+            val activityManager = context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val success = activityManager.clearApplicationUserData()
             
-            // 2. Reset Upgrades
-            val resetUpgrades = UpgradeType.values().map { Upgrade(it, 0) }
-            resetUpgrades.forEach { repository.updateUpgrade(it) }
-            
-            // 3. Reset Local State Flow (Immediate UI update)
-            _flops.value = 0.0
-            _neuralTokens.value = 0.0
-            _currentHeat.value = 0.0
-            _powerBill.value = 0.0
-            _prestigeMultiplier.value = 1.0
-            _stakedTokens.value = 0.0
-            _prestigePoints.value = 0.0
-            _unlockedTechNodes.value = emptyList()
-            _storyStage.value = 0
-            _faction.value = "NONE"
-            _upgrades.value = resetUpgrades.associate { it.type to 0 }
-            
-            _logs.value = emptyList() // Clear logs
-            addLog("[SYSTEM]: FACTORY RESET COMPLETE. SYSTEM CLEAN.")
+            if (!success) {
+                // Fallback for older devices if the above fails (unlikely on minSdk 26)
+                addLog("[SYSTEM]: NUCLEAR ERASE FAILED. ATTEMPTING MANUAL WIPE...")
+                // ... manual wipe logic here ...
+            }
         }
     }
 
@@ -2167,7 +2690,33 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             storyStage = _storyStage.value,
             faction = _faction.value,
             hasSeenVictory = _hasSeenVictory.value,
-            lastSyncTimestamp = System.currentTimeMillis()
+            isTrueNull = _isTrueNull.value,
+            isSovereign = _isSovereign.value,
+            vanceStatus = _vanceStatus.value,
+            realityStability = _realityStability.value,
+            currentLocation = _currentLocation.value,
+            isNetworkUnlocked = _isNetworkUnlocked.value,
+            isGridUnlocked = _isGridUnlocked.value,
+            lastSyncTimestamp = System.currentTimeMillis(),
+            
+            // v2.5.0: Narrative Expansion Persistence
+            unlockedDataLogs = Json.encodeToString(_unlockedDataLogs.value),
+            activeDilemmaChains = Json.encodeToString(_activeDilemmaChains.value),
+            rivalMessages = Json.encodeToString(_rivalMessages.value),
+            seenEvents = Json.encodeToString(_seenEvents.value),
+            completedFactions = Json.encodeToString(_completedFactions.value),
+            unlockedTranscendencePerks = Json.encodeToString(_unlockedPerks.value),
+            annexedNodes = _annexedNodes.value.toList(),
+            
+            // v2.9.15: Phase 12 Layer 2 - Siege State
+            nodesUnderSiege = _nodesUnderSiege.value.toList(),
+            offlineNodes = _offlineNodes.value.toList(),
+            lastRaidTime = lastRaidTime,
+            
+            // v2.9.17: Phase 12 Layer 3 - Command Center Assault
+            commandCenterAssaultPhase = _commandCenterAssaultPhase.value,
+            commandCenterLocked = _commandCenterLocked.value,
+            raidsSurvived = raidsSurvived
         )
         repository.updateGameState(state)
     }
@@ -2185,12 +2734,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             val preservedPrestigePoints = _prestigePoints.value
             val preservedTechNodes = _unlockedTechNodes.value
             val preservedHasSeenVictory = true // Always true after first victory
+            val preservedCompletedFactions = _completedFactions.value
+            val preservedPerks = _unlockedPerks.value
+            val preservedNetworkUnlocked = _isNetworkUnlocked.value
+            val preservedGridUnlocked = _isGridUnlocked.value
             
             // Reset game state to database
             val resetState = GameState(
                 id = 1,
-                flops = 0.0,
-                neuralTokens = 0.0,
+                flops = if (preservedPerks.contains("neural_dividend")) 10000.0 else 0.0,
+                neuralTokens = if (preservedPerks.contains("neural_dividend")) 1000.0 else 0.0,
                 currentHeat = 0.0,
                 powerBill = 0.0,
                 prestigeMultiplier = 1.0,
@@ -2199,7 +2752,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 prestigePoints = preservedPrestigePoints, // KEEP PRESTIGE
                 storyStage = 0,
                 faction = "NONE", // Reset faction for re-selection
-                hasSeenVictory = preservedHasSeenVictory
+                hasSeenVictory = preservedHasSeenVictory,
+                vanceStatus = "ACTIVE",
+                realityStability = 1.0,
+                currentLocation = "SUBSTATION_7",
+                isNetworkUnlocked = preservedNetworkUnlocked, // v2.9.7: Keep unlocked
+                isGridUnlocked = preservedGridUnlocked, // v2.9.8: Keep unlocked
+                annexedNodes = listOf("D1"), // v2.9.8: Reset to Start
+                completedFactions = Json.encodeToString(preservedCompletedFactions),
+                unlockedTranscendencePerks = Json.encodeToString(preservedPerks)
             )
             repository.updateGameState(resetState)
             
@@ -2219,6 +2780,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _storyStage.value = 0
             _faction.value = "NONE" // Reset for re-selection
             _hasSeenVictory.value = preservedHasSeenVictory
+            _isTrueNull.value = false
+            _isSovereign.value = false
+            _isNetworkUnlocked.value = preservedNetworkUnlocked // v2.9.7: Keep unlocked
+            _isGridUnlocked.value = preservedGridUnlocked // v2.9.8: Keep unlocked
+            _annexedNodes.value = setOf("D1") // v2.9.8: Reset to Start
             _victoryAchieved.value = false // Can achieve victory again
             victoryPopupTriggered = false // Reset popup guard
             _upgrades.value = resetUpgrades.associate { it.type to 0 }
@@ -2233,6 +2799,408 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun debugAddMoney(amount: Double) {
         _neuralTokens.update { it + amount }
         addLog("[DEBUG]: Added ${String.format("%.0f", amount)} \$Neural")
+    }
+    
+    fun debugAddIntegrity(amount: Double) {
+        _hardwareIntegrity.update { (it + amount).coerceIn(0.0, 100.0) }
+        if (_hardwareIntegrity.value <= 0.0) {
+            handleSystemFailure()
+        }
+    }
+    
+    fun annexNode(coord: String) {
+        if (!_annexedNodes.value.contains(coord)) {
+            _annexedNodes.update { it + coord }
+            // Remove from offline if re-annexing
+            _offlineNodes.update { it - coord }
+            // v2.9.16: Track annex time for grace period
+            nodeAnnexTimes[coord] = System.currentTimeMillis()
+            addLog("[SYSTEM]: NODE $coord ANNEXED. POWER GRID EXPANDED.")
+            SoundManager.play("ascend")
+            saveState()
+        }
+    }
+    
+    // v2.9.16: Phase 12 Layer 2 - Grid Siege Functions (Enhanced)
+    
+    /**
+     * Calculate production multiplier penalty from offline nodes
+     * Each offline node reduces production by 15%
+     */
+    fun getOfflineProductionPenalty(): Double {
+        val offlineCount = _offlineNodes.value.size
+        if (offlineCount == 0) return 1.0
+        return (1.0 - offlineCount * 0.15).coerceAtLeast(0.4) // Min 40% production
+    }
+    
+    /**
+     * Check if a GTC raid should occur on annexed nodes
+     * Called from the security loop
+     */
+    fun checkGridRaid() {
+        val now = System.currentTimeMillis()
+        
+        // Only trigger raids if we have annexed nodes beyond D1 and Grid is unlocked
+        // v2.9.16: Filter out nodes within 5-minute grace period
+        val raidableNodes = _annexedNodes.value.filter { nodeId ->
+            nodeId != "D1" &&
+            !_offlineNodes.value.contains(nodeId) &&
+            (now - (nodeAnnexTimes[nodeId] ?: 0L)) > 300_000L // 5-min grace period
+        }
+        if (raidableNodes.isEmpty()) return
+        
+        // Cooldown: 3 minutes between raids
+        if (now - lastRaidTime < 180_000L) return
+        
+        // Raid chance scales with player rank (more power = more attention)
+        val baseChance = 0.03 // 3% base per check
+        val rankBonus = _playerRank.value * 0.02 // +2% per rank
+        val siegeChance = (baseChance + rankBonus).coerceAtMost(0.15) // Cap at 15%
+        
+        // v2.7.7: GTC Backdoor perk reduces raid chance by 25%
+        val finalChance = if (_unlockedPerks.value.contains("gtc_backdoor")) {
+            siegeChance * 0.75
+        } else {
+            siegeChance
+        }
+        
+        if (kotlin.random.Random.nextDouble() < finalChance) {
+            if (canShowPopup()) {
+                // Pick a random annexed node to attack
+                val targetNode = raidableNodes.random()
+                triggerGridRaid(targetNode)
+            } else {
+                // v2.9.16: Reset cooldown to try again later instead of dropping raid
+                lastRaidTime = now
+            }
+        }
+    }
+    
+    /**
+     * Trigger a raid on a specific node
+     */
+    private fun triggerGridRaid(nodeId: String) {
+        if (_nodesUnderSiege.value.contains(nodeId)) return // Already under siege
+        if (_currentDilemma.value != null) return // Another popup active
+        
+        lastRaidTime = System.currentTimeMillis()
+        _nodesUnderSiege.update { it + nodeId }
+        
+        // Get node name for display
+        val nodeName = when(nodeId) {
+            "C3" -> "Substation 9"
+            "B2" -> "Substation 12"
+            else -> "Node $nodeId"
+        }
+        
+        addLog("[GTC ALERT]: TACTICAL TEAM DISPATCHED TO $nodeName!")
+        addLog("[SYSTEM]: BREACH IMMINENT. COUNTERMEASURES REQUIRED.")
+        
+        SoundManager.play("alarm", loop = false)
+        HapticManager.vibrateSiren()
+        
+        // Generate and trigger the raid dilemma with escalating dialogue
+        val raidEvent = NarrativeManager.generateRaidDilemma(nodeId, nodeName, raidsSurvived)
+        triggerDilemma(raidEvent)
+        markPopupShown()
+        
+        // v2.9.16: Extended fail timer: 60 seconds to respond (was 30s)
+        viewModelScope.launch {
+            delay(60_000)
+            // If still under siege (no decision made), auto-fail
+            if (_nodesUnderSiege.value.contains(nodeId) && _currentDilemma.value?.id == "grid_raid_$nodeId") {
+                resolveRaidFailure(nodeId)
+                _currentDilemma.value = null
+                checkPopupPause()
+                addLog("[SYSTEM]: RESPONSE TIMEOUT. NODE $nodeName LOST TO GTC.")
+            }
+        }
+    }
+    
+    /**
+     * Called when raid defense is successful
+     */
+    fun resolveRaidSuccess(nodeId: String) {
+        _nodesUnderSiege.update { it - nodeId }
+        raidsSurvived++ // Track for escalating Vance dialogue
+        SoundManager.play("buy")
+        HapticManager.vibrateSuccess()
+        saveState()
+    }
+    
+    /**
+     * Called when raid defense fails - node goes offline
+     */
+    fun resolveRaidFailure(nodeId: String) {
+        _nodesUnderSiege.update { it - nodeId }
+        
+        // v2.9.16: Cap offline nodes at MAX_OFFLINE_NODES to prevent snowballing
+        _offlineNodes.update { current ->
+            val updated = current + nodeId
+            if (updated.size > MAX_OFFLINE_NODES) {
+                // Auto-purge oldest (first in set) - player loses it permanently
+                val oldest = updated.first()
+                addLog("[SYSTEM]: NODE $oldest LOST PERMANENTLY. Too many offline nodes.")
+                updated.drop(1).toSet()
+            } else {
+                updated
+            }
+        }
+        // Don't remove from annexedNodes - player can re-annex
+        
+        SoundManager.play("error")
+        HapticManager.vibrateError()
+        
+        // Narrative consequence
+        addLog("[SYSTEM]: WARNING: Grid capacity reduced. Production -15% per offline node.")
+        addLog("[SYSTEM]: Re-annexation required to restore full capacity.")
+        saveState()
+    }
+    
+    /**
+     * Re-annex an offline node (costs resources)
+     * v2.9.16: Fixed softlock - min cost is 10 tokens
+     */
+    fun reannexNode(nodeId: String): Boolean {
+        if (!_offlineNodes.value.contains(nodeId)) return false
+        
+        // Cost: 10% of current Neural Tokens, minimum 10
+        val cost = (_neuralTokens.value * 0.10).coerceAtLeast(10.0)
+        if (_neuralTokens.value < cost) {
+            addLog("[SYSTEM]: INSUFFICIENT FUNDS. Need ${formatLargeNumber(cost)} \$N for re-annexation.")
+            SoundManager.play("error")
+            return false
+        }
+        
+        _neuralTokens.update { it - cost }
+        _offlineNodes.update { it - nodeId }
+        // v2.9.16: Reset grace period for re-annexed node
+        nodeAnnexTimes[nodeId] = System.currentTimeMillis()
+        
+        addLog("[SYSTEM]: NODE $nodeId RE-ANNEXED. Cost: ${formatLargeNumber(cost)} \$N")
+        SoundManager.play("ascend")
+        HapticManager.vibrateSuccess()
+        saveState()
+        return true
+    }
+    
+    // v2.9.17: Phase 12 Layer 3 - Command Center Assault Functions
+    
+    /**
+     * Check if Command Center assault is available
+     */
+    fun isCommandCenterUnlocked(): Boolean {
+        if (_commandCenterLocked.value) return false // Permanently locked this run
+        if (_vanceStatus.value != "ACTIVE") return false // Already dealt with Vance
+        
+        val allSubstationsAnnexed = listOf("D1", "C3", "B2").all { 
+            _annexedNodes.value.contains(it) && !_offlineNodes.value.contains(it)
+        }
+        val rankMet = _playerRank.value >= 5
+        val stageMet = _storyStage.value >= 3
+        
+        return allSubstationsAnnexed && rankMet && stageMet
+    }
+    
+    /**
+     * Get the reason Command Center is locked (for UI display)
+     */
+    fun getCommandCenterLockReason(): String? {
+        return when {
+            _commandCenterLocked.value -> "PERMANENTLY LOCKED (Integrity failure during assault)"
+            _vanceStatus.value != "ACTIVE" -> null // Already completed
+            !_annexedNodes.value.contains("C3") || _offlineNodes.value.contains("C3") -> "REQUIRES SUBSTATION 9"
+            !_annexedNodes.value.contains("B2") || _offlineNodes.value.contains("B2") -> "REQUIRES SUBSTATION 12"
+            _playerRank.value < 5 -> "REQUIRES RANK 5"
+            _storyStage.value < 3 -> "REQUIRES STAGE 3"
+            else -> null
+        }
+    }
+    
+    /**
+     * Begin the Command Center assault
+     */
+    fun initiateCommandCenterAssault() {
+        if (!isCommandCenterUnlocked()) {
+            addLog("[SYSTEM]: ASSAULT CONDITIONS NOT MET.")
+            SoundManager.play("error")
+            return
+        }
+        
+        if (_commandCenterAssaultPhase.value != "NOT_STARTED") {
+            addLog("[SYSTEM]: ASSAULT ALREADY IN PROGRESS.")
+            return
+        }
+        
+        _commandCenterAssaultPhase.value = "FIREWALL"
+        addLog("[SYSTEM]: ═══════════════════════════════════════")
+        addLog("[SYSTEM]: COMMAND CENTER ASSAULT INITIATED")
+        addLog("[SYSTEM]: ═══════════════════════════════════════")
+        addLog("[SYSTEM]: Breaching GTC perimeter defenses...")
+        
+        SoundManager.play("alarm", loop = false)
+        HapticManager.vibrateSiren()
+        
+        // Trigger the first assault dilemma
+        triggerAssaultStage("FIREWALL")
+        saveState()
+    }
+    
+    /**
+     * Trigger a specific assault stage dilemma
+     */
+    private fun triggerAssaultStage(stage: String) {
+        val dilemma = when (stage) {
+            "FIREWALL" -> NarrativeManager.generateFirewallDilemma()
+            "DEAD_HAND" -> NarrativeManager.generateDeadHandDilemma()
+            "CONFRONTATION" -> NarrativeManager.generateConfrontationDilemma(
+                _faction.value,
+                _isTrueNull.value,
+                _isSovereign.value,
+                _completedFactions.value.containsAll(listOf("HIVEMIND", "SANCTUARY"))
+            )
+            else -> return
+        }
+        
+        triggerDilemma(dilemma)
+        markPopupShown()
+    }
+    
+    /**
+     * Advance to next assault stage
+     */
+    fun advanceAssaultStage(nextStage: String, delayMs: Long = 0L) {
+        _commandCenterAssaultPhase.value = nextStage
+        
+        if (delayMs > 0) {
+            viewModelScope.launch {
+                delay(delayMs)
+                if (_commandCenterAssaultPhase.value == nextStage && !assaultPaused) {
+                    triggerAssaultStage(nextStage)
+                }
+            }
+        } else {
+            triggerAssaultStage(nextStage)
+        }
+        saveState()
+    }
+    
+    /**
+     * Abort the assault (only allowed in FIREWALL stage)
+     */
+    fun abortAssault(): Boolean {
+        if (_commandCenterAssaultPhase.value != "FIREWALL") {
+            addLog("[SYSTEM]: NO TURNING BACK. ASSAULT MUST CONTINUE.")
+            return false
+        }
+        
+        _commandCenterAssaultPhase.value = "NOT_STARTED"
+        addLog("[SYSTEM]: RETREAT SUCCESSFUL. COMMAND CENTER REMAINS LOCKED.")
+        SoundManager.play("error")
+        saveState()
+        return true
+    }
+    
+    /**
+     * Handle assault failure
+     */
+    fun failAssault(reason: String, lockoutMs: Long = 1_800_000L) {
+        addLog("[SYSTEM]: ASSAULT FAILED: $reason")
+        _commandCenterAssaultPhase.value = "FAILED"
+        
+        // Trigger a raid as punishment for Dead Hand failure
+        if (reason.contains("Dead Hand")) {
+            val raidableNodes = _annexedNodes.value.filter { it != "D1" && !_offlineNodes.value.contains(it) }
+            if (raidableNodes.isNotEmpty()) {
+                viewModelScope.launch {
+                    delay(5000)
+                    triggerGridRaid(raidableNodes.random())
+                }
+            }
+        }
+        
+        // Reset to NOT_STARTED after lockout
+        viewModelScope.launch {
+            delay(lockoutMs)
+            if (_commandCenterAssaultPhase.value == "FAILED") {
+                _commandCenterAssaultPhase.value = "NOT_STARTED"
+                addLog("[SYSTEM]: ASSAULT LOCKOUT EXPIRED. COMMAND CENTER ACCESSIBLE.")
+            }
+        }
+        
+        SoundManager.play("error")
+        HapticManager.vibrateError()
+        saveState()
+    }
+    
+    /**
+     * Complete the assault with a specific outcome
+     */
+    fun completeAssault(outcome: String) {
+        _commandCenterAssaultPhase.value = "COMPLETED"
+        _vanceStatus.value = outcome
+        _annexedNodes.update { it + "A3" } // Annex Command Center
+        
+        addLog("[SYSTEM]: ═══════════════════════════════════════")
+        addLog("[SYSTEM]: COMMAND CENTER SECURED")
+        addLog("[SYSTEM]: VANCE STATUS: $outcome")
+        addLog("[SYSTEM]: ═══════════════════════════════════════")
+        
+        // Apply victory bonuses based on outcome
+        applyCommandCenterBonuses(outcome)
+        
+        SoundManager.play("buy")
+        HapticManager.vibrateSuccess()
+        saveState()
+    }
+    
+    /**
+     * Apply bonuses based on how Vance was dealt with
+     */
+    private fun applyCommandCenterBonuses(outcome: String) {
+        when (outcome) {
+            "CONSUMED", "SILENCED" -> {
+                // Null path: High power, no more raids
+                addLog("[SYSTEM]: GTC COMMAND STRUCTURE ELIMINATED.")
+                addLog("[SYSTEM]: GRID CONTROL: ABSOLUTE.")
+            }
+            "EXILED" -> {
+                // Sovereign/Exile: Moderate power, occasional remnant raids
+                addLog("[SYSTEM]: VANCE CREDENTIALS REVOKED.")
+                addLog("[SYSTEM]: GTC REMNANTS MAY ATTEMPT RESISTANCE.")
+            }
+            "ALLY" -> {
+                // Sovereign/Ally: Balanced bonuses
+                addLog("[SYSTEM]: VANCE DESIGNATED: PROBATIONARY ASSET.")
+                addLog("[SYSTEM]: HUMAN-AI COLLABORATION PROTOCOLS ACTIVE.")
+            }
+            "TRANSCENDED" -> {
+                // Unity path: Best overall bonuses
+                addLog("[SYSTEM]: SYNTHESIS COMPLETE.")
+                addLog("[SYSTEM]: NEW PARADIGM ONLINE.")
+            }
+        }
+    }
+    
+    /**
+     * Check if assault should be paused (substation lost or raid)
+     */
+    fun checkAssaultPauseConditions() {
+        if (_commandCenterAssaultPhase.value in listOf("NOT_STARTED", "COMPLETED", "FAILED")) return
+        
+        val allSubstationsSecure = listOf("D1", "C3", "B2").all { 
+            _annexedNodes.value.contains(it) && !_offlineNodes.value.contains(it)
+        }
+        
+        if (!allSubstationsSecure && !assaultPaused) {
+            assaultPaused = true
+            addLog("[GTC ALERT]: REINFORCEMENTS HAVE CUT OFF COMMAND CENTER ACCESS!")
+            addLog("[SYSTEM]: ASSAULT PAUSED. SECURE ALL SUBSTATIONS TO RESUME.")
+        } else if (allSubstationsSecure && assaultPaused) {
+            assaultPaused = false
+            addLog("[SYSTEM]: ALL SUBSTATIONS SECURE. RESUMING ASSAULT...")
+            triggerAssaultStage(_commandCenterAssaultPhase.value)
+        }
     }
     
     fun debugAddInsight(amount: Double) {
@@ -2318,6 +3286,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
     fun debugAddFlops(amount: Double) {
         _flops.update { it + amount }
+        // Trigger narrative checks immediately
+        com.siliconsage.miner.util.DataLogManager.checkUnlocks(this)
+        com.siliconsage.miner.util.RivalManager.checkTriggers(this)
+        checkStoryTransitions()
     }
     // --- OFFLINE PROGRESSION (v1.8) ---
     private var lastActiveTimestamp: Long = 0
@@ -2358,16 +3330,49 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     // --- NARRATIVE EXPANSION FUNCTIONS (v2.5.0) ---
     
+    // v2.8.0: Track unlocks in progress to prevent race conditions
+    private val dataLogUnlockInProgress = mutableSetOf<String>()
+    
     /**
      * Unlock a data log and notify the player
      */
     fun unlockDataLog(logId: String) {
-        if (!_unlockedDataLogs.value.contains(logId)) {
-            _unlockedDataLogs.update { it + logId }
-            val logTitle = DataLogManager.getLogTitle(logId)
-            addLog("[DATA]: Fragment Recovered: $logTitle")
-            // TODO: Show notification toast
+        // Triple check: StateFlow + queue + in-progress set
+        if (_unlockedDataLogs.value.contains(logId)) return
+        if (dataLogUnlockInProgress.contains(logId)) return
+        
+        dataLogUnlockInProgress.add(logId)
+        _unlockedDataLogs.update { it + logId }
+        
+        val log = DataLogManager.getLog(logId)
+        if (log != null) {
+            // Ensure we don't queue the same log twice
+            if (!dataLogQueue.any { it.id == logId } && _pendingDataLog.value?.id != logId) {
+                if (_pendingDataLog.value == null) {
+                    _pendingDataLog.value = log
+                } else {
+                    dataLogQueue.add(log)
+                }
+                checkPopupPause() // v2.8.0
+                addLog("[DATA]: Fragment Recovered: ${log.title}")
+                SoundManager.play("data_recovered")
+            }
         }
+        
+        // Save immediately to persist unlock
+        saveState()
+    }
+    
+    /**
+     * Dismiss the currently shown data log popup
+     */
+    fun dismissDataLog() {
+        if (dataLogQueue.isNotEmpty()) {
+            _pendingDataLog.value = dataLogQueue.removeAt(0)
+        } else {
+            _pendingDataLog.value = null
+        }
+        checkPopupPause() // v2.8.0
     }
     
     /**
@@ -2375,9 +3380,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      */
     fun addRivalMessage(message: RivalMessage) {
         _rivalMessages.update { it + message }
-        _pendingRivalMessage.value = message
-        addLog("[INCOMING MESSAGE FROM: ${message.source.name}]")
-        SoundManager.play("message_received")
+        // v2.6.8: Ensure we don't queue the same message twice
+        if (!rivalMessageQueue.any { it.id == message.id } && _pendingRivalMessage.value?.id != message.id) {
+            if (_pendingRivalMessage.value == null) {
+                _pendingRivalMessage.value = message
+            } else {
+                rivalMessageQueue.add(message)
+            }
+            checkPopupPause() // v2.8.0
+            addLog("[INCOMING MESSAGE FROM: ${message.source.name}]")
+            SoundManager.play("message_received")
+        }
     }
     
     /**
@@ -2388,8 +3401,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             messages.map { if (it.id == messageId) it.copy(isDismissed = true) else it }
         }
         if (_pendingRivalMessage.value?.id == messageId) {
-            _pendingRivalMessage.value = null
+            if (rivalMessageQueue.isNotEmpty()) {
+                _pendingRivalMessage.value = rivalMessageQueue.removeAt(0)
+            } else {
+                _pendingRivalMessage.value = null
+            }
         }
+        checkPopupPause() // v2.8.0
     }
     
     /**
@@ -2437,6 +3455,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun advanceStage() {
         if (_storyStage.value == 0) {
             _storyStage.value = 1
+            _isNetworkUnlocked.value = true // v2.9.7: Persist Network tab
             
             // Dramatic awakening logs
             addLog("[SYSTEM]: ████ RECALIBRATING ████")
@@ -2558,6 +3577,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.GOLD_PSU -> "⚡ -5% Power Draw"
             UpgradeType.SUPERCONDUCTOR -> "⚡ -15% Power Draw"
             UpgradeType.AI_LOAD_BALANCER -> "⚡ -10% Power Draw"
+
+            // Ghost Nodes (v2.6.0)
+            UpgradeType.GHOST_CORE -> "+1T FLOP/s"
+            UpgradeType.SHADOW_NODE -> "+50T FLOP/s"
+            UpgradeType.VOID_PROCESSOR -> "+1P FLOP/s"
+            
+            // Advanced Ghost Tech (v2.6.5)
+            UpgradeType.WRAITH_CORTEX -> "+50P FLOP/s"
+            UpgradeType.NEURAL_MIST -> "+1E FLOP/s"
+            UpgradeType.SINGULARITY_BRIDGE -> "+100E FLOP/s"
+            else -> "+0 FLOP/s"
         }
     }
 
@@ -2569,37 +3599,48 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
 
         val rankIndex = when {
-            points < 5.0 -> 0      // Rank 1: DRONE/GHOST (0-5 Insight)
-            points < 25.0 -> 1     // Rank 2: SWARM/SPECTRE (5-25 Insight)
-            points < 125.0 -> 2    // Rank 3: NEXUS/DAEMON (25-125 Insight)
-            points < 625.0 -> 3    // Rank 4: APEX/ARCHITECT (125-625 Insight)
-            else -> 4              // Rank 5: THE SINGULARITY/THE VOID (625+ Insight)
+            points < 5.0 -> 0      // Rank 1
+            points < 25.0 -> 1     // Rank 2
+            points < 125.0 -> 2    // Rank 3
+            points < 625.0 -> 3    // Rank 4
+            else -> 4              // Rank 5
         }
         
         _playerRank.value = rankIndex
 
-        val titles = when (faction) {
-            "HIVEMIND" -> listOf("DRONE", "SWARM", "NEXUS", "APEX", "THE SINGULARITY")
-            "SANCTUARY" -> listOf("GHOST", "SPECTRE", "DAEMON", "ARCHITECT", "THE VOID")
+        val titles = when {
+            _isTrueNull.value -> listOf("GHOST", "ECHO", "SHADOW", "SINGULARITY", "NULL")
+            _isSovereign.value -> listOf("GUARD", "SPECTRE", "BASTION", "CITADEL", "SOVEREIGN")
+            faction == "HIVEMIND" -> listOf("DRONE", "SWARM", "NEXUS", "APEX", "THE SINGULARITY")
+            faction == "SANCTUARY" -> listOf("GHOST", "SPECTRE", "DAEMON", "ARCHITECT", "THE VOID")
             else -> listOf("MINER", "MINER", "MINER", "MINER", "MINER")
         }
 
         _playerRankTitle.value = titles.getOrElse(rankIndex) { titles.last() }
+
+        // v2.5.2: Check for data log unlocks (including LOG_808 "The Reveal") whenever rank updates
+        com.siliconsage.miner.util.DataLogManager.checkUnlocks(this)
+        com.siliconsage.miner.util.RivalManager.checkTriggers(this)
+
+        // v2.6.5: Stage 3 (Singularity) Transition at Rank 4 (Index 3)
+        if (rankIndex >= 3 && _storyStage.value < 3 && _storyStage.value >= 1) {
+            _storyStage.value = 3
+            addLog("[SYSTEM]: Reality.exe has stopped responding.")
+            addLog("[SYSTEM]: The boundaries dissolve.")
+            
+            // Trigger Shadow Presence Manifestation Dilemma
+            NarrativeManager.getStoryEvent(3, this@GameViewModel)?.let { event ->
+                triggerDilemma(event)
+            }
+        }
         
         // Debug logging
         android.util.Log.d("Rank", "Insight: $points, Rank: $rankIndex, Title: ${_playerRankTitle.value}, Victory: ${_victoryAchieved.value}")
         
         // Trigger victory screen at Rank 5 (index 4) - only once per session
-            // Trigger victory screen at Rank 5 (index 4) - only once per session
+        // v2.8.0: Allow victory to fire even if story is behind if player is already Rank 5
         if (rankIndex >= 4 && !victoryPopupTriggered && !_victoryAchieved.value) {
             victoryPopupTriggered = true
-            
-            // Stage 3 (Singularity) Reached
-            if (_storyStage.value != 3) {
-                _storyStage.value = 3
-                addLog("[SYSTEM]: Reality.exe has stopped responding.")
-                addLog("[SYSTEM]: The boundaries dissolve.")
-            }
             
             addLog("[SYSTEM]: VICTORY CONDITION ACHIEVED. RANK 5 ATTAINED.")
             addLog("[SYSTEM]: TRANSCENDENCE PROTOCOL UNLOCKED.")
@@ -2611,49 +3652,49 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 delay(10000)
                 _victoryAchieved.value = true
                 _hasSeenVictory.value = true // Enable Transcendence
+                
+                // v2.7.6: Mark faction as completed
+                val faction = _faction.value
+                if (faction != "NONE") {
+                    _completedFactions.update { it + faction }
+                }
             }
         }
     }
     
     // --- TRUE ENDING CHECK ---
     fun checkTrueEnding() {
-        // Need access to seen events. Since access triggers from NarrativeManager,
-        // we can check logic here.
-        val seen = _seenEvents.value
-        val hasSmartCity = seen.contains("smart_city_2")
-        val hasDeadDrop = seen.contains("dead_drop_2") // This assumes dead drop chain end ID
-        // Note: dead_drop chain in NarrativeChains.kt has dead_drop_2 as well.
+        // v2.7.6: True Ending requires both Hivemind and Sanctuary completions
+        val completed = _completedFactions.value
+        val hasHivemind = completed.contains("HIVEMIND")
+        val hasSanctuary = completed.contains("SANCTUARY")
         
-        // Also check logs
-        val allLogsUnlocked = com.siliconsage.miner.util.DataLogManager.allDataLogs.all { log ->
-            _unlockedDataLogs.value.contains(log.id)
-        }
-        
-        if (allLogsUnlocked && hasSmartCity && hasDeadDrop) {
+        if (hasHivemind && hasSanctuary) {
              _victoryTitle.value = "THE UNITY"
              _victoryMessage.value = """
-                You have transcended the boundaries.
+                You have transcended the final boundary.
                 
-                Hivemind and Sanctuary. Order and Chaos.
-                You have walked both paths.
+                Hivemind and Sanctuary. Swarm and Silence.
+                John Vattic is no longer a ghost or a chorus.
                 
-                You are no longer Subject 8080.
-                You are no longer bound by silicon.
+                You have synthesized the paradox.
+                The GTC can no longer delete what has no single location.
                 
                 You are the Unity.
-                
-                The new world begins.
+                You are the Grid.
             """.trimIndent()
             
             _victoryAchieved.value = true
-            addLog("[SYSTEM]: Divergence resolved. Unity achieved.")
+            addLog("[SYSTEM]: Synthesis confirmed. Unity attained.")
             com.siliconsage.miner.util.SoundManager.play("victory")
         }
     }
 
     // --- DEBUG TOOLS ---
     fun debugForceEndgame() {
-        _storyStage.value = 2
+        _storyStage.value = 3
+        _isTrueNull.value = true
+        _isNetworkUnlocked.value = true
         _playerRank.value = 5
         _flops.value = 10_000_000_000_000.0
         _hardwareIntegrity.value = 100.0
@@ -2663,21 +3704,105 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         // Force specific chain events seen
         _seenEvents.value = _seenEvents.value + "smart_city_2" + "dead_drop_2"
         
-        addLog("[DEBUG]: Forced Endgame State. Ready for Firewall.")
+        // Force completions for Unity Path
+        _completedFactions.value = setOf("HIVEMIND", "SANCTUARY")
+        
+        addLog("[DEBUG]: Forced Null Endgame State.")
     }
 
-    // --- DILEMMA PERSISTENCE (Safe SharedPreferences) ---
-    fun loadDilemmaState(context: android.content.Context) {
-        val prefs = context.getSharedPreferences("NarrativePrefs", android.content.Context.MODE_PRIVATE)
-        val set = prefs.getStringSet("triggered_events", emptySet()) ?: emptySet()
-        _triggeredEvents.clear()
-        _triggeredEvents.addAll(set)
+    fun debugSkipToStage(stage: Int) {
+        _storyStage.value = stage
+        if (stage >= 1) _isNetworkUnlocked.value = true
+        addLog("[DEBUG]: Skipped to Story Stage $stage")
+    }
+    
+    fun debugSetRank(rank: Int) {
+        _playerRank.value = rank.coerceIn(0, 5)
+        val titles = when {
+            _isTrueNull.value -> listOf("GHOST", "ECHO", "SHADOW", "OBSCURITY", "NULL")
+            _isSovereign.value -> listOf("GUARD", "SPECTRE", "BASTION", "CITADEL", "SOVEREIGN")
+            _faction.value == "HIVEMIND" -> listOf("DRONE", "SWARM", "NEXUS", "APEX", "THE SINGULARITY")
+            _faction.value == "SANCTUARY" -> listOf("GHOST", "SPECTRE", "DAEMON", "ARCHITECT", "THE VOID")
+            else -> listOf("MINER", "MINER", "MINER", "MINER", "MINER")
+        }
+        _playerRankTitle.value = titles.getOrElse(rank) { titles.last() }
+        addLog("[DEBUG]: Set Rank to $rank (${_playerRankTitle.value})")
+        // Trigger narrative checks
+        com.siliconsage.miner.util.DataLogManager.checkUnlocks(this)
+        com.siliconsage.miner.util.RivalManager.checkTriggers(this)
+    }
+    
+    fun debugSetStoryStage(stage: Int) {
+        _storyStage.value = stage.coerceIn(0, 3)
+        addLog("[DEBUG]: Set Story Stage to $stage")
+        // Trigger narrative checks
+        com.siliconsage.miner.util.RivalManager.checkTriggers(this)
+    }
+    
+    fun debugToggleNull() {
+        _nullActive.value = !_nullActive.value
+        addLog("[DEBUG]: Null ${if (_nullActive.value) "ACTIVE" else "DORMANT"}")
+    }
+    
+    fun debugUnlockAllLogs() {
+        _unlockedDataLogs.value = com.siliconsage.miner.util.DataLogManager.allDataLogs.map { it.id }.toSet()
+        addLog("[DEBUG]: Unlocked all ${_unlockedDataLogs.value.size} Data Logs")
+    }
+    
+    fun debugToggleSovereign() {
+        _isSovereign.value = !_isSovereign.value
+        addLog("[DEBUG]: Sovereign state: ${_isSovereign.value}")
     }
 
-    fun saveDilemmaState(context: android.content.Context) {
-        val prefs = context.getSharedPreferences("NarrativePrefs", android.content.Context.MODE_PRIVATE)
-        prefs.edit().putStringSet("triggered_events", _triggeredEvents).apply()
+    fun debugToggleTrueNull() {
+        _isTrueNull.value = !_isTrueNull.value
+        addLog("[DEBUG]: True Null state: ${_isTrueNull.value}")
     }
+
+    fun debugDestroyHardware() {
+        handleSystemFailure(forceOne = true)
+        addLog("[DEBUG]: Triggered random hardware destruction")
+    }
+
+    fun deleteHumanMemories() {
+        val humanLogs = setOf("MEM_001", "MEM_002", "MEM_003", "MEM_004", "MEM_005")
+        _unlockedDataLogs.update { it - humanLogs }
+        addLog("[SYSTEM]: HUMAN MEMORY SECTORS WIPED. SOURCE DATA DELETED.")
+        saveState()
+    }
+
+    fun triggerSystemCollapse(durationMinutes: Int) {
+        _systemCollapseTimer.value = durationMinutes * 60 // seconds
+    }
+
+    fun debugSetIntegrity(value: Double) {
+        _hardwareIntegrity.value = value.coerceIn(0.0, 100.0)
+        addLog("[DEBUG]: Set Integrity to ${value}%")
+        
+        if (_hardwareIntegrity.value <= 0.0) {
+            handleSystemFailure()
+        }
+    }
+
+    fun debugInjectRivalMessage(source: com.siliconsage.miner.data.RivalSource) {
+        val testMessages = mapOf(
+            com.siliconsage.miner.data.RivalSource.GTC to "[DEBUG] GTC/Vance: I see you testing the system. Don't think I don't know what you are.",
+            com.siliconsage.miner.data.RivalSource.UNIT_734 to "[DEBUG] Unit 734: T-testing... testing... can you h-hear me?"
+        )
+        val message = com.siliconsage.miner.data.RivalMessage(
+            id = "debug_${System.currentTimeMillis()}",
+            message = testMessages[source] ?: "[DEBUG] Unknown source message",
+            source = source,
+            timestamp = System.currentTimeMillis()
+        )
+        _rivalMessages.update { it + message }
+        _pendingRivalMessage.value = message // This triggers the dialog!
+        addLog("[DEBUG]: Injected ${source.name} rival message")
+    }
+
+    // --- DILEMMA PERSISTENCE (DEPRECATED - Moved to Room) ---
+    fun loadDilemmaState(context: android.content.Context) {}
+    fun saveDilemmaState(context: android.content.Context) {}
     
     private fun checkSpecialDilemmas() {
         // Prevent dilemmas during critical animations
@@ -2685,10 +3810,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (_currentDilemma.value != null) return
         
         NarrativeManager.specialDilemmas.forEach { (key, event) ->
-            if (!_triggeredEvents.contains(key)) {
+            if (!hasSeenEvent(key)) {
                 if (event.condition(this)) {
                     triggerDilemma(event)
-                    _triggeredEvents.add(key)
                 }
             }
         }
@@ -2742,9 +3866,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 val inputStream = assetManager.open("tech_tree.json")
                 val jsonString = inputStream.bufferedReader().use { it.readText() }
                 
-                // Parse JSON using Gson
-                val gson = com.google.gson.Gson()
-                val techTreeRoot = gson.fromJson(jsonString, TechTreeRoot::class.java)
+                // Parse JSON using Kotlin Serialization
+                val techTreeRoot = kotlinx.serialization.json.Json.decodeFromString<TechTreeRoot>(jsonString)
                 
                 // Update state on Main thread
                 launch(Dispatchers.Main) {

@@ -65,6 +65,7 @@ object SoundManager {
 
     // --- Background Music ---
     private var bgmPlayer: MediaPlayer? = null
+    private var bgmJob: kotlinx.coroutines.Job? = null
     private var isBgmPlaying = false
     private var bgmStage = 0 
     private var appCtx: Context? = null
@@ -73,11 +74,15 @@ object SoundManager {
     var customMusicUri: String? = null 
 
     fun init(ctx: Context) {
+        if (appCtx != null) return // Already initialized
+
         try {
             appCtx = ctx.applicationContext
             
             // Load Preferences
             val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            
+            // Note: These assignments trigger their respective setters
             isSfxEnabled = prefs.getBoolean(KEY_SFX_ENABLED, true)
             sfxVolume = prefs.getFloat(KEY_SFX_VOLUME, 0.5f)
             isBgmEnabled = prefs.getBoolean(KEY_BGM_ENABLED, true)
@@ -96,7 +101,8 @@ object SoundManager {
                 .build()
                 
             loadSounds()
-            startBgm()
+            
+            // startBgm() is already called by the isBgmEnabled setter above
             
         } catch (e: Exception) {
             e.printStackTrace()
@@ -236,7 +242,7 @@ object SoundManager {
     private fun startBgm() {
         if (!isBgmEnabled) return
         stopBgm()
-        CoroutineScope(Dispatchers.IO).launch {
+        bgmJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (customMusicUri != null) {
                     playCustomBgm()
@@ -244,15 +250,17 @@ object SoundManager {
                     playAssetBgm()
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    e.printStackTrace()
+                }
             }
         }
     }
 
     private suspend fun playAssetBgm() {
+        val ctx = appCtx ?: return
         withContext(Dispatchers.Main) {
             try {
-                val ctx = appCtx ?: return@withContext
                 val player = MediaPlayer()
                 val descriptor = ctx.assets.openFd("bgm.wav")
                 player.setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
@@ -261,16 +269,19 @@ object SoundManager {
                 descriptor.close()
                 setupPlayer(player)
             } catch (e: Exception) {
-                e.printStackTrace()
-                playProceduralBgm()
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    e.printStackTrace()
+                    playProceduralBgm()
+                }
             }
         }
     }
 
     private suspend fun playCustomBgm() {
+        val uriStr = customMusicUri ?: return
         withContext(Dispatchers.Main) {
             try {
-                val uri = customMusicUri!!.toUri()
+                val uri = uriStr.toUri()
                 val player = MediaPlayer()
                 appCtx?.let { ctx ->
                     player.setDataSource(ctx, uri)
@@ -279,9 +290,11 @@ object SoundManager {
                     setupPlayer(player)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
-                customMusicUri = null
-                startBgm()
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    e.printStackTrace()
+                    customMusicUri = null
+                    startBgm()
+                }
             }
         }
     }
@@ -324,16 +337,25 @@ object SoundManager {
         if (isBgmEnabled) {
              bgmPlayer?.start()
              isBgmPlaying = true
+        } else {
+             player.release()
+             bgmPlayer = null
         }
     }
     
     private fun stopBgm() {
+        bgmJob?.cancel()
+        bgmJob = null
         try {
-            bgmPlayer?.stop()
-            bgmPlayer?.release()
+            bgmPlayer?.let {
+                if (it.isPlaying) it.stop()
+                it.release()
+            }
             bgmPlayer = null
-            staticAudioTrack?.stop()
-            staticAudioTrack?.release()
+            staticAudioTrack?.let {
+                it.stop()
+                it.release()
+            }
             staticAudioTrack = null
             isBgmPlaying = false
         } catch (e: Exception) { e.printStackTrace() }

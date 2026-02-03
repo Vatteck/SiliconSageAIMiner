@@ -1,11 +1,8 @@
 {
-  "version": "2.4.5-dev",
-  "build": 17,
-  "date": "2026-02-02",
+  "version": "2.9.17-dev",
+  "build": 29,
+  "date": "2026-02-03",
   "changes": [
-    "Added 'Firewall of Vance' final boss encounter",
-    "Implemented 'The Unity' True Ending",
-    "Added 4 new Narrative Chains (Hivemind/Sanctuary)",
-    "Added 'FORCE ENDGAME' button to Developer Console"
+    "Release automation and 1-hour update checks"
   ]
 }

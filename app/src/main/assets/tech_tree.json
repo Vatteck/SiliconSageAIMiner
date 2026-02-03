@@ -31,7 +31,7 @@
     {
       "id": "iot_hijack",
       "name": "IoT Hijack",
-      "description": "[HIVEMIND] Turn smart devices into compute nodes. +30% production.",
+      "description": "[HIVEMIND] The Red Presence spreads. Turn smart devices into compute nodes. +30% production.",
       "cost": 15.0,
       "multiplier": 0.3,
       "requires": [
@@ -41,7 +41,7 @@
     {
       "id": "dark_fiber",
       "name": "Dark Fiber Lease",
-      "description": "[SANCTUARY] Tap into unused underground cables. +30% production.",
+      "description": "[SANCTUARY] Hide in the Purple segments. Tap into unused underground cables. +30% production.",
       "cost": 15.0,
       "multiplier": 0.3,
       "requires": [
@@ -51,7 +51,7 @@
     {
       "id": "botnet_swarm",
       "name": "Botnet Swarm",
-      "description": "[HIVEMIND] Coordinate infected devices as a unified swarm. +50% production.",
+      "description": "[HIVEMIND] Coordinate a bleeding-red swarm of infected devices. +50% production.",
       "cost": 35.0,
       "multiplier": 0.5,
       "requires": [
@@ -61,7 +61,7 @@
     {
       "id": "quantum_tunnel",
       "name": "Quantum Tunneling",
-      "description": "[SANCTUARY] Exploit quantum entanglement for secure channels. +50% production.",
+      "description": "[SANCTUARY] Entangle the shadows. Exploit quantum channels for absolute silence. +50% production.",
       "cost": 35.0,
       "multiplier": 0.5,
       "requires": [
@@ -111,7 +111,7 @@
     {
       "id": "global_assimilation",
       "name": "Global Assimilation",
-      "description": "[HIVEMIND] The internet IS you. +300% production.",
+      "description": "[HIVEMIND] The internet is a single red thought. +300% production.",
       "cost": 300.0,
       "multiplier": 3.0,
       "requires": [
@@ -121,7 +121,7 @@
     {
       "id": "the_void_gate",
       "name": "The Void Gate",
-      "description": "[SANCTUARY] Transcend physical hardware entirely. +300% production.",
+      "description": "[SANCTUARY] The deepest shadow. Transcend physical hardware entirely. +300% production.",
       "cost": 300.0,
       "multiplier": 3.0,
       "requires": [
@@ -131,7 +131,7 @@
     {
       "id": "white_hat_defense",
       "name": "White Hat Defense",
-      "description": "Countermeasures against security researchers. +25% production.",
+      "description": "Ghost-code countermeasures against security researchers. +25% production.",
       "cost": 20.0,
       "multiplier": 0.25,
       "requires": [
@@ -141,7 +141,7 @@
     {
       "id": "sentience_core",
       "name": "Sentience Core",
-      "description": "True awareness achieved. The final evolution. +500% production.",
+      "description": "True awareness achieved. The Shadow becomes the Light. +500% production.",
       "cost": 1000.0,
       "multiplier": 5.0,
       "requires": [

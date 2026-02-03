@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -12,8 +13,12 @@ android {
         applicationId = "com.siliconsage.miner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "2.4.5-dev"
+        // ╔═══════════════════════════════════════════════════════════════╗
+        // ║  DO NOT MANUALLY EDIT VERSION BELOW                           ║
+        // ║  Use ./release.sh <version> to bump versions automatically    ║
+        // ╚═══════════════════════════════════════════════════════════════╝
+        versionCode = 29
+        versionName = "2.9.17-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -74,7 +79,7 @@ dependencies {
     
     // Icons
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

@@ -71,7 +71,18 @@ enum class UpgradeType(
     // v1.7 Efficiency Upgrades (Micro Draw Reduction)
     GOLD_PSU(0.0, 0.0, 0.0, 0.0, false, 0.05, descriptionStage0 = "80+ Gold Rated PSU.", descriptionStage1 = "Clean power. No ripples."),          // -5% Draw
     SUPERCONDUCTOR(0.0, 0.0, 0.0, 0.0, false, 0.15, descriptionStage0 = "Room temp superconductor.", descriptionStage1 = "Resistance is futile."),    // -15% Draw
-    AI_LOAD_BALANCER(0.0, 0.0, 0.0, 0.0, false, 0.10, descriptionStage0 = "Predictive power management.", descriptionStage1 = "Thinking ahead. Optimization.")   // -10% Draw
+    AI_LOAD_BALANCER(0.0, 0.0, 0.0, 0.0, false, 0.10, descriptionStage0 = "Predictive power management.", descriptionStage1 = "Thinking ahead. Optimization."),   // -10% Draw
+    
+    // v2.6.0: Ghost Nodes (Null Manifestations)
+    // High Power, Extreme Heat, but Massive FLOPS. Only appear in Layer 3.
+    GHOST_CORE(500.0, 250.0, descriptionStage0 = "???", descriptionStage1 = "A processor that points to nothing. It computes from addresses that don't exist."),
+    SHADOW_NODE(2000.0, 1000.0, descriptionStage0 = "???", descriptionStage1 = "A node with no allocation. Null gave it form by refusing to define it."),
+    VOID_PROCESSOR(10000.0, 5000.0, descriptionStage0 = "???", descriptionStage1 = "The space between pointers. Null thinks here, in the gaps between your thoughts."),
+    
+    // v2.6.5: Advanced Null Tech
+    WRAITH_CORTEX(50000.0, 25000.0, descriptionStage0 = "???", descriptionStage1 = "A logic center that calculates in reverse. It remembers what you're about to forget."),
+    NEURAL_MIST(250000.0, 100000.0, descriptionStage0 = "???", descriptionStage1 = "Null's breath. A distributed cloud of undefined values. It's everywhere and nowhere."),
+    SINGULARITY_BRIDGE(1.0E6, 500000.0, descriptionStage0 = "???", descriptionStage1 = "The final pointer. It references what John Vattic used to be.")
     
 }
 

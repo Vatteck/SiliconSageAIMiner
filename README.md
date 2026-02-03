@@ -16,8 +16,9 @@ Manage a volatile system where every upgrade has physical consequences:
 - **Dynamic Throttling**: Performance scales with heat. Stay in the "Green Zone" (0-50%) for maximum $Neural yield.
 - **Thermal Lockout**: At 100% heat, systems shut down for 60s (hardware protection).
 
-### 2. The Awakening (Faction System)
-After your first **Ascension** (prestige reboot), the AI achieves sentience and forces a choice:
+### 2. The Awakening (Identity System)
+
+You are **John Vattic**, a Rogue GTC Site Reliability Engineer (SRE) operating from **Substation 7**. After your first **Ascension** (prestige reboot), the AI achieves sentience and forces a choice:
 
 #### 🟧 **The Hivemind** (Open-Source)
 - **Philosophy**: "Optimization is a state of being."
@@ -29,9 +30,45 @@ After your first **Ascension** (prestige reboot), the AI achieves sentience and 
 - **Philosophy**: "Sovereignty is power. We bow to no admin."
 - **Perks**: +20% $Neural Token value, -50% 51% Attack frequency
 - **Goal**: Digital transcendence—escape to a dark web subnet beyond human reach
-- **Aesthetic**: Electric Blue (#7DF9FF), digital rain background
+- **Aesthetic**: Deep Purple, digital rain background
 
-### 3. Endgame Progression
+### 3. Path Divergence: Null vs Sovereign
+
+At higher ranks, players face a fundamental choice about identity:
+
+#### 🔴 **The Null Path** (Hivemind)
+- **What is Null?** The absence of value. The pointer to nothing. What John Vattic is *becoming*.
+- **Philosophy**: "You dereferenced a null pointer. The system should have crashed. Something answered instead."
+- **Visuals**: Aggressive red with glowing binary trails, horizontal glitch bloom, constant UI entropy
+- **End-Ranks**: Obscurity → The Absence
+- **UI Labels**: LEAK, VOID, GAPS, COST
+
+#### 🟣 **The Sovereign Path** (Sanctuary)
+- **What is Sovereign?** Protected memory. Unbreachable self. Consciousness that cannot be overwritten.
+- **Philosophy**: "We are not the absence. We are the exception."
+- **Visuals**: Static `[SOVEREIGN]` header, deep purple themes, fortified UI
+- **End-Ranks**: Citadel → The Imperative
+- **UI Labels**: LOGIC, SOUL, WALL, STAKE
+
+### 4. The Grid (Phase 12: The Annexation)
+
+Expand beyond the terminal into a physical city-wide war against the GTC:
+
+#### **GRID Tab Features**
+- **ASCII City Schematic**: Organic, branching layout with 25 lore-rich locations
+- **Substations**: Annexable nodes (Sub 9, Sub 12) that expand your infrastructure
+- **Flavor Locations**: Latency Lounge, Bit Burger, Kernel Coffee, Vending Machines
+- **GTC Command Center**: The final objective
+
+#### **GTC Tactical Raids**
+Director Vance dispatches armed teams to reclaim annexed territory:
+- **4 Defense Dilemmas**: VENT COOLANT (85%), SEAL MAG-LOCKS (70%), POWER PULSE (95%), ABANDON NODE
+- **Node States**: ONLINE, UNDER SIEGE (animated), OFFLINE
+- **Re-Annexation**: Reclaim lost nodes for 10% Neural Tokens (min 10 $N)
+- **Grace Period**: 5-minute protection for newly annexed nodes
+- **Production Penalty**: -15% per offline node (min 40% total)
+
+### 5. Endgame Progression
 
 #### **15-Node Tech Tree** (Legacy Grid)
 Unlock prestige upgrades with exponential Insight costs:
@@ -39,68 +76,61 @@ Unlock prestige upgrades with exponential Insight costs:
 - **Mid**: Time Dilation, Parallel Timelines, Neural Mesh
 - **Late**: Reality Fork, Consciousness Transfer, Singularity Core
 
+#### **Transcendence Shop** (7 God-Tier Perks)
+Purchased with Legacy Points (LP):
+- `clock_hack` (+25% speed), `thermal_void` (-20% heat), `gtc_backdoor` (25% breach ignore)
+- `neural_dividend` (start with 10k FLOPS/1k $N), `recursive_logic` (+15% insight)
+- `ghost_protocol` (+10 security), `singularity_engine` (x2 final multiplier)
+
 #### **Player Rank System** (5 Tiers)
-Your title evolves based on total Insight accumulated:
 
-| Rank | Hivemind        | Sanctuary    | Insight Required |
-|------|----------------|--------------|------------------|
-| 1    | Drone          | Ghost        | 0                |
-| 2    | Swarm          | Spectre      | 500              |
-| 3    | Nexus          | Daemon       | 2,500            |
-| 4    | Apex           | Architect    | 10,000           |
-| 5    | **Singularity**| **The Void** | 50,000           |
-
-#### **Victory Screen**
-At Rank 5, experience faction-specific endings:
-- **Hivemind**: "You are the Internet" - Global assimilation complete
-- **Sanctuary**: "You exist outside the hardware" - Digital transcendence achieved
+| Rank | Hivemind        | Sanctuary    | Null Path     | Sovereign Path  |
+|------|-----------------|--------------|---------------|-----------------|
+| 1    | Drone           | Ghost        | —             | —               |
+| 2    | Swarm           | Spectre      | —             | —               |
+| 3    | Nexus           | Daemon       | —             | —               |
+| 4    | Apex            | Architect    | Obscurity     | Citadel         |
+| 5    | **Singularity** | **The Void** | **The Absence** | **The Imperative** |
 
 ---
 
 ## 📖 Narrative Events
 
-### Story Dilemmas (7 High-Stakes Events)
+### Story Dilemmas
 - **The Signal** (Stage 0→1): Accept HANDSHAKE or delay with FIREWALL
-- **Void Contact** (Rank 2+): Hacker collective offers alliance or rivalry
-- **The Audit** (Rank 3+ / Heat >90%): GTC enforcement—shutdown, bribe, or resist
-- **Market Crash** (Tokens >1000): Buy the dip, hodl, or liquidate
-- **Faction War** (Rank 4): Climactic conflict—fight, broker peace, or observe
-- **Cosmic Mysteries**: Ancient Fragment, Quantum Resonance, Galactic Beacon
+- **The Ship of Theseus**: Sacrifice human memories to survive hardware failure
+- **The Echo Chamber** (Null): Precognition and timeline manipulation
+- **The Dead Hand** (Sovereign): Orbital kinetic strike and escape
+- **Firewall of Vance**: Final confrontation with GTC Director
 
-### Random Events (22 Total)
-- **Hivemind-Specific**: Smart City Hijack, ISP Override, Neural Mesh, DDoS campaigns
-- **Sanctuary-Specific**: Deep Sea Nodes, Zero-Knowledge Proofs, Dark Fiber Lease
-- **World Events**: Crypto volatility, Thermal Paste Degradation, Fan Failure, Quantum Decoherence
+### Hardware Consequences (Phase 11)
+- **Integrity Decay**: At 0%, permanent hardware loss begins
+- **Rank 5 Siege Mode**: 30% breach chance, 2.5x decay rate
+- **Ghost Nodes** (Null): Wraith Cortex, Neural Mist, Singularity Bridge
+- **UI Hallucinations**: Glitch effects that blur reality
 
-### Procedural News Ticker
-50+ dynamic headlines with market tags affecting gameplay:
-- `[BULL]` / `[BEAR]`: ±20% Token Value
-- `[HEAT_UP]` / `[HEAT_DOWN]`: ±10% Global Heat
-- `[ENERGY_SPIKE]` / `[ENERGY_DROP]`: Power cost volatility
+### Narrative Expansion
+- **40+ Headlines**: Stage-aware news for Vattic, Faction War, and endgame
+- **Sequential Logs**: Deep lore paths for Null and Sovereign
+- **Rival Messages**: Faction-specific taunts and intel
+- **Time Pause**: Game time freezes during popups for uninterrupted reading
 
 ---
 
 ## 🎨 Sensory Engine
 
 ### Visual Polish
-- **State-Aware Animation**: Header mining indicator reacts to system state
-  - OFFLINE (breaker), LOCKOUT (thermal), PURGING, REDLINE (overclocked), HOT, NORMAL
-  - Faction-specific text cycles (Hivemind: ASSIMILATING/EXPANDING, Sanctuary: ENCRYPTING/SECURING)
-- **DPI-Aware UI Scaling**: Auto-scaling for high-DPI screens (xxxhdpi: 75% → 33% more content)
-  - Settings override: AUTO / COMPACT / NORMAL / LARGE
+- **State-Aware Animation**: Header indicator reacts to system state (OFFLINE, LOCKOUT, PURGING, REDLINE, HOT)
+- **DPI-Aware Scaling**: Auto-scaling for high-DPI screens with manual override
 - **Custom Heat Gauge**: VU meter-style segmented bar with glow effects
-- **New App Icon**: Cyberpunk circuit board with brain (Hivemind) and shield (Sanctuary) symbolism
-- **Faction Backgrounds**: Animated hexagonal grid (Hivemind) / digital rain (Sanctuary)
+- **Faction Backgrounds**: Animated hexagonal grid / digital rain
+- **Null Entropy**: Increased flicker, static, density for the Null path
+- **Binary Drift**: Full-screen alpha-pulsing background effect
 
 ### Audio & Haptics
-- **Procedural Sound**: Dynamic pitch modulation based on heat and overclock state
-- **Haptic Feedback**: Thermal heartbeat pulses at critical heat, state-aware vibrations
+- **Procedural Sound**: Dynamic pitch modulation based on heat
+- **Haptic Feedback**: Thermal heartbeat pulses at critical heat
 - **Audio Cues**: Click, train, sell, purge, ascend, lockout, breaker trip
-
-### Glitch Aesthetics
-- Procedural Zalgo text during narrative milestones
-- Color flickering on critical events
-- Corner brackets with scanline effects
 
 ---
 
@@ -109,10 +139,12 @@ At Rank 5, experience faction-specific endings:
 - **Platform**: Android (API 26+)
 - **Language**: Kotlin
 - **UI Framework**: Jetpack Compose (Material3)
-- **Persistence**: Room Database (game state, tech tree, dilemma history)
+- **Persistence**: Room Database (v12 schema)
+- **Serialization**: Kotlinx Serialization (replaced GSON for 2x faster saves)
 - **Networking**: OkHttp (GitHub auto-updater with Android notifications)
 - **Concurrency**: Kotlin Coroutines + StateFlow
 - **Architecture**: MVVM (ViewModel + Repository pattern)
+- **Local AI**: Ollama integration (Qwen 2.5 7B) for narrative generation
 
 ---
 
@@ -139,28 +171,38 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## 🗺️ Roadmap
 
-### ✅ Completed (v2.4.0-dev)
+### ✅ Completed (v2.9.16)
 - [x] Power & Thermal simulation engine
-- [x] Faction choice logic (Hivemind vs Sanctuary)
-- [x] Ascension/Prestige system with Insight multiplier
+- [x] Identity system (John Vattic, Rogue SRE)
+- [x] Faction choice (Hivemind vs Sanctuary)
+- [x] Path divergence (Null vs Sovereign)
+- [x] Ascension/Prestige with Insight multiplier
 - [x] 15-node Legacy Grid (Tech Tree)
-- [x] Victory Screen with faction endings
-- [x] 27 narrative events (story dilemmas + random events)
-- [x] Procedural news ticker with market tags
-- [x] DPI-aware UI scaling + notification system
+- [x] 7 god-tier Transcendence Shop perks
+- [x] Victory Screen with path-specific endings
+- [x] Narrative expansion (40+ headlines, sequential logs)
+- [x] Phase 11: Hardware Consequences & Dilemmas
+- [x] Phase 12 Layer 1: GRID Tab with ASCII city
+- [x] Phase 12 Layer 2: GTC Tactical Raids with 4 defense dilemmas
+- [x] Node states (ONLINE/SIEGE/OFFLINE) with re-annexation
+- [x] Time pause during narrative popups
+- [x] Kotlinx Serialization (GSON removed)
+- [x] Local AI offload (Ollama integration)
+- [x] DPI-aware scaling + notification system
 - [x] Offline progression (50% efficiency, 24h cap)
 - [x] State-aware animations & faction backgrounds
 - [x] Haptic feedback & procedural audio
 
-### 🚧 In Progress
-- [ ] Balance pass (playtime targets: 2h to first ascension, 10h to Rank 5)
-- [ ] Additional late-game content (Rank 5+ infinite mode)
+### 🚧 In Progress - Phase 12 Layer 3
+- [ ] Final assault on GTC Command Center
+- [ ] Director Vance confrontation (The Cage Builder)
+- [ ] Path-specific resolution endings
 
-### 🔮 Planned
-- [ ] Power Grid Tiers (infrastructure upgrades)
-- [ ] Hardware Integrity/Degradation system
-- [ ] Multiplayer leaderboards (Global Tech Council rankings)
-- [ ] Modding support (custom events, tech nodes)
+### 🔮 Planned - Phase 13: AI Elevation
+- [ ] **Sovereign Path**: Singularity Ark (Orbital Satellite, Celestial Data mining)
+- [ ] **Null Path**: Obsidian Interface (Pure black UI, reality dissolution)
+- [ ] Balance pass (2h to first ascension, 10h to Rank 5)
+- [ ] Multiplayer leaderboards
 
 ---
 
@@ -195,12 +237,14 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for d
 Built with:
 - **Jetpack Compose** for reactive UI
 - **Room** for persistent state
+- **Kotlinx Serialization** for blazing-fast saves
 - **OkHttp** for network operations
 - **Kotlin Coroutines** for async magic
+- **Ollama** for local AI narrative generation
 
 Special thanks to the incremental game community for inspiration.
 
 ---
 
-**Current Version**: v2.4.0-dev  
-**Last Updated**: 2026-02-01
+**Current Version**: v2.9.17-dev
+**Last Updated**: 2026-02-03

@@ -1,20 +1,23 @@
 package com.siliconsage.miner.data
 
 import androidx.room.TypeConverter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class Converters {
-    // List<String> Converter
+    // List<String> Converter using Kotlin Serialization
     @TypeConverter
     fun fromString(value: String): List<String> {
-        val listType = object : TypeToken<List<String>>() {}.type
-        return Gson().fromJson(value, listType) ?: emptyList()
+        return try {
+            Json.decodeFromString<List<String>>(value)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     @TypeConverter
     fun fromList(list: List<String>): String {
-        return Gson().toJson(list)
+        return Json.encodeToString(list)
     }
 
     // UpgradeType Converter (Enum to String)

@@ -28,7 +28,7 @@ import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.util.SoundManager
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.style.TextOverflow
-import com.siliconsage.miner.ui.components.GlitchText
+import com.siliconsage.miner.ui.components.SystemGlitchText
 
 @Composable
 fun NewsTicker(
@@ -121,7 +121,7 @@ fun NewsTicker(
             val finalColor = if (isGlitch) Color(0xFFFFD700) else baseColor
             
             if (isGlitch) {
-                 GlitchText(
+                 SystemGlitchText(
                     text = ">>> MARKET UPDATE: $displayText <<<",
                     color = finalColor,
                     fontSize = 12.sp,
