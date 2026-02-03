@@ -1,8 +1,8 @@
 {
   "version": "2.9.17-dev",
-  "build": 29,
+  "build": 30,
   "date": "2026-02-03",
   "changes": [
-    "Release automation and 1-hour update checks"
+    "Added new story, map, and faction mechanics"
   ]
 }

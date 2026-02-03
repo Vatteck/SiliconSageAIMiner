@@ -119,7 +119,8 @@ echo -e "${GREEN}       ✓ Tag created${NC}"
 
 echo ""
 echo -e "${YELLOW}[6/6]${NC} Pushing to origin..."
-git push origin main --tags
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push origin "$BRANCH" --tags
 echo -e "${GREEN}       ✓ Pushed to GitHub${NC}"
 
 echo ""
