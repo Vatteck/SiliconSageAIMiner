@@ -21,7 +21,7 @@ data class UpdateInfo(
     val version: String,
     val build: Int = 0,
     val date: String = "",
-    val changes: List<String> = emptyList(),
+    val changes: String = "",  // String for backward compatibility
     val url: String = "" // Optional for manual redirect
 )
 

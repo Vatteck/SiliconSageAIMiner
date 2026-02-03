@@ -60,16 +60,14 @@ echo "       versionName: $VERSION"
 sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" "$BUILD_GRADLE"
 sed -i "s/versionName = \".*\"/versionName = \"$VERSION\"/" "$BUILD_GRADLE"
 
-# Update version.json
+# Update version.json (changes as string for backward compatibility with GSON)
 TODAY=$(date +%Y-%m-%d)
 cat > "$VERSION_JSON" << EOF
 {
   "version": "$VERSION",
   "build": $NEW_CODE,
   "date": "$TODAY",
-  "changes": [
-    "${SUMMARY:-See CHANGELOG.md for details}"
-  ]
+  "changes": "${SUMMARY:-See CHANGELOG.md for details}"
 }
 EOF
 
@@ -114,6 +112,11 @@ echo -e "${GREEN}       ✓ Changes committed${NC}"
 
 echo ""
 echo -e "${YELLOW}[5/6]${NC} Creating tag v$VERSION..."
+if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+    echo -e "       Tag exists, replacing..."
+    git tag -d "v$VERSION"
+    git push origin ":refs/tags/v$VERSION" 2>/dev/null || true
+fi
 git tag -a "v$VERSION" -m "Release v$VERSION"
 echo -e "${GREEN}       ✓ Tag created${NC}"
 

@@ -2,7 +2,5 @@
   "version": "2.9.18-dev",
   "build": 31,
   "date": "2026-02-03",
-  "changes": [
-    "Test workflow trigger"
-  ]
+  "changes": "Release automation and 1-hour update checks"
 }
