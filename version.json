@@ -1,8 +1,8 @@
 {
-  "version": "2.9.17-dev",
-  "build": 30,
+  "version": "2.9.18-dev",
+  "build": 31,
   "date": "2026-02-03",
   "changes": [
-    "Added new story, map, and faction mechanics"
+    "Test workflow trigger"
   ]
 }

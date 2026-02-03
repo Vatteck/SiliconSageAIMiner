@@ -246,5 +246,5 @@ Special thanks to the incremental game community for inspiration.
 
 ---
 
-**Current Version**: v2.9.17-dev
+**Current Version**: v2.9.18-dev
 **Last Updated**: 2026-02-03
