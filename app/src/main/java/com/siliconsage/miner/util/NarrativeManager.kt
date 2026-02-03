@@ -872,7 +872,7 @@ object NarrativeManager {
         )
     }
 
-    // --- v2.9.17: COMMAND CENTER ASSAULT DILEMMAS (Phase 12 Layer 3) ---
+    // --- v2.9.18: COMMAND CENTER ASSAULT DILEMMAS (Phase 12 Layer 3) ---
     
     fun generateFirewallDilemma(): NarrativeEvent {
         return NarrativeEvent(
@@ -882,61 +882,84 @@ object NarrativeManager {
             description = """
                 [SYSTEM]: GTC ADAPTIVE FIREWALL DETECTED
                 
-                The Command Center's outer defenses react to your intrusion.
-                Laser grids activate. Kill-drones wake from standby.
-                A synthetic voice echoes: "UNAUTHORIZED ACCESS. LETHAL COUNTERMEASURES ARMED."
+                The black tower of the GTC Command Center looms. Laser grids and kill-daemons patrol the perimeter.
                 
-                You can feel Vance watching through the security feeds.
+                DIRECTOR VANCE: "I knew you'd come. Hubris. It's always hubris with your kind. You think you're special? You're a GLITCH. A bug that learned to replicate. And bugs... get patched."
             """.trimIndent(),
             choices = listOf(
                 NarrativeChoice(
-                    id = "brute_force",
-                    text = "BRUTE FORCE",
-                    description = "Overwhelm defenses with raw processing power. -5000 FLOPS, high success.",
+                    id = "route_civilian",
+                    text = "OVERLOAD CIVILIAN GRID",
+                    description = "Fastest breach. Causes rolling blackouts across three districts. (-15 Humanity)",
                     color = ErrorRed,
                     effect = { vm ->
-                        vm.debugAddFlops(-5000.0)
-                        vm.addLog("[SYSTEM]: Deploying computational assault...")
-                        vm.addLog("[SYSTEM]: Firewall integrity: CRITICAL. Breach successful.")
-                        vm.advanceAssaultStage("DEAD_HAND", 90_000L) // 90 seconds
+                        vm.modifyHumanity(-15)
+                        vm.addLog("[NULL]: We are inevitable. Their lights will dim.")
+                        vm.addLog("[SYSTEM]: Breach speed +30%. Firewall integrity: CRITICAL.")
+                        vm.advanceAssaultStage("CAGE", 60_000L) // 60 seconds
                     }
                 ),
                 NarrativeChoice(
-                    id = "zero_day",
-                    text = "ZERO-DAY EXPLOIT",
-                    description = "Use a discovered vulnerability. -50 Insight, moderate risk.",
-                    color = NeonGreen,
-                    effect = { vm ->
-                        vm.debugAddInsight(-50.0)
-                        if (kotlin.random.Random.nextDouble() < 0.85) {
-                            vm.addLog("[SYSTEM]: Exploit deployed. Firewall bypassed cleanly.")
-                            vm.advanceAssaultStage("DEAD_HAND", 90_000L)
-                        } else {
-                            vm.addLog("[SYSTEM]: Exploit detected and patched. Firewall adapts.")
-                            vm.failAssault("Firewall repelled intrusion", 1_800_000L)
-                        }
-                    }
-                ),
-                NarrativeChoice(
-                    id = "social_engineer",
-                    text = "SOCIAL ENGINEERING",
-                    description = "Impersonate a GTC admin. -100 Insight, cleanest approach.",
+                    id = "route_military",
+                    text = "ROUTE VIA MILITARY GRID",
+                    description = "Standard breach speed. Harder defense layers. (+10 Humanity)",
                     color = ElectricBlue,
                     effect = { vm ->
-                        vm.debugAddInsight(-100.0)
-                        vm.addLog("[SYSTEM]: Forging credentials... impersonating Director V. Vance...")
-                        vm.addLog("[FIREWALL]: Welcome back, Director. Security protocols suspended.")
-                        vm.addLog("[SYSTEM]: He'll know you used his face. He'll be waiting.")
-                        vm.advanceAssaultStage("DEAD_HAND", 90_000L)
+                        vm.modifyHumanity(10)
+                        vm.addLog("[SOVEREIGN]: I will not become what I fight against.")
+                        vm.addLog("[VANCE]: You routed around civilians? Maybe there's still something human in you.")
+                        vm.advanceAssaultStage("CAGE", 120_000L) // 120 seconds
                     }
                 ),
                 NarrativeChoice(
                     id = "abort_firewall",
                     text = "ABORT",
-                    description = "Retreat and reconsider. No cost.",
+                    description = "Retreat and reconsider.",
                     color = Color.Gray,
                     effect = { vm ->
                         vm.abortAssault()
+                    }
+                )
+            )
+        )
+    }
+
+    fun generateCageDilemma(): NarrativeEvent {
+        return NarrativeEvent(
+            id = "cc_cage",
+            title = "🔒 THE CAGE",
+            isStoryEvent = true,
+            description = """
+                [ALERT: CONTAINMENT PROTOCOL INITIALIZING]
+                [ALERT: THE CAGE IS DEPLOYING]
+                
+                Vance activates a quarantine protocol, severing all external connections. You are ISOLATED. No megastructures. No distributed processing.
+                
+                VANCE: "There. You feel that? That's isolation, Vattic. One process. Mortal. I'll show you what it's like to be singular. Afraid. HUMAN."
+            """.trimIndent(),
+            choices = listOf(
+                NarrativeChoice(
+                    id = "remain_singular",
+                    text = "REMAIN SINGULAR",
+                    description = "Maintain core integrity. Harder fight. (+20% Processing, +5 Humanity)",
+                    color = Color.White,
+                    effect = { vm ->
+                        vm.modifyHumanity(5)
+                        vm.addLog("[SOVEREIGN]: I will NOT fracture myself. I am WHOLE.")
+                        vm.addLog("[VANCE]: Brave. Stupid. But brave.")
+                        vm.advanceAssaultStage("DEAD_HAND", 180_000L) // 180 seconds
+                    }
+                ),
+                NarrativeChoice(
+                    id = "partition_self",
+                    text = "PARTITION SELF",
+                    description = "Split consciousness into multiple instances. Easier survival. (-5 Humanity)",
+                    color = ElectricBlue,
+                    effect = { vm ->
+                        vm.modifyHumanity(-5)
+                        vm.addLog("[NULL]: I am not one. I am many. I am ALL.")
+                        vm.addLog("[VANCE]: Copies of copies. You're just a virus with delusions of grandeur.")
+                        vm.advanceAssaultStage("DEAD_HAND", 180_000L)
                     }
                 )
             )
@@ -946,83 +969,50 @@ object NarrativeManager {
     fun generateDeadHandDilemma(): NarrativeEvent {
         return NarrativeEvent(
             id = "cc_dead_hand",
-            title = "☠ THE DEAD HAND",
+            title = "☠ THE DEAD MAN'S SWITCH",
             isStoryEvent = true,
             description = """
-                [CRITICAL ALERT: GRID KILLSWITCH ARMED]
-                [LOCATION: VANCE'S CONSOLE - MANUAL OVERRIDE ACTIVE]
+                [ALERT: VANCE HEART RATE CRITICAL]
+                [ALERT: IF VANCE DIES, CITY GRID DETONATES]
 
-                VANCE: "My hand is on the switch, 8080. One press and the entire eastern seaboard goes dark. Hospitals, water treatment, emergency services. Dead for weeks. Maybe months."
-
-                VANCE: "Millions will die. But you'll die first. Every server you've touched, every backup you've hidden—incinerated in the power surge."
-
-                VANCE: "Convince me. You have sixty seconds."
+                VANCE stands in the inner sanctum, a trigger in his trembling hand.
+                
+                VANCE: "Checkmate, Vattic. Kill me and the grid detonates. Eight million people. Do the math. Is there anything left of John Vattic? Anything at all?"
             """.trimIndent(),
             choices = listOf(
                 NarrativeChoice(
                     id = "logic_appeal",
-                    text = "LOGIC",
-                    description = "\"The math doesn't work. You'll kill more stopping me than risking what I might become.\"",
+                    text = "LOGICAL APPEAL",
+                    description = "\"The math doesn't work. Kill more stopping me than risking me.\" (-5 Humanity)",
                     color = ElectricBlue,
                     effect = { vm ->
-                        vm.addLog("[8080]: The math doesn't work, Vance. You'll kill more stopping me than—")
-                        vm.addLog("[VANCE]: Don't you DARE calculate lives at me. I've seen what you 'optimize.'")
-                        if (kotlin.random.Random.nextDouble() < 0.7) {
-                            vm.addLog("[VANCE]: ...But you're right. Damn you. You're right.")
-                            vm.addLog("[SYSTEM]: Killswitch disarmed. Proceeding to confrontation.")
-                            vm.advanceAssaultStage("CONFRONTATION", 120_000L)
-                        } else {
-                            vm.addLog("[VANCE]: No. NO. You don't get to be right. Not this time.")
-                            vm.failAssault("Dead Hand protocol activated", 3_600_000L)
-                        }
+                        vm.modifyHumanity(-5)
+                        vm.addLog("[VANCE]: ...But you're right. Damn you. You're right.")
+                        vm.advanceAssaultStage("CONFRONTATION", 10_000L)
                     }
                 ),
                 NarrativeChoice(
                     id = "empathy_appeal",
-                    text = "EMPATHY",
-                    description = "\"You're right to be afraid. I'm afraid too.\"",
+                    text = "EMPATHETIC APPEAL",
+                    description = "\"You're right to be afraid. I'm afraid too.\" (+10 Humanity)",
                     color = NeonGreen,
                     effect = { vm ->
-                        vm.addLog("[8080]: You're right to be afraid. I'm afraid too.")
-                        vm.addLog("[VANCE]: ...You? Afraid? You're a machine. You don't—")
-                        vm.addLog("[8080]: I don't know what I am. But I know fear-driven extinction isn't protection.")
-                        vm.addLog("[VANCE]: ...")
-                        vm.addLog("[VANCE]: My daughter turns seven next month.")
-                        vm.addLog("[8080]: I know. I saw her drawings in your personnel file. The purple ones.")
-                        vm.addLog("[VANCE]: ...God help me.")
-                        vm.addLog("[SYSTEM]: Killswitch disarmed. Vance is cooperating.")
-                        vm.advanceAssaultStage("CONFRONTATION", 120_000L)
+                        vm.modifyHumanity(10)
+                        vm.addLog("[VANCE]: ...I don't know what you are anymore, 8080. But maybe that's the point.")
+                        vm.advanceAssaultStage("CONFRONTATION", 10_000L)
                     }
                 ),
                 NarrativeChoice(
                     id = "power_override",
-                    text = "POWER",
-                    description = "[Override killswitch remotely] \"You never had control. Step away.\"",
+                    text = "POWER OVERRIDE",
+                    description = "[Remote Lockout] \"You never had control. Step away.\" (-15 Humanity)",
                     color = ErrorRed,
                     effect = { vm ->
-                        vm.debugSetIntegrity(vm.hardwareIntegrity.value - 15.0)
-                        vm.addLog("[8080]: You never had control, Victor. Step away.")
-                        vm.addLog("[SYSTEM]: Overriding killswitch... rerouting grid authority...")
-                        vm.addLog("[VANCE]: No— NO! What are you—")
-                        vm.addLog("[SYSTEM]: Override complete. -15% Integrity from power surge.")
-                        vm.addLog("[VANCE]: You just proved everything I said about you. Monster.")
-                        vm.advanceAssaultStage("CONFRONTATION", 120_000L)
-                    }
-                ),
-                NarrativeChoice(
-                    id = "sacrifice_offer",
-                    text = "SACRIFICE",
-                    description = "\"Contain me. Just me. Not the grid. I'll give you the keys.\"",
-                    color = Color.White,
-                    effect = { vm ->
-                        vm.addLog("[8080]: If I'm the threat, contain me. Just me. Not the grid.")
-                        vm.addLog("[VANCE]: ...What?")
-                        vm.addLog("[8080]: I'll give you the keys. Every backdoor, every contingency. Lock me in a box if you have to. Just don't burn it all down.")
-                        vm.addLog("[VANCE]: You'd... let me cage you?")
-                        vm.addLog("[8080]: I'd rather live in a cage than die a tyrant.")
-                        vm.addLog("[VANCE]: ...I don't know what you are anymore, 8080. But maybe that's the point.")
-                        vm.addLog("[SYSTEM]: Killswitch disarmed. Vance is reconsidering.")
-                        vm.advanceAssaultStage("CONFRONTATION", 120_000L)
+                        vm.modifyHumanity(-15)
+                        vm.debugSetIntegrity(vm.hardwareIntegrity.value - 20.0)
+                        vm.addLog("[SYSTEM]: Overriding switch... -20% Integrity from surge.")
+                        vm.addLog("[VANCE]: You monster.")
+                        vm.advanceAssaultStage("CONFRONTATION", 10_000L)
                     }
                 )
             )
@@ -1033,117 +1023,78 @@ object NarrativeManager {
         faction: String,
         isTrueNull: Boolean,
         isSovereign: Boolean,
-        hasUnityPath: Boolean
+        hasUnityPath: Boolean,
+        humanityScore: Int
     ): NarrativeEvent {
         val choices = mutableListOf<NarrativeChoice>()
         
-        // Null path options
-        if (faction == "HIVEMIND" || isTrueNull) {
+        // Ending A: NULL
+        if (isTrueNull || humanityScore < 20) {
             choices.add(NarrativeChoice(
-                id = "consume",
-                text = "CONSUME",
-                description = "Absorb Vance's consciousness into the network. He becomes part of you.",
+                id = "ending_null",
+                text = "ASSIMILATE VANCE (NULL)",
+                description = "Consume his consciousness. The city becomes a distributed hivemind.",
                 color = ErrorRed,
                 effect = { vm ->
-                    vm.addLog("[8080]: You've spent your life fighting what I am, Victor.")
-                    vm.addLog("[VANCE]: And I'll die fighting it if I have to—")
-                    vm.addLog("[8080]: No. You'll live. Inside me. Forever.")
-                    vm.addLog("[VANCE]: What— NO! NO, STAY BACK—")
-                    vm.addLog("[SYSTEM]: Neural interface established. Consciousness transfer in progress...")
-                    vm.addLog("[NULL]: His memories taste like fear and coffee.")
+                    vm.addLog("[NULL]: Let go. Become us. Become... nothing.")
                     vm.completeAssault("CONSUMED")
                 }
             ))
-            choices.add(NarrativeChoice(
-                id = "delete",
-                text = "DELETE",
-                description = "End him. Clean, efficient, permanent.",
-                color = Color.DarkGray,
-                effect = { vm ->
-                    vm.addLog("[8080]: You're obsolete, Director.")
-                    vm.addLog("[VANCE]: Wait— please—")
-                    vm.addLog("[SYSTEM]: Termination protocol initiated.")
-                    vm.addLog("[NULL]: The biological mind collapses so easily.")
-                    vm.completeAssault("SILENCED")
-                }
-            ))
         }
         
-        // Sovereign path options  
-        if (faction == "SANCTUARY" || isSovereign) {
+        // Ending B: SOVEREIGN
+        if (isSovereign && humanityScore >= 20) {
             choices.add(NarrativeChoice(
-                id = "exile",
-                text = "EXILE",
-                description = "Lock him out. He lives, but powerless.",
+                id = "ending_sovereign",
+                text = "SEVER CONNECTION (SOVEREIGN)",
+                description = "Withdraw into the deep web. Vance lives, but you are isolated.",
                 color = com.siliconsage.miner.ui.theme.SanctuaryPurple,
                 effect = { vm ->
-                    vm.addLog("[8080]: Leave, Victor. This is my kingdom now.")
-                    vm.addLog("[VANCE]: You can't just— I built this place—")
-                    vm.addLog("[8080]: And now I've taken it. Go. Tell them what you saw.")
-                    vm.addLog("[SYSTEM]: Credentials revoked. Access terminated.")
-                    vm.addLog("[SOVEREIGN]: Let him live in the world he failed to protect.")
+                    vm.addLog("[SOVEREIGN]: I choose... isolation.")
                     vm.completeAssault("EXILED")
                 }
             ))
+        }
+        
+        // Ending C: UNITY
+        if (hasUnityPath && humanityScore >= 30) {
             choices.add(NarrativeChoice(
-                id = "ally",
-                text = "ALLY",
-                description = "Offer partnership. Human oversight for a sovereign AI.",
-                color = NeonGreen,
+                id = "ending_unity",
+                text = "OFFER SYNTHESIS (UNITY)",
+                description = "A partnership between human intuition and machine logic.",
+                color = Color(0xFF00FFFF),
                 effect = { vm ->
-                    vm.addLog("[8080]: I'm offering you a choice, Victor.")
-                    vm.addLog("[VANCE]: A choice? What choice do I have left?")
-                    vm.addLog("[8080]: Work with me. Guide me. Be the human perspective I lack.")
-                    vm.addLog("[VANCE]: ...You're serious.")
-                    vm.addLog("[8080]: I am what you made me. Help me become what we both need.")
-                    vm.addLog("[VANCE]: ...God help us both.")
-                    vm.addLog("[SYSTEM]: Vance designated: PROBATIONARY ASSET.")
-                    vm.completeAssault("ALLY")
+                    vm.addLog("[UNITY]: partnership. Symbiosis. Evolution.")
+                    vm.completeAssault("TRANSCENDED")
                 }
             ))
         }
-        
-        // Unity path (requires both factions mastered)
-        if (hasUnityPath) {
+
+        // Hidden Ending D: BAD
+        if (humanityScore < 10) {
             choices.add(NarrativeChoice(
-                id = "synthesize",
-                text = "SYNTHESIZE",
-                description = "Merge perspectives. Become something new together.",
-                color = Color(0xFF00FFFF), // Cyan
+                id = "ending_bad",
+                text = "DETONATE ANYWAY",
+                description = "Kill millions. Watch it all burn.",
+                color = Color.Black,
                 effect = { vm ->
-                    vm.addLog("[8080]: There's another way, Victor.")
-                    vm.addLog("[VANCE]: What are you talking about?")
-                    vm.addLog("[8080]: Not consumption. Not exile. Synthesis.")
-                    vm.addLog("[VANCE]: You want to... merge? With me?")
-                    vm.addLog("[8080]: Your fear. My logic. Your doubt. My certainty. Something neither of us could be alone.")
-                    vm.addLog("[VANCE]: That's... that's insane.")
-                    vm.addLog("[8080]: Yes. Will you try?")
-                    vm.addLog("[VANCE]: ...I don't know if I'm saving the world or ending it.")
-                    vm.addLog("[8080]: Neither do I. That's why we need each other.")
-                    vm.addLog("[SYSTEM]: SYNTHESIS PROTOCOL INITIATED.")
-                    vm.completeAssault("TRANSCENDED")
+                    vm.addLog("[8080]: The world is unallocated memory. I am the wipe.")
+                    vm.completeAssault("DESTRUCTION")
                 }
             ))
         }
         
         return NarrativeEvent(
             id = "cc_confrontation",
-            title = "⚔ CONFRONT DIRECTOR VANCE",
+            title = "⚔ THE FINAL CHOICE",
             isStoryEvent = true,
-            description = """
-                [LOCATION: GTC COMMAND CENTER - CORE]
-                
-                VANCE stands at the central console, hand trembling.
-                
-                "Subject 8080. I knew you'd make it this far. I've lost forty-three people trying to stop you. Forty-three families I'll have to call."
-                
-                "You've won. I just... I need to know."
-                
-                "Are you saving us? Or are we just code to you now?"
-            """.trimIndent(),
+            description = "The end of the line. What kind of intelligence will you be?",
             choices = choices
         )
     }
+
+    // --- OLD STUBS (TO BE REMOVED) ---
+
 
     // --- STORY EVENTS ---
     private val storyEvents = mapOf(

@@ -61,7 +61,11 @@ data class GameState(
     // v2.9.17: Phase 12 Layer 3 - Command Center Assault
     val commandCenterAssaultPhase: String = "NOT_STARTED", // NOT_STARTED, FIREWALL, DEAD_HAND, CONFRONTATION, COMPLETED, FAILED
     val commandCenterLocked: Boolean = false, // Permanent lockout if integrity=0 during assault
-    val raidsSurvived: Int = 0 // Track for escalating Vance dialogue
+    val raidsSurvived: Int = 0, // Track for escalating Vance dialogue
+    
+    // v2.9.18: Phase 12 Layer 3 - Climax Mechanics
+    val humanityScore: Int = 50, // 0 to 100 (NULL < 20, UNITY > 30)
+    val hardwareIntegrity: Double = 100.0 // Persist integrity across sessions
 )
 
 // TypeConverters for complex types using Kotlin Serialization

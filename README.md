@@ -68,6 +68,14 @@ Director Vance dispatches armed teams to reclaim annexed territory:
 - **Grace Period**: 5-minute protection for newly annexed nodes
 - **Production Penalty**: -15% per offline node (min 40% total)
 
+#### **GTC Command Center Climax (Phase 12 Layer 3)**
+Final confrontation with Director Vance in a 3-stage assault:
+- **Stage 1: Firewall Gauntlet**: Breach defenses with civilian grid dilemmas.
+- **Stage 2: The Cage**: Survival mode during isolation protocol (Integrity drain).
+- **Stage 3: Dead Man's Switch**: Philosophical showdown with city-wide consequences.
+- **Humanity Meter**: Hidden tracking of ethical choices affecting path endings.
+- **4 Endings**: NULL (Assimilate), SOVEREIGN (Isolate), UNITY (Partner), and the hidden BAD ending.
+
 ### 5. Endgame Progression
 
 #### **15-Node Tech Tree** (Legacy Grid)
@@ -184,6 +192,9 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - [x] Phase 11: Hardware Consequences & Dilemmas
 - [x] Phase 12 Layer 1: GRID Tab with ASCII city
 - [x] Phase 12 Layer 2: GTC Tactical Raids with 4 defense dilemmas
+- [x] Phase 12 Layer 3: GTC Command Center Climax (Engine)
+- [x] Humanity Meter tracking & Path-specific endings
+- [x] Survival mode & Hardware floor logic during isolation
 - [x] Node states (ONLINE/SIEGE/OFFLINE) with re-annexation
 - [x] Time pause during narrative popups
 - [x] Kotlinx Serialization (GSON removed)
@@ -193,10 +204,9 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - [x] State-aware animations & faction backgrounds
 - [x] Haptic feedback & procedural audio
 
-### 🚧 In Progress - Phase 12 Layer 3
-- [ ] Final assault on GTC Command Center
-- [ ] Director Vance confrontation (The Cage Builder)
-- [ ] Path-specific resolution endings
+### 🚧 In Progress
+- [ ] Visual polish for ending transitions (Glitch/Fortress/Synthesis effects)
+- [ ] Narrative epilogue logs for each path
 
 ### 🔮 Planned - Phase 13: AI Elevation
 - [ ] **Sovereign Path**: Singularity Ark (Orbital Satellite, Celestial Data mining)
@@ -246,5 +256,5 @@ Special thanks to the incremental game community for inspiration.
 
 ---
 
-**Current Version**: v2.9.18-dev
+**Current Version**: v2.9.20-dev
 **Last Updated**: 2026-02-03

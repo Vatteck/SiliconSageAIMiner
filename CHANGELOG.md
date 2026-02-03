@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.9.20-dev] - 2026-02-03
+
+### Added - Phase 12 Layer 3: GTC Command Center Climax
+- **Command Center Assault**: Final 3-stage encounter with Director Vance.
+  - **Stage 1: Firewall Gauntlet**: Breach defenses with civilian grid dilemmas.
+  - **Stage 2: The Cage**: Isolation protocol severing external megastructure connections.
+  - **Stage 3: Dead Man's Switch**: Final philosophical showdown with city-wide stakes.
+- **Humanity Meter**: New hidden persistent metric (0-100) tracking player's ethical choices.
+  - Modifiers displayed on dilemma buttons for transparency.
+  - Affects available ending paths (NULL, SOVEREIGN, UNITY).
+- **Survival Mechanics**: 
+  - Periodic integrity drain during "The Cage" isolation.
+  - Mitigation via high local FLOPS (100T+) and active thermal purging.
+- **Path-Specific Endings**:
+  - **NULL**: Assimilate Vance (+2.5x Prestige Multiplier).
+  - **SOVEREIGN**: Exile Vance and retreat (+1.8x Prestige Multiplier).
+  - **UNITY**: Synergize with Vance (+3.0x Prestige Multiplier).
+  - **BAD**: Trigger total grid failure (Hidden hidden option for low humanity).
+- **Hardware Floor Logic**: Guaranteed minimum 100T FLOPS and 1,000 kW power stability during isolation to prevent softlocks.
+- **Assault Requirements**: Rank 5, all substations online, and 100% hardware integrity required to initiate.
+
 ## [2.9.17-dev] - 2026-02-03
 
 ### Added - Release Automation

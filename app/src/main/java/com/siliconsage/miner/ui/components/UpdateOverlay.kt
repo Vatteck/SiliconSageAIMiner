@@ -89,11 +89,13 @@ fun UpdateOverlay(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         
-                        updateInfo.changes.forEach { line ->
+                        // Handle changes as a String (v2.9.18 backward compatibility fix)
+                        val changeLines = updateInfo.changes.split("\n").filter { it.isNotBlank() }
+                        changeLines.forEach { line ->
                             Row(modifier = Modifier.padding(start = 8.dp, bottom = 2.dp), verticalAlignment = Alignment.Top) {
                                 Text("•", color = ElectricBlue, fontSize = 12.sp, modifier = Modifier.padding(end = 4.dp))
                                 Text(
-                                    text = line,
+                                    text = line.trim(),
                                     color = Color.LightGray,
                                     fontSize = 12.sp
                                 )

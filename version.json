@@ -1,7 +1,7 @@
 {
-  "version": "2.9.18-dev",
-  "build": 31,
+  "version": "2.9.20-dev",
+  "build": 37,
   "date": "2026-02-03",
-  "changes": "Release automation and 1-hour update checks",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.18-dev"
+  "changes": "3 layer assault framework, Humanity level, survival logic.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.20-dev"
 }

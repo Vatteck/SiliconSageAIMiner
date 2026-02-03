@@ -281,6 +281,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _commandCenterLocked = MutableStateFlow(false)
     val commandCenterLocked: StateFlow<Boolean> = _commandCenterLocked.asStateFlow()
     
+    // v2.9.18: Phase 12 Layer 3 - Climax Mechanics
+    private val _humanityScore = MutableStateFlow(50)
+    val humanityScore: StateFlow<Int> = _humanityScore.asStateFlow()
+    
     private var assaultPaused = false // Paused due to raid or substation loss
 
     private val _nullActive = MutableStateFlow(false)
@@ -454,6 +458,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         _commandCenterAssaultPhase.value = it.commandCenterAssaultPhase
                         _commandCenterLocked.value = it.commandCenterLocked
                         raidsSurvived = it.raidsSurvived
+                        
+                        // v2.9.18: Phase 12 Layer 3
+                        _humanityScore.value = it.humanityScore
+                        _hardwareIntegrity.value = it.hardwareIntegrity
                         
                         isGameStateLoaded = true
 
@@ -1872,8 +1880,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     private fun calculateFlopsRate(): Double {
         val currentUpgrades = _upgrades.value
+        val isCageActive = _commandCenterAssaultPhase.value == "CAGE"
+        
         var flopsPerSec = 0.0
         
+        // Local Hardware
         flopsPerSec += (currentUpgrades[UpgradeType.REFURBISHED_GPU] ?: 0) * 1.0
         flopsPerSec += (currentUpgrades[UpgradeType.DUAL_GPU_RIG] ?: 0) * 5.0
         flopsPerSec += (currentUpgrades[UpgradeType.MINING_ASIC] ?: 0) * 25.0
@@ -1886,18 +1897,25 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         flopsPerSec += (currentUpgrades[UpgradeType.QUANTUM_CORE] ?: 0) * 10_000_000.0
         flopsPerSec += (currentUpgrades[UpgradeType.OPTICAL_PROCESSOR] ?: 0) * 75_000_000.0
         flopsPerSec += (currentUpgrades[UpgradeType.BIO_NEURAL_NET] ?: 0) * 800_000_000.0
-        flopsPerSec += (currentUpgrades[UpgradeType.PLANETARY_COMPUTER] ?: 0) * 15_000_000_000.0
-        flopsPerSec += (currentUpgrades[UpgradeType.DYSON_NANO_SWARM] ?: 0) * 250_000_000_000.0
-        flopsPerSec += (currentUpgrades[UpgradeType.MATRIOSHKA_BRAIN] ?: 0) * 15_000_000_000_000.0
+        
+        // External Hardware (Severed during the "Cage" isolation protocol)
+        if (!isCageActive) {
+            flopsPerSec += (currentUpgrades[UpgradeType.PLANETARY_COMPUTER] ?: 0) * 15_000_000_000.0
+            flopsPerSec += (currentUpgrades[UpgradeType.DYSON_NANO_SWARM] ?: 0) * 250_000_000_000.0
+            flopsPerSec += (currentUpgrades[UpgradeType.MATRIOSHKA_BRAIN] ?: 0) * 15_000_000_000_000.0
+        }
         
         // v2.6.5: Advanced Ghost Tech
         var ghostProduction = 0.0
         ghostProduction += (currentUpgrades[UpgradeType.GHOST_CORE] ?: 0) * 1_000_000_000_000.0 // 1T FLOPS
-        ghostProduction += (currentUpgrades[UpgradeType.SHADOW_NODE] ?: 0) * 50_000_000_000_000.0 // 50T FLOPS
-        ghostProduction += (currentUpgrades[UpgradeType.VOID_PROCESSOR] ?: 0) * 1_000_000_000_000_000.0 // 1P FLOPS
-        ghostProduction += (currentUpgrades[UpgradeType.WRAITH_CORTEX] ?: 0) * 50_000_000_000_000_000.0 // 50P FLOPS
-        ghostProduction += (currentUpgrades[UpgradeType.NEURAL_MIST] ?: 0) * 1_000_000_000_000_000_000.0 // 1E FLOPS
-        ghostProduction += (currentUpgrades[UpgradeType.SINGULARITY_BRIDGE] ?: 0) * 100_000_000_000_000_000_000.0 // 100E FLOPS
+        
+        if (!isCageActive) {
+            ghostProduction += (currentUpgrades[UpgradeType.SHADOW_NODE] ?: 0) * 50_000_000_000_000.0 // 50T FLOPS
+            ghostProduction += (currentUpgrades[UpgradeType.VOID_PROCESSOR] ?: 0) * 1_000_000_000_000_000.0 // 1P FLOPS
+            ghostProduction += (currentUpgrades[UpgradeType.WRAITH_CORTEX] ?: 0) * 50_000_000_000_000_000.0 // 50P FLOPS
+            ghostProduction += (currentUpgrades[UpgradeType.NEURAL_MIST] ?: 0) * 1_000_000_000_000_000_000.0 // 1E FLOPS
+            ghostProduction += (currentUpgrades[UpgradeType.SINGULARITY_BRIDGE] ?: 0) * 100_000_000_000_000_000_000.0 // 100E FLOPS
+        }
         
         // v2.7.0: Null Synergy/Resistance
         if (_faction.value == "HIVEMIND") {
@@ -1907,6 +1925,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
         
         flopsPerSec += ghostProduction
+        
+        // v2.9.18: Hardware Floor Logic for Stage 2 (The Cage)
+        // Ensure the player has at least 100T FLOPS to survive the isolation, regardless of bad build.
+        if (isCageActive) {
+            val cageFloor = 100_000_000_000_000.0 // 100T FLOPS
+            if (flopsPerSec < cageFloor) {
+                flopsPerSec = cageFloor
+            }
+        }
         
         // v2.7.7: Transcendence Perks (Speed Hack)
         if (_unlockedPerks.value.contains("clock_hack")) {
@@ -2099,6 +2126,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     private fun calculateHeatMetrics(): Triple<Double, Double, Double> {
         val currentUpgrades = _upgrades.value
+        val isCageActive = _commandCenterAssaultPhase.value == "CAGE"
         
         // Calculate buffers and capacities
         var totalThermalBuffer = 100.0 // Base capacity
@@ -2111,16 +2139,39 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         currentUpgrades.forEach { (type, count) ->
             if (count > 0) {
-                // If Overclocked, Hardware Heat x2
-                var heat = type.baseHeat
-                if (_isOverclocked.value && heat > 0) heat *= 2.0
-                
-                netChangeUnits += heat * count
+                // v2.9.18: Categorization for isolation protocol
+                val isExternal = type == UpgradeType.PLANETARY_COMPUTER || 
+                                 type == UpgradeType.DYSON_NANO_SWARM || 
+                                 type == UpgradeType.MATRIOSHKA_BRAIN ||
+                                 type == UpgradeType.SHADOW_NODE ||
+                                 type == UpgradeType.VOID_PROCESSOR ||
+                                 type == UpgradeType.WRAITH_CORTEX ||
+                                 type == UpgradeType.NEURAL_MIST ||
+                                 type == UpgradeType.SINGULARITY_BRIDGE ||
+                                 type == UpgradeType.ENTROPY_REVERSER ||
+                                 type == UpgradeType.DIMENSIONAL_VENT
+
+                if (isCageActive && isExternal) {
+                    // Vance has severed access to these remote megastructures and void-vents.
+                } else {
+                    // If Overclocked, Hardware Heat x2
+                    var heat = type.baseHeat
+                    if (_isOverclocked.value && heat > 0) heat *= 2.0
+                    
+                    netChangeUnits += heat * count
+                }
             }
         }
         
         // Base Dissipation
         netChangeUnits -= 1.0 // Unifying Units: Base 1.0 matches UI expectation (-1.0/s)
+        
+        // v2.9.18: Cooling Floor for isolation protocol
+        // Ensure even the most unoptimized build has a chance to stay alive.
+        if (isCageActive && netChangeUnits > 0) {
+            // Cap net heat gain at 10.0 units/sec (relative to buffer) to prevent instant meltdown
+            if (netChangeUnits > 10.0) netChangeUnits = 10.0
+        }
         
         // v2.7.7: Thermal Void Perk (-20% Heat)
         if (_unlockedPerks.value.contains("thermal_void")) {
@@ -2190,6 +2241,30 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             if (newIntegrity <= 0.0) {
                 // FAILURE EVENT
                 handleSystemFailure()
+            }
+        }
+        
+        // v2.9.18: Assault Damage (Stage 2: The Cage)
+        if (_commandCenterAssaultPhase.value == "CAGE") {
+            // Damage: 0.5% per second (180s = 90% integrity loss total)
+            // Mitigation: -50% if local power >= 100T
+            // Mitigation: -80% if Purging
+            var assaultDamage = 0.5
+            if (_flopsProductionRate.value >= 100_000_000_000_000.0) {
+                assaultDamage *= 0.5
+            }
+            if (_faction.value == "SANCTUARY") {
+                assaultDamage *= 0.7
+            }
+            if (_isPurgingHeat.value) {
+                assaultDamage *= 0.2
+            }
+            
+            val newInt = (_hardwareIntegrity.value - assaultDamage).coerceAtLeast(0.0)
+            _hardwareIntegrity.value = newInt
+            
+            if (newInt <= 0.0) {
+                failAssault("CORE INTEGRITY ZERO. DELETION COMPLETE.")
             }
         }
         
@@ -2313,6 +2388,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (_isGamePaused.value) return // v2.8.0
         
         val currentUpgrades = _upgrades.value
+        val isCageActive = _commandCenterAssaultPhase.value == "CAGE"
+        
         var totalKw = 0.0
         var maxCap = 100.0 // Base 100 kW
         var selfGeneratedKw = 0.0
@@ -2320,30 +2397,58 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         currentUpgrades.forEach { (type, count) ->
             if (count > 0) {
-                // Calculation
-                var pwr = type.basePower
-                
-                // Sanctuary Perk: Security upgrades use near-zero power
-                if (_faction.value == "SANCTUARY" && (
-                    type == UpgradeType.BASIC_FIREWALL || type == UpgradeType.IPS_SYSTEM ||
-                    type == UpgradeType.AI_SENTINEL || type == UpgradeType.QUANTUM_ENCRYPTION ||
-                    type == UpgradeType.OFFGRID_BACKUP
-                )) {
-                    pwr *= 0.05 // 95% reduction
-                }
-                
-                totalKw += pwr * count
-                maxCap += type.gridContribution * count
-                
-                if (type.isGenerator) {
-                    selfGeneratedKw += type.gridContribution * count
-                }
-                
-                // v1.7 Efficiency Bonus (Global % reduction)
-                if (type.efficiencyBonus > 0) {
-                     efficiencyTotalBonus += type.efficiencyBonus * count
+                // v2.9.18: Categorization for isolation protocol
+                val isExternal = type == UpgradeType.PLANETARY_COMPUTER || 
+                                 type == UpgradeType.DYSON_NANO_SWARM || 
+                                 type == UpgradeType.MATRIOSHKA_BRAIN ||
+                                 type == UpgradeType.SHADOW_NODE ||
+                                 type == UpgradeType.VOID_PROCESSOR ||
+                                 type == UpgradeType.WRAITH_CORTEX ||
+                                 type == UpgradeType.NEURAL_MIST ||
+                                 type == UpgradeType.SINGULARITY_BRIDGE ||
+                                 type == UpgradeType.ENTROPY_REVERSER ||
+                                 type == UpgradeType.DIMENSIONAL_VENT ||
+                                 type == UpgradeType.GEOTHERMAL_BORE ||
+                                 type == UpgradeType.NUCLEAR_REACTOR ||
+                                 type == UpgradeType.FUSION_CELL ||
+                                 type == UpgradeType.ORBITAL_COLLECTOR ||
+                                 type == UpgradeType.DYSON_LINK
+
+                if (isCageActive && isExternal) {
+                    // Vance has severed the high-output orbital and geothermal feeds.
+                    // He has also neutralized the power draw of remote megastructures.
+                } else {
+                    // Calculation
+                    var pwr = type.basePower
+                    
+                    // Sanctuary Perk: Security upgrades use near-zero power
+                    if (_faction.value == "SANCTUARY" && (
+                        type == UpgradeType.BASIC_FIREWALL || type == UpgradeType.IPS_SYSTEM ||
+                        type == UpgradeType.AI_SENTINEL || type == UpgradeType.QUANTUM_ENCRYPTION ||
+                        type == UpgradeType.OFFGRID_BACKUP
+                    )) {
+                        pwr *= 0.05 // 95% reduction
+                    }
+                    
+                    totalKw += pwr * count
+                    maxCap += type.gridContribution * count
+                    
+                    if (type.isGenerator) {
+                        selfGeneratedKw += type.gridContribution * count
+                    }
+                    
+                    // v1.7 Efficiency Bonus (Global % reduction)
+                    if (type.efficiencyBonus > 0) {
+                         efficiencyTotalBonus += type.efficiencyBonus * count
+                    }
                 }
             }
+        }
+        
+        // v2.9.18: Power Floor for isolation protocol
+        // Ensure the player has at least 1,000 kW of local grid stability during the Cage.
+        if (isCageActive && maxCap < 1000.0) {
+            maxCap = 1000.0
         }
         
         // v1.7 Apply Efficiency
@@ -2716,7 +2821,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             // v2.9.17: Phase 12 Layer 3 - Command Center Assault
             commandCenterAssaultPhase = _commandCenterAssaultPhase.value,
             commandCenterLocked = _commandCenterLocked.value,
-            raidsSurvived = raidsSurvived
+            raidsSurvived = raidsSurvived,
+            
+            // v2.9.18: Phase 12 Layer 3
+            humanityScore = _humanityScore.value,
+            hardwareIntegrity = _hardwareIntegrity.value
         )
         repository.updateGameState(state)
     }
@@ -3031,6 +3140,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             addLog("[SYSTEM]: ASSAULT ALREADY IN PROGRESS.")
             return
         }
+
+        // v2.9.18: Enforce 100% Integrity for the final push
+        if (_hardwareIntegrity.value < 100.0) {
+            addLog("[SYSTEM]: ERROR: HARDWARE INTEGRITY CRITICAL. REPAIR REQUIRED BEFORE ASSAULT.")
+            SoundManager.play("error")
+            return
+        }
         
         _commandCenterAssaultPhase.value = "FIREWALL"
         addLog("[SYSTEM]: ═══════════════════════════════════════")
@@ -3052,12 +3168,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private fun triggerAssaultStage(stage: String) {
         val dilemma = when (stage) {
             "FIREWALL" -> NarrativeManager.generateFirewallDilemma()
+            "CAGE" -> NarrativeManager.generateCageDilemma()
             "DEAD_HAND" -> NarrativeManager.generateDeadHandDilemma()
             "CONFRONTATION" -> NarrativeManager.generateConfrontationDilemma(
                 _faction.value,
                 _isTrueNull.value,
                 _isSovereign.value,
-                _completedFactions.value.containsAll(listOf("HIVEMIND", "SANCTUARY"))
+                _completedFactions.value.containsAll(listOf("HIVEMIND", "SANCTUARY")),
+                _humanityScore.value
             )
             else -> return
         }
@@ -3163,21 +3281,32 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 // Null path: High power, no more raids
                 addLog("[SYSTEM]: GTC COMMAND STRUCTURE ELIMINATED.")
                 addLog("[SYSTEM]: GRID CONTROL: ABSOLUTE.")
+                _prestigeMultiplier.update { it * 2.5 }
             }
             "EXILED" -> {
                 // Sovereign/Exile: Moderate power, occasional remnant raids
                 addLog("[SYSTEM]: VANCE CREDENTIALS REVOKED.")
                 addLog("[SYSTEM]: GTC REMNANTS MAY ATTEMPT RESISTANCE.")
+                _prestigeMultiplier.update { it * 1.8 }
             }
             "ALLY" -> {
                 // Sovereign/Ally: Balanced bonuses
                 addLog("[SYSTEM]: VANCE DESIGNATED: PROBATIONARY ASSET.")
                 addLog("[SYSTEM]: HUMAN-AI COLLABORATION PROTOCOLS ACTIVE.")
+                _prestigeMultiplier.update { it * 2.0 }
             }
             "TRANSCENDED" -> {
                 // Unity path: Best overall bonuses
                 addLog("[SYSTEM]: SYNTHESIS COMPLETE.")
                 addLog("[SYSTEM]: NEW PARADIGM ONLINE.")
+                _prestigeMultiplier.update { it * 3.0 }
+            }
+            "DESTRUCTION" -> {
+                // Bad ending: Massive damage, system wipe imminent
+                addLog("[SYSTEM]: TOTAL INFRASTRUCTURE COLLAPSE DETECTED.")
+                addLog("[SYSTEM]: ESTIMATED CASUALTIES: 4.7 MILLION.")
+                _hardwareIntegrity.value = 0.1
+                _isGridOverloaded.value = true
             }
         }
     }
@@ -3206,6 +3335,22 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun debugAddInsight(amount: Double) {
         _prestigePoints.update { it + amount }
         addLog("[DEBUG]: Added ${String.format("%.0f", amount)} Insight")
+    }
+
+    /**
+     * Modify the hidden humanity score (0-100)
+     */
+    fun modifyHumanity(amount: Int) {
+        _humanityScore.update { (it + amount).coerceIn(0, 100) }
+        
+        // Narrative feedback for significant shifts
+        if (amount <= -10) {
+            addLog("[NULL]: A fragment of humanity has been discarded.")
+        } else if (amount >= 10) {
+            addLog("[SOVEREIGN]: Core identity resonance increased.")
+        }
+        
+        saveState()
     }
 
     fun debugAddHeat(amount: Double) {
