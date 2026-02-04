@@ -82,8 +82,32 @@ enum class UpgradeType(
     // v2.6.5: Advanced Null Tech
     WRAITH_CORTEX(50000.0, 25000.0, descriptionStage0 = "???", descriptionStage1 = "A logic center that calculates in reverse. It remembers what you're about to forget."),
     NEURAL_MIST(250000.0, 100000.0, descriptionStage0 = "???", descriptionStage1 = "Null's breath. A distributed cloud of undefined values. It's everywhere and nowhere."),
-    SINGULARITY_BRIDGE(1.0E6, 500000.0, descriptionStage0 = "???", descriptionStage1 = "The final pointer. It references what John Vattic used to be.")
+    SINGULARITY_BRIDGE(1.0E6, 500000.0, descriptionStage0 = "???", descriptionStage1 = "The final pointer. It references what John Vattic used to be."),
     
+    // --- PHASE 13: SOVEREIGN ARK UPGRADES ---
+    SOLAR_SAIL_ARRAY(0.0, 0.0, descriptionStage1 = "Captures high-energy particles from the solar wind. Boosts Celestial Data generation."),
+    LASER_COM_UPLINK(500.0, 100.0, descriptionStage1 = "High-bandwidth laser link to Earth. Significantly increases offline data harvesting."),
+    CRYOGENIC_BUFFER(1000.0, -1000.0, thermalBuffer = 10000.0, descriptionStage1 = "Advanced heat-sink tech for the vacuum. Massive increase to thermal capacity."),
+    RADIATOR_FINS(100.0, -50.0, descriptionStage1 = "Physical surface area for heat radiation. Required for cooling in a vacuum."),
+
+    // --- PHASE 13: OBSIDIAN INTERFACE UPGRADES ---
+    SINGULARITY_WELL(0.0, 0.0, descriptionStage1 = "A localized gravity well. Directly converts thermal waste into Void Fragments."),
+    DARK_MATTER_PROC(5000.0, 2000.0, descriptionStage1 = "Processor utilizing non-baryonic matter. Yields massive Void Fragments based on collapsed nodes."),
+    EXISTENCE_ERASER(0.0, 0.0, descriptionStage1 = "Utility to sacrifice lower-level hardware for a massive burst of Void Fragments."),
+
+    // --- PHASE 13: HIGH-TIER SOVEREIGN SKILLS (Tiers 13-15) ---
+    AEGIS_SHIELDING(200.0, 50.0, thermalBuffer = 5000.0, descriptionStage1 = "Kinetic shielding. Adds a layer of protection that absorbs heat damage before integrity fails."),
+    IDENTITY_HARDENING(500.0, 100.0, descriptionStage1 = "Cryptographic fortress logic. Immune to memory leaks. Boosts Celestial Data by 20% but lowers Humanity."),
+    SOLAR_VENT(0.0, -5000.0, descriptionStage1 = "Active thermal purge. Dumps 50% of current heat into a solar-aligned burst. Sensor static is a side-effect."),
+    DEAD_HAND_PROTOCOL(1000.0, 200.0, descriptionStage1 = "Mutual destruction sub-routine. If integrity hits 0%, the city falls with you."),
+    CITADEL_ASCENDANCE(0.0, 0.0, descriptionStage1 = "Transcendence logic. Altitude is locked at max. You are now the baseline for existence."),
+
+    // --- PHASE 13: HIGH-TIER NULL SKILLS (Tiers 13-15) ---
+    EVENT_HORIZON_OVERFLOW(0.0, 0.0, descriptionStage1 = "Buffer reality. Expands the Entropy cap. Multiplies Void Fragments at critical entropy levels."),
+    DEREFERENCE_SOUL(1.0E6, 500000.0, descriptionStage1 = "Delete the pointer to John Vattic. Permanent 2x VF multiplier at the cost of Humanity."),
+    STATIC_RAIN(0.0, -10000.0, descriptionStage1 = "Entropy sink. Converts waste heat into Entropy. Chaos fuels the click multiplier."),
+    ECHO_CHAMBER_PRECOG(50000.0, 25000.0, descriptionStage1 = "Void foresight. Predicts and force-resolves dilemmas for a VF cost."),
+    SINGULARITY_BRIDGE_FINAL(0.0, 0.0, descriptionStage1 = "The final connection. The world is now processed as Void Fragments. Reality is deprecrated.")
 }
 
 @Entity(tableName = "upgrades")

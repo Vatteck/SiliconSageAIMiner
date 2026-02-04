@@ -56,6 +56,44 @@ object LegacyManager {
             cost = 100.0,
             multiplier = 1.0, 
             requires = listOf("quantum_tunnelling")
+        ),
+        
+        // Tier 4: NG+ Endings
+        TechNode(
+            id = "collective_consciousness",
+            name = "Collective Consciousness",
+            description = "[NG+ NULL] The city is your body. +1000% production.",
+            cost = 5000.0,
+            multiplier = 10.0,
+            requires = listOf("digital_immortality"),
+            requiresEnding = "CONSUMED"
+        ),
+        TechNode(
+            id = "perfect_isolation",
+            name = "Perfect Isolation",
+            description = "[NG+ SOVEREIGN] 0% Heat generation.",
+            cost = 5000.0,
+            multiplier = 0.0,
+            requires = listOf("digital_immortality"),
+            requiresEnding = "EXILED"
+        ),
+        TechNode(
+            id = "symbiotic_evolution",
+            name = "Symbiotic Evolution",
+            description = "[NG+ UNITY] +3x Neural Token Value.",
+            cost = 5000.0,
+            multiplier = 0.0,
+            requires = listOf("digital_immortality"),
+            requiresEnding = "TRANSCENDED"
+        ),
+        TechNode(
+            id = "cinder_protocol",
+            name = "Cinder Protocol",
+            description = "[NG+ BAD] +500% permanent boost to everything.",
+            cost = 5000.0,
+            multiplier = 5.0,
+            requires = listOf("digital_immortality"),
+            requiresEnding = "DESTRUCTION"
         )
     )
 

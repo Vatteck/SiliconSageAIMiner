@@ -14,5 +14,6 @@ data class TechNode(
     val description: String,
     val cost: Double,
     val multiplier: Double, // Global multiplier bonus (e.g., 0.1 for +10%)
-    val requires: List<String>
+    val requires: List<String>,
+    val requiresEnding: String? = null // NULL, SOVEREIGN, UNITY, BAD
 )

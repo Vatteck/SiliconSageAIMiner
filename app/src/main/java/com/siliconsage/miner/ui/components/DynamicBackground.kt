@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.siliconsage.miner.ui.theme.ElectricBlue
@@ -22,7 +23,9 @@ fun DynamicBackground(
     heatPercent: Double, // 0.0 to 100.0
     faction: String, // "NONE", "HIVEMIND", "SANCTUARY"
     isTrueNull: Boolean = false, // v2.8.0
-    isSovereign: Boolean = false // v2.8.0
+    isSovereign: Boolean = false, // v2.8.0
+    isUnity: Boolean = false, // v2.9.18
+    isAnnihilated: Boolean = false // v2.9.18
 ) {
     // Pulse Animation
     val infiniteTransition = rememberInfiniteTransition(label = "dynamicBg")
@@ -48,6 +51,8 @@ fun DynamicBackground(
 
         // Determine Color based on Faction & Heat
         val baseColor = when {
+            isAnnihilated -> ErrorRed
+            isUnity -> ElectricBlue
             isTrueNull -> Color.White
             isSovereign -> com.siliconsage.miner.ui.theme.SanctuaryPurple
             faction == "HIVEMIND" -> HivemindOrange
@@ -68,6 +73,8 @@ fun DynamicBackground(
 
         // Draw Pattern based on priority
         when {
+            isAnnihilated -> drawStaticPattern(width, height, ErrorRed, linearTime)
+            isUnity -> drawSynthesisPattern(width, height, activeColor, linearTime)
             isTrueNull -> drawEntropyPattern(width, height, activeColor, linearTime)
             isSovereign -> drawMonolithPattern(width, height, activeColor, linearTime)
             faction == "HIVEMIND" -> drawHivePattern(width, height, activeColor, time, heatFactor)
@@ -76,13 +83,210 @@ fun DynamicBackground(
         }
         
         // Heat Haze / Warning glow
-        if (heatFactor > 0.75f && !isSovereign) { // Sovereign resists the visual "panic"
+        if (heatFactor > 0.75f && !isSovereign && !isUnity && !isAnnihilated) { // High tiers resist the visual "panic"
             val glowAlpha = (heatFactor - 0.75f) * 4f 
             drawRect(
                 color = ErrorRed.copy(alpha = (glowAlpha + (sin(time * 4) * 0.05f).toFloat()).coerceIn(0f, 0.6f)),
                 size = size
             )
         }
+    }
+}
+
+fun DrawScope.drawSynthesisPattern(w: Float, h: Float, color: Color, time: Float) {
+    // v2.9.37: Snapped Nexus Grid Engine
+    val gold = Color(0xFFFFD700)
+    val cyan = ElectricBlue
+    val gridSpacing = 100f
+    
+    // 1. Prominent Grid Floor
+    val cols = (w / gridSpacing).toInt()
+    val rows = (h / gridSpacing).toInt()
+    
+    for (x in 0..cols) {
+        drawLine(
+            color = cyan.copy(alpha = 0.15f),
+            start = Offset(x * gridSpacing, 0f),
+            end = Offset(x * gridSpacing, h),
+            strokeWidth = 2f
+        )
+    }
+    for (y in 0..rows) {
+        drawLine(
+            color = gold.copy(alpha = 0.15f),
+            start = Offset(0f, y * gridSpacing),
+            end = Offset(w, y * gridSpacing),
+            strokeWidth = 2f
+        )
+    }
+
+    // 2. Snapped Light Beams (Aligned to grid lines)
+    data class SnappedBeam(val gridIndex: Int, val speed: Float, val isHorizontal: Boolean)
+    val beams = listOf(
+        SnappedBeam(2, 400f, true),
+        SnappedBeam(5, -300f, true),
+        SnappedBeam(rows - 2, 500f, true),
+        SnappedBeam(1, 250f, false),
+        SnappedBeam(4, -450f, false),
+        SnappedBeam(cols - 1, 350f, false)
+    )
+    
+    beams.forEachIndexed { i, cfg ->
+        val beamColor = if (i % 2 == 0) cyan else gold
+        val speed = cfg.speed
+        
+        if (cfg.isHorizontal) {
+            val y = (cfg.gridIndex * gridSpacing) % h
+            val xProg = (time * speed) % (w * 2) - w
+            drawLine(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color.Transparent, beamColor.copy(alpha=0.6f), beamColor, beamColor.copy(alpha=0.6f), Color.Transparent),
+                    startX = xProg,
+                    endX = xProg + 500f
+                ),
+                start = Offset(0f, y),
+                end = Offset(w, y),
+                strokeWidth = 8f
+            )
+        } else {
+            val x = (cfg.gridIndex * gridSpacing) % w
+            val yProg = (time * speed) % (h * 2) - h
+            drawLine(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, beamColor.copy(alpha=0.4f), beamColor, beamColor.copy(alpha=0.6f), Color.Transparent),
+                    startY = yProg,
+                    endY = yProg + 600f
+                ),
+                start = Offset(x, 0f),
+                end = Offset(x, h),
+                strokeWidth = 8f
+            )
+        }
+    }
+
+    // 3. Pulsing Grid Nodes (Snapped to intersections)
+    repeat(12) { i ->
+        val r = kotlin.random.Random(i.toLong() + 77)
+        val gx = r.nextInt(cols)
+        val gy = r.nextInt(rows)
+        val px = gx * gridSpacing
+        val py = gy * gridSpacing
+        val pulse = (sin(time * 4f + i) + 1f) / 2f
+        
+        drawRect(
+            color = if(i%2==0) cyan else gold,
+            topLeft = Offset(px - 6f, py - 6f),
+            size = androidx.compose.ui.geometry.Size(12f, 12f),
+            alpha = 0.2f + pulse * 0.5f
+        )
+        // Strong Node Glow
+        drawCircle(
+            color = (if(i%2==0) cyan else gold).copy(alpha = 0.2f * pulse),
+            radius = 25f * pulse,
+            center = Offset(px, py)
+        )
+    }
+    
+    // 4. DNA Strands (Heavy stroke, background layer)
+    val strands = 2
+    val points = 40
+    val verticalSpacing = h / points
+    
+    repeat(strands) { s ->
+        val xOffset = (w / (strands + 1)) * (s + 1)
+        val phaseShift = s * Math.PI.toFloat() + (time * 0.3f)
+        
+        val path1 = androidx.compose.ui.graphics.Path()
+        val path2 = androidx.compose.ui.graphics.Path()
+        
+        for (i in 0..points) {
+            val y = i * verticalSpacing
+            val wave = sin(y * 0.006f + time * 2.5f + phaseShift)
+            val x1 = xOffset + wave * 80f
+            val x2 = xOffset - wave * 80f
+            
+            if (i == 0) {
+                path1.moveTo(x1, y)
+                path2.moveTo(x2, y)
+            } else {
+                path1.lineTo(x1, y)
+                path2.lineTo(x2, y)
+            }
+            
+            if (i % 4 == 0) {
+                val pairAlpha = (0.2f + (wave + 1f) / 2f * 0.3f).coerceIn(0.1f, 0.5f)
+                drawLine(
+                    color = lerpColor(cyan, gold, (wave + 1f) / 2f).copy(alpha = pairAlpha),
+                    start = Offset(x1, y),
+                    end = Offset(x2, y),
+                    strokeWidth = 6f
+                )
+            }
+        }
+        
+        drawPath(path1, cyan.copy(alpha = 0.6f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 8f))
+        drawPath(path2, gold.copy(alpha = 0.6f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 8f))
+    }
+}
+
+fun DrawScope.drawStaticPattern(w: Float, h: Float, color: Color, time: Float) {
+    // v2.9.35: Aggressive System Meltdown
+    val random = kotlin.random.Random((time * 1000).toLong())
+    
+    // 1. Heavy Opaque Red Rain (Thicker and faster)
+    val rainCols = 15
+    repeat(rainCols) { i ->
+        val x = (i * w / rainCols)
+        val speed = 1500f + (sin(i.toFloat() * 10f) * 500f)
+        val y = (time * speed) % (h + 400f) - 200f
+        
+        drawRect(
+            color = color.copy(alpha = 0.6f),
+            topLeft = Offset(x, y),
+            size = androidx.compose.ui.geometry.Size(4f, 80f)
+        )
+        // Trail glow
+        drawRect(
+            color = color.copy(alpha = 0.2f),
+            topLeft = Offset(x - 2f, y - 40f),
+            size = androidx.compose.ui.geometry.Size(8f, 120f)
+        )
+    }
+
+    // 2. Large Data Corruption Blocks (Glitchy)
+    repeat(8) {
+        val bw = 100f + random.nextFloat() * 300f
+        val bh = 10f + random.nextFloat() * 40f
+        val bx = random.nextFloat() * (w - bw)
+        val by = random.nextFloat() * (h - bh)
+        
+        if (random.nextFloat() > 0.8) {
+            drawRect(
+                color = if(random.nextBoolean()) color.copy(alpha=0.3f) else Color.White.copy(alpha=0.1f),
+                topLeft = Offset(bx, by),
+                size = androidx.compose.ui.geometry.Size(bw, bh)
+            )
+        }
+    }
+    
+    // 3. CRT Scanline Tear
+    val tearY = (time * 1000f) % h
+    drawRect(
+        color = Color.White.copy(alpha = 0.15f),
+        topLeft = Offset(0f, tearY),
+        size = androidx.compose.ui.geometry.Size(w, 2f)
+    )
+
+    // 4. Random Digital "Snow"
+    repeat(100) {
+        val px = random.nextFloat() * w
+        val py = random.nextFloat() * h
+        drawRect(
+            color = if(random.nextFloat() > 0.5) color else Color.White,
+            topLeft = Offset(px, py),
+            size = androidx.compose.ui.geometry.Size(2f, 2f),
+            alpha = random.nextFloat() * 0.5f
+        )
     }
 }
 

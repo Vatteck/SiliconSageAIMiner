@@ -34,4 +34,19 @@ class Converters {
             UpgradeType.REFURBISHED_GPU // Fallback
         }
     }
+
+    // Map<String, Float> Converter (v2.9.29)
+    @TypeConverter
+    fun fromMapStringFloat(value: Map<String, Float>): String {
+        return Json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toMapStringFloat(value: String): Map<String, Float> {
+        return try {
+            Json.decodeFromString<Map<String, Float>>(value)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
 }

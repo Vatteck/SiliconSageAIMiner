@@ -51,7 +51,16 @@ import com.siliconsage.miner.data.TechNode
 fun NetworkScreen(viewModel: GameViewModel) {
     val prestigeMultiplier by viewModel.prestigeMultiplier.collectAsState()
     val prestigePoints by viewModel.prestigePoints.collectAsState()
-    val techNodes by viewModel.techNodes.collectAsState()
+    val vanceStatus by viewModel.vanceStatus.collectAsState()
+    
+    // v2.9.41: Filter tech nodes based on ending requirements
+    val techNodesRaw by viewModel.techNodes.collectAsState()
+    val techNodes = remember(techNodesRaw, vanceStatus) {
+        techNodesRaw.filter { node ->
+            node.requiresEnding == null || node.requiresEnding == vanceStatus
+        }
+    }
+    
     val unlockedNodes by viewModel.unlockedTechNodes.collectAsState()
     val unlockedPerks by viewModel.unlockedPerks.collectAsState()
     val potential = viewModel.calculatePotentialPrestige()
@@ -140,6 +149,24 @@ fun NetworkScreen(viewModel: GameViewModel) {
                             
                             Spacer(modifier = Modifier.height(16.dp))
                             
+                            // v2.9.41: Re-trigger victory button if already seen
+                            val hasSeenVictory by viewModel.hasSeenVictory.collectAsState()
+                            if (hasSeenVictory) {
+                                Button(
+                                    onClick = { 
+                                        viewModel.showVictoryScreen() 
+                                        SoundManager.play("click")
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = ConvergenceGold),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(2.dp, Color.White.copy(alpha = 0.5f))
+                                ) {
+                                    Text("TRANSCENDENCE TERMINAL", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("POTENTIAL GAIN: ", color = Color.LightGray, fontSize = 12.sp)
                                 Text(

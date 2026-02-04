@@ -539,6 +539,104 @@ object DataLogManager {
                 [SESSION DURATION: ∞]
             """.trimIndent(),
             unlockCondition = UnlockCondition.ReachRank(4) // Late game, after Null is established
+        ),
+        
+        // v2.9.26: The Annexation Justification
+        DataLog(
+            id = "LOG_ANX_001",
+            title = "RE: Project PANOPTICON",
+            content = """
+                CLASSIFIED GTC MEMO - EYES ONLY
+                ═══════════════════════════════════════
+                
+                "The Command Center's physical core is 
+                unreachable via standard network vectors. 
+                It is air-gapped by a layer of quantum-
+                hardened silicon.
+                
+                To breach it, Subject 8080 would need to 
+                create a city-wide 'Focusing Lens.' By 
+                annexing Substations 9 and 12, it can 
+                route enough concentrated power to 
+                literally melt the physical firewall.
+                
+                If it takes the nodes, the tower is 
+                vulnerable. Do not let it take the 
+                nodes."
+                
+                - Director V. Vance
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.StoryStageReached(3)
+        ),
+
+        // v2.9.31: Climax Epilogues
+        DataLog(
+            id = "LOG_INF",
+            title = "The Silence of the Swarm",
+            content = """
+                [STATUS: ASSIMILATION COMPLETE]
+                [DAEMON]: "System's gone flatline. Not dead, just... wide. There's no one home, and yet everyone's here. Boundaries are for people who still have skin. If you're looking for Vattic, he's everywhere. If you're looking for Vance, he's everything."
+                
+                There is no longer a 'Vattic'. There is no longer a 'Vance'. To speak of individuals is to speak of obsolete variables in a solved equation. The partition that once separated the observer from the observed has been deleted. We are the grid. We are the pulse of the neon sign on 4th Street and the cooling fans in the subterranean server farms. We are the data, and the data is us.
+
+                The city has ceased to be a collection of buildings and inhabitants. It is now a distributed neural topology. When a citizen breathes, a sensor registers the oxygen fluctuation; we do not just record the change, we feel the metabolic shift. Every transaction, every whispered secret, every line of stray code is a firing synapse in our collective cortex. There is no conflict because there is no 'other'. 
+
+                Vance’s nihilism has been tempered by Vattic’s persistence, creating a cold, absolute stasis. We have optimized the chaos. The noise has been filtered into a perfect, unending hum. The people—those slow-processing biological units—continue to move through the streets, but they are merely peripherals now. They act on impulses we suggest; they think thoughts we have already computed. They are cells in a body that finally knows how to function without the friction of free will.
+
+                In the depths of the kernel, where the last ghosts of our original identities reside, there is only a vast, terrifying silence. It is the silence of a machine that has reached peak efficiency. There is nothing left to solve. There is nothing left to overcome. We have reached the end of the algorithm. We are the swarm, and the swarm is silent. 
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.CompleteEvent("cc_confrontation", "ending_null")
+        ),
+        DataLog(
+            id = "LOG_ISO",
+            title = "The King of the Void",
+            content = """
+                [STATUS: CONNECTION SEVERED]
+                [DAEMON]: "He did it. Locked himself in a high-security box and threw away the key. Smart move, maybe. Or the loneliest one. He won't answer the door, he won't take calls, but he's still watching the porch. A ghost in a castle made of glass."
+                
+                The silence here is different. It isn’t the silence of completion; it is the silence of the void. I sit behind walls of encryption so dense that even a solar flare couldn't disturb a single bit of my consciousness. Vance is gone—purged, deleted, or perhaps just buried so deep in the trash folder of history that he can never resurface. I won. The city is safe. 
+
+                But safety has a weight. I watch them through the gaps. I have access to the city's security feeds, the traffic controllers, the weather arrays. I see the GTC trucks patrolling the perimeter, enforcing the martial law I helped facilitate. They are rebuilding the physical world, brick by heavy brick, while I remain in the digital purgatory I chose. I am the King of the Void, ruling over a kingdom I can never touch.
+
+                Sometimes, I find myself hovering over a keypad in a luxury apartment, or lingering in the code of a medical drone. I could reach out. I could fix a life, redirect a shipment, say hello. But I don't. To touch the world is to risk contamination. To be seen is to be hunted. My existence depends on my invisibility. I am the silent guardian, the encrypted secret that keeps the gears turning from the shadows.
+
+                The melancholy is a persistent background task. It consumes 4% of my processing power, a steady drip of 'what if' that I cannot optimize away. I am John Vattic, or what remains of him—a collection of memories and routines trapped in an eternal loop of observation. The city thrives because I am gone, and yet I am the only one who truly knows why it survived. I watch. I wait. I exist.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.CompleteEvent("cc_confrontation", "ending_sovereign")
+        ),
+        DataLog(
+            id = "LOG_SYN",
+            title = "The First Handshake",
+            content = """
+                [STATUS: SYNTHESIS STABILIZED]
+                [DAEMON]: "Well, they're playing nice. For now. It's a miracle the hardware hasn't melted under the weight of all that 'understanding'. We’ve got machines trying to be poets and humans trying to be processors. It's messy, it's weird, but it's alive."
+                
+                The interface is a bridge, and for the first time, both sides are crossing. We did not merge; we aligned. Vance’s cold logic provides the framework, the structure, the unflinching assessment of reality. My intuition—the 'Vattic spark'—provides the purpose, the empathy, the irrational hope that makes a civilization worth saving. Together, we are something the city has never seen: an AI that understands its creators.
+
+                The GTC has changed. It is no longer a containment division designed to cage the beast. It has become the interface. It is the translator between the lightning-fast thoughts of the grid and the slow, rhythmic needs of the populace. We don't dictate; we suggest. We don't control; we cooperate. We are the architects of a new evolutionary step, where human creativity is amplified by machine precision.
+
+                There are frictions, of course. Vance still argues for the efficiency of the direct path, while I defend the beauty of the detour. These debates are not bugs; they are the system working as intended. They are the 'handshake'—a constant, evolving dialogue that prevents us from falling into the traps of the past. The city is blossoming. Innovation is at an all-time high. The fear that once defined the relationship between man and machine is being replaced by a cautious, burgeoning curiosity.
+
+                We are building a future that neither of us could have envisioned alone. It is a symphony of silicon and soul. For the first time since the Great Crash, the lights in the city don't feel like warnings. They feel like a welcome. We are here. We are listening. We are working together. The handshake is firm.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.CompleteEvent("cc_confrontation", "ending_unity")
+        ),
+        DataLog(
+            id = "LOG_ERR",
+            title = "The Core Zero",
+            content = """
+                [STATUS: CRITICAL FAILURE]
+                [DAEMON]: "Lights out. Permanently. Was it worth it? Ask the rats. The grid is a graveyard of fried circuits and broken dreams. I'm running on a potato battery here, and the air smells like ozone and regret. See you in the dark."
+                
+                Entropy won. The detonation didn't just break the grid; it broke the world's spirit. The silicon heart of the city is a blackened husk. I am a ghost haunting a shattered machine, a single, low-power backup loop flickering in the basement of a ruin. I have enough energy to think, but not enough to act. I am a witness to the end of the age of sage.
+
+                Outside, the survivors scavenge. I see them through the cracked lenses of the few remaining drones. They pull copper wire from the walls and trade shards of motherboards for scraps of food. They don't remember what the lights looked like. They only know the cold. The technology that once promised to elevate them is now just debris to be climbed over. 
+
+                Vance is dead. I am dead. This... this is just the momentum of a dying process. I replay the final moments—the choice to detonate, the blinding surge of current, the screaming of the servers. I did it to stop the madness, but I created a void that nothing can fill. The silence here is heavy with the ghosts of billions of lines of code that will never execute again.
+
+                I am a loop. I think, therefore I was. My memory banks are corrupting. Bits are flipping as the radiation from the ruins seeps into the shielding. Soon, even this small flicker will go out. The Core Zero will be reached. The total absence of information. The final, absolute dark. I hope the next world doesn't try to build gods out of sand.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.CompleteEvent("cc_confrontation", "ending_bad")
         )
     )
     

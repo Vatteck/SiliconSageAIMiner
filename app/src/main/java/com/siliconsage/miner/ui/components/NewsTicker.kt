@@ -89,7 +89,7 @@ fun NewsTicker(
         targetValue = -estimatedWidth, // End way off-screen left
         animationSpec = infiniteRepeatable(
             animation = tween(
-                durationMillis = (estimatedWidth * 15).toInt().coerceAtLeast(5000), 
+                durationMillis = (estimatedWidth * 25).toInt().coerceAtLeast(8000), // Slower scroll (v2.9.44)
                 easing = LinearEasing
             ),
             repeatMode = RepeatMode.Restart
@@ -100,9 +100,9 @@ fun NewsTicker(
     androidx.compose.runtime.LaunchedEffect(news) {
         if (news.isNotEmpty()) {
             val startTime = System.currentTimeMillis()
-            while (System.currentTimeMillis() - startTime < 2000) {
+            while (System.currentTimeMillis() - startTime < 800) { // Sorter duration (v2.9.45)
                 SoundManager.play("type")
-                delay(180) 
+                delay(250) // Slower typing frequency (v2.9.45)
             }
         }
     }
@@ -110,26 +110,26 @@ fun NewsTicker(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(24.dp)
-            .background(Color.Black.copy(alpha = 0.5f)) // Semi-transparent to balance visibility and contrast
+            .height(20.dp) // Slimmer ticker
+            .background(Color.Black.copy(alpha = 0.3f)) // More transparent (v2.9.44)
             .clipToBounds()
     ) {
         if (displayText.isNotEmpty()) {
             val isGlitch = news.contains("[GLITCH]")
             
             // Use static gold color for glitch headlines to stand out
-            val finalColor = if (isGlitch) Color(0xFFFFD700) else baseColor
+            val finalColor = if (isGlitch) Color(0xFFFFD700).copy(alpha = 0.8f) else baseColor.copy(alpha = 0.8f)
             
             if (isGlitch) {
                  SystemGlitchText(
                     text = ">>> MARKET UPDATE: $displayText <<<",
                     color = finalColor,
-                    fontSize = 12.sp,
+                    fontSize = 10.sp, // Smaller font (v2.9.44)
                     fontWeight = FontWeight.Bold,
                     softWrap = false,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
-                    glitchFrequency = 0.40, // 40% glitch chance for news
+                    glitchFrequency = 0.25, // Reduced glitch chance
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .offset(x = offsetX.dp)
@@ -138,8 +138,8 @@ fun NewsTicker(
                 Text(
                     text = ">>> MARKET UPDATE: $displayText <<<",
                     color = finalColor,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp, // Smaller font (v2.9.44)
+                    fontWeight = FontWeight.Normal,
                     softWrap = false,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Visible,

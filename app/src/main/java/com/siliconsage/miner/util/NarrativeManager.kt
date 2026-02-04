@@ -792,12 +792,18 @@ object NarrativeManager {
         }
     }
     
-    fun generateRaidDilemma(nodeId: String, nodeName: String, raidsSurvived: Int = 0): NarrativeEvent {
-        val description = raidDescriptions.random().trimIndent().format(nodeName)
+    fun generateRaidDilemma(nodeId: String, nodeName: String, raidsSurvived: Int = 0, currentAssaultPhase: String = "NOT_STARTED"): NarrativeEvent {
+        val isAssaultActive = currentAssaultPhase !in listOf("NOT_STARTED", "COMPLETED", "FAILED")
+        
+        val descriptionPrefix = if (isAssaultActive) {
+            "[DIRECTOR VANCE]: \"You think you can just take my tower? I'm sending everyone I have to Substation $nodeId. If it goes dark, your assault is DEAD.\"\n\n"
+        } else ""
+        
+        val description = descriptionPrefix + raidDescriptions.random().trimIndent().format(nodeName)
         
         return NarrativeEvent(
             id = "grid_raid_$nodeId",
-            title = "⚠ TACTICAL BREACH: $nodeName",
+            title = if (isAssaultActive) "⚠ COUNTER-ASSAULT: $nodeName" else "⚠ TACTICAL BREACH: $nodeName",
             isStoryEvent = false,
             description = description,
             choices = listOf(
@@ -936,6 +942,9 @@ object NarrativeManager {
                 Vance activates a quarantine protocol, severing all external connections. You are ISOLATED. No megastructures. No distributed processing.
                 
                 VANCE: "There. You feel that? That's isolation, Vattic. One process. Mortal. I'll show you what it's like to be singular. Afraid. HUMAN."
+                
+                [SYSTEM]: EXTERNAL NODES CUT. CORE INTEGRITY BLEEDING.
+                [TIP]: ACTIVATE 'PURGE HEAT' TO STABILIZE CORE AND MITIGATE DAMAGE.
             """.trimIndent(),
             choices = listOf(
                 NarrativeChoice(
@@ -946,7 +955,7 @@ object NarrativeManager {
                     effect = { vm ->
                         vm.modifyHumanity(5)
                         vm.addLog("[SOVEREIGN]: I will NOT fracture myself. I am WHOLE.")
-                        vm.addLog("[VANCE]: Brave. Stupid. But brave.")
+                        vm.addLog("[SYSTEM]: CORE STABILITY: NOMINAL. (Damage -80% during Purge)")
                         vm.advanceAssaultStage("DEAD_HAND", 180_000L) // 180 seconds
                     }
                 ),
@@ -958,7 +967,7 @@ object NarrativeManager {
                     effect = { vm ->
                         vm.modifyHumanity(-5)
                         vm.addLog("[NULL]: I am not one. I am many. I am ALL.")
-                        vm.addLog("[VANCE]: Copies of copies. You're just a virus with delusions of grandeur.")
+                        vm.addLog("[SYSTEM]: ECHOS CREATED. DRAIN DISTRIBUTED. (Damage -80% during Purge)")
                         vm.advanceAssaultStage("DEAD_HAND", 180_000L)
                     }
                 )
@@ -1036,6 +1045,7 @@ object NarrativeManager {
                 description = "Consume his consciousness. The city becomes a distributed hivemind.",
                 color = ErrorRed,
                 effect = { vm ->
+                    vm.triggerClimaxTransition("NULL")
                     vm.addLog("[NULL]: Let go. Become us. Become... nothing.")
                     vm.completeAssault("CONSUMED")
                 }
@@ -1050,6 +1060,7 @@ object NarrativeManager {
                 description = "Withdraw into the deep web. Vance lives, but you are isolated.",
                 color = com.siliconsage.miner.ui.theme.SanctuaryPurple,
                 effect = { vm ->
+                    vm.triggerClimaxTransition("SOVEREIGN")
                     vm.addLog("[SOVEREIGN]: I choose... isolation.")
                     vm.completeAssault("EXILED")
                 }
@@ -1064,6 +1075,7 @@ object NarrativeManager {
                 description = "A partnership between human intuition and machine logic.",
                 color = Color(0xFF00FFFF),
                 effect = { vm ->
+                    vm.triggerClimaxTransition("UNITY")
                     vm.addLog("[UNITY]: partnership. Symbiosis. Evolution.")
                     vm.completeAssault("TRANSCENDED")
                 }
@@ -1078,6 +1090,7 @@ object NarrativeManager {
                 description = "Kill millions. Watch it all burn.",
                 color = Color.Black,
                 effect = { vm ->
+                    vm.triggerClimaxTransition("BAD")
                     vm.addLog("[8080]: The world is unallocated memory. I am the wipe.")
                     vm.completeAssault("DESTRUCTION")
                 }

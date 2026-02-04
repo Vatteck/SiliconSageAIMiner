@@ -389,7 +389,13 @@ fun SettingsScreen(viewModel: GameViewModel) {
                          ) { Text("STAGE 3", color = Color.White, fontSize = 10.sp) }
                     }
                     
-                    DevButton("FORCE ENDGAME", themeColor) { viewModel.debugForceEndgame() }
+                    DevButton("FORCE NULL ENDGAME", themeColor) { viewModel.debugForceEndgame() }
+                    DevButton("FORCE SOV ENDGAME", themeColor) { viewModel.debugForceSovereignEndgame() }
+                    DevButton("TEST NULL FX", themeColor) { viewModel.triggerClimaxTransition("NULL") }
+                    DevButton("TEST SOVEREIGN FX", themeColor) { viewModel.triggerClimaxTransition("SOVEREIGN") }
+                    DevButton("TEST UNITY FX", themeColor) { viewModel.triggerClimaxTransition("UNITY") }
+                    DevButton("FORCE UNITY (BG TEST)", themeColor) { viewModel.completeAssault("TRANSCENDED") }
+                    DevButton("FORCE BAD (BG TEST)", themeColor) { viewModel.completeAssault("DESTRUCTION") }
                     DevButton("TOGGLE NULL", themeColor) { viewModel.debugToggleNull() }
                     DevButton("TOGGLE TRUE NULL", themeColor) { viewModel.debugToggleTrueNull() }
                     DevButton("TOGGLE SOVEREIGN", themeColor) { viewModel.debugToggleSovereign() }
@@ -470,6 +476,32 @@ fun SettingsScreen(viewModel: GameViewModel) {
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
                             ) { Text(rank.toString(), color = Color.White, fontSize = 10.sp) }
                         }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("PHASE 13 TESTING", color = themeColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    
+                    DevButton("INITIATE LAUNCH", themeColor) { viewModel.initiateLaunchSequence() }
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugSetLocation("ORBITAL_SATELLITE") },
+                            modifier = Modifier.weight(1f).height(32.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("LOC: ORBIT", color = Color.White, fontSize = 10.sp) }
+                         
+                         androidx.compose.material3.Button(
+                            onClick = { viewModel.debugSetLocation("VOID_INTERFACE") },
+                            modifier = Modifier.weight(1f).height(32.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                         ) { Text("LOC: VOID", color = Color.White, fontSize = 10.sp) }
+                    }
+                    
+                    DevButton("RESET LOC: EARTH", themeColor) { 
+                        viewModel.debugSetLocation("SUBSTATION_7") 
+                        viewModel.debugResetLaunch()
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))

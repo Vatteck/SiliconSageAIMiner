@@ -14,7 +14,8 @@ object AudioGenerator {
         frequency: Double,
         durationMs: Int,
         type: WaveType = WaveType.SINE,
-        volume: Double = 1.0
+        volume: Double = 1.0,
+        isLoop: Boolean = false // v2.9.47: Handle looping samples
     ): ByteArray {
         val numSamples = (durationMs * SAMPLE_RATE / 1000)
         val sample = ByteArray(2 * numSamples)
@@ -25,11 +26,16 @@ object AudioGenerator {
                 WaveType.SINE -> sin(freq * i)
                 WaveType.SQUARE -> if (sin(freq * i) > 0) 1.0 else -1.0
                 WaveType.SAWTOOTH -> 2.0 * (i * frequency / SAMPLE_RATE - kotlin.math.floor(0.5 + i * frequency / SAMPLE_RATE))
+                WaveType.TRIANGLE -> {
+                    val period = SAMPLE_RATE / frequency
+                    val phase = (i % period) / period
+                    if (phase < 0.5) -1.0 + 4.0 * phase else 3.0 - 4.0 * phase
+                }
                 WaveType.NOISE -> Random.nextDouble(-1.0, 1.0)
             }
             
-            // Apply simple ADSR envelope (Attack, Decay, Sustain, Release) to avoid clicking
-            val envelope = getEnvelope(i, numSamples)
+            // v2.9.47: Apply loop-friendly envelope if requested
+            val envelope = if (isLoop) getLoopEnvelope(i, numSamples) else getEnvelope(i, numSamples)
             
             val val16 = (s * volume * envelope * 32767).toInt().toShort()
             
@@ -69,16 +75,32 @@ object AudioGenerator {
     }
 
     private fun getEnvelope(index: Int, total: Int): Double {
+        // v2.9.45: Advanced Mobile Envelope
+        // Clicks/UI sounds need an exponential decay to avoid "beeping" and popping.
         val attack = total * 0.1
-        val release = total * 0.2
+        val decay = total * 0.9
+        
         return when {
-            index < attack -> index / attack
-            index > total - release -> (total - index) / release
+            index < attack -> (index / attack)
+            else -> {
+                // Exponential decay: 1.0 -> 0.0
+                val progress = (index - attack) / decay
+                kotlin.math.exp(-progress * 5.0) 
+            }
+        }
+    }
+    
+    private fun getLoopEnvelope(index: Int, total: Int): Double {
+        // v2.9.47: Tiny 5ms fade in/out to prevent pops during loop reset
+        val fadeSamples = (5 * SAMPLE_RATE / 1000)
+        return when {
+            index < fadeSamples -> index.toDouble() / fadeSamples
+            index > total - fadeSamples -> (total - index).toDouble() / fadeSamples
             else -> 1.0
         }
     }
 
     enum class WaveType {
-        SINE, SQUARE, SAWTOOTH, NOISE
+        SINE, SQUARE, SAWTOOTH, NOISE, TRIANGLE
     }
 }

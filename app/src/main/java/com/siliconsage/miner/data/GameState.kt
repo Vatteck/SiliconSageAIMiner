@@ -48,7 +48,7 @@ data class GameState(
     // v2.8.5: Phase 11 Finale State
     val vanceStatus: String = "ACTIVE", // ACTIVE, SILENCED, ALLY, CONSUMED, EXILED, TRANSCENDED
     val realityStability: Double = 1.0, // 1.0 to 0.0
-    val currentLocation: String = "SUBSTATION_7", // SUBSTATION_7, ORBITAL_SATELLITE, COMMAND_CENTER
+    val currentLocation: String = "SUBSTATION_7", // SUBSTATION_7, ORBITAL_SATELLITE, COMMAND_CENTER, VOID_INTERFACE
     val isNetworkUnlocked: Boolean = false, // v2.9.7: Persistence for Network tab
     val isGridUnlocked: Boolean = false, // v2.9.8: Persistence for Grid tab
     val annexedNodes: List<String> = listOf("D1"), // v2.9.8: List of annexed grid coordinates
@@ -65,7 +65,19 @@ data class GameState(
     
     // v2.9.18: Phase 12 Layer 3 - Climax Mechanics
     val humanityScore: Int = 50, // 0 to 100 (NULL < 20, UNITY > 30)
-    val hardwareIntegrity: Double = 100.0 // Persist integrity across sessions
+    val hardwareIntegrity: Double = 100.0, // Persist integrity across sessions
+    
+    // v2.9.29: Progress tracking
+    val annexingNodes: Map<String, Float> = emptyMap(), // nodeId -> progress (0.0 to 1.0)
+    val collapsedNodes: List<String> = emptyList(), // v2.9.31: Nodes unmade during dissolution
+
+    // v2.9.49: Phase 13 - AI Elevation Resources
+    val celestialData: Double = 0.0, // Sovereign Path Resource
+    val voidFragments: Double = 0.0, // Null Path Resource
+    val launchProgress: Float = 0f, // 0.0 to 1.0 during launch event
+    val orbitalAltitude: Double = 0.0, // Miles/Km above Earth
+    val realityIntegrity: Double = 1.0, // 1.0 to 0.0 (Null Path)
+    val entropyLevel: Double = 0.0 // v2.9.49
 )
 
 // TypeConverters for complex types using Kotlin Serialization
@@ -112,6 +124,22 @@ class StringMapConverter {
     fun toStringMap(value: String): Map<String, String> {
         return try {
             Json.decodeFromString<Map<String, String>>(value)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+}
+
+class MapStringFloatConverter {
+    @TypeConverter
+    fun fromMap(value: Map<String, Float>): String {
+        return Json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toMap(value: String): Map<String, Float> {
+        return try {
+            Json.decodeFromString<Map<String, Float>>(value)
         } catch (e: Exception) {
             emptyMap()
         }

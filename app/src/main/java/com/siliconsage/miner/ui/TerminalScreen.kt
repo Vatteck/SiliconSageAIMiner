@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.siliconsage.miner.ui.components.ExchangeSection
 import com.siliconsage.miner.ui.components.StakingSection
+import com.siliconsage.miner.ui.components.RepairSection
 import com.siliconsage.miner.ui.theme.ElectricBlue
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,6 +105,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
         )
 
         HeaderSection(
+            viewModel = viewModel,
             flopsStr = viewModel.formatLargeNumber(flops),
             neuralStr = viewModel.formatLargeNumber(neuralTokens),
             heat = currentHeat,
@@ -394,11 +396,15 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
             }
             Spacer(modifier = Modifier.width(8.dp))
             Box(modifier = Modifier.weight(1f)) {
-                StakingSection(color = primaryColor, onStake = { 
-                    viewModel.stakeTokens(100.0)
-                    SoundManager.play("buy")
-                    HapticManager.vibrateClick()
-                })
+                RepairSection(
+                    integrity = integrity,
+                    cost = viewModel.calculateRepairCost(),
+                    color = primaryColor,
+                    onRepair = {
+                        viewModel.repairIntegrity()
+                        HapticManager.vibrateClick()
+                    }
+                )
             }
         }
     }

@@ -343,6 +343,30 @@ fun StakingSection(color: Color, onStake: () -> Unit) {
     }
 }
 
+@Composable
+fun RepairSection(integrity: Double, cost: Double, color: Color, onRepair: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "repairScale")
+
+    androidx.compose.material3.Button(
+        onClick = onRepair,
+        interactionSource = interactionSource,
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp))
+            .border(androidx.compose.foundation.BorderStroke(1.dp, if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color), RoundedCornerShape(4.dp)),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        shape = RoundedCornerShape(4.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("REPAIR CORE", color = if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color, fontSize = 12.sp)
+            Text("${integrity.toInt()}% @ ${String.format("%.0f", cost)} \$N", color = Color.Gray, fontSize = 10.sp)
+        }
+    }
+}
+
 /**
  * A reusable component that renders text with random "glitch" artifacts (Zalgo text, strikethrough).
  * Uses a random loop to occasionally corrupt the text for a short duration.

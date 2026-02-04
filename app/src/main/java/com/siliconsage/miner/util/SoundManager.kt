@@ -32,6 +32,7 @@ object SoundManager {
         set(value) {
             field = value
             saveSetting(KEY_SFX_VOLUME, value)
+            updateActiveSfxVolume()
         }
     
     var isSfxEnabled = true
@@ -109,59 +110,68 @@ object SoundManager {
         }
     }
 
+    private fun updateActiveSfxVolume() {
+        val pool = soundPool ?: return
+        val vol = sfxVolume
+        if (humStreamId != 0) pool.setVolume(humStreamId, vol, vol)
+        if (alarmStreamId != 0) pool.setVolume(alarmStreamId, vol, vol)
+        if (thrumStreamId != 0) pool.setVolume(thrumStreamId, vol, vol)
+    }
+
     private fun loadSounds() {
         val ctx = appCtx ?: return
         CoroutineScope(Dispatchers.IO).launch {
-            // 1. Click
-            val clickPcm = AudioGenerator.generateTone(350.0, 25, AudioGenerator.WaveType.SQUARE, 0.3)
+            // 1. Click (V2.9.45: High-frequency percussive "tick")
+            // Exponential decay makes this sound like a real button click, not a beep.
+            val clickPcm = AudioGenerator.generateTone(2500.0, 10, AudioGenerator.WaveType.SINE, 0.1)
             loadPcm(ctx, "click", clickPcm)
 
-            // 2. Buy
-            val note1 = AudioGenerator.generateTone(800.0, 40, AudioGenerator.WaveType.SINE, 0.3)
-            val note2 = AudioGenerator.generateTone(1200.0, 40, AudioGenerator.WaveType.SINE, 0.3)
-            val note3 = AudioGenerator.generateTone(1600.0, 80, AudioGenerator.WaveType.SINE, 0.2)
-            loadPcm(ctx, "buy", note1 + note2 + note3)
+            // 2. Buy (Pleasant harmonic chord)
+            val note1 = AudioGenerator.generateTone(1000.0, 50, AudioGenerator.WaveType.SINE, 0.1)
+            val note2 = AudioGenerator.generateTone(1500.0, 50, AudioGenerator.WaveType.SINE, 0.1)
+            loadPcm(ctx, "buy", note1 + note2)
 
-            // 3. Error
-            val errorPcm = AudioGenerator.generateTone(150.0, 400, AudioGenerator.WaveType.SAWTOOTH, 0.6)
+            // 3. Error (Dull thud)
+            val errorPcm = AudioGenerator.generateTone(180.0, 200, AudioGenerator.WaveType.SINE, 0.2)
             loadPcm(ctx, "error", errorPcm)
             
             // 4. Glitch
-            val glitchPcm = AudioGenerator.generateTone(0.0, 100, AudioGenerator.WaveType.NOISE, 0.5)
+            val glitchPcm = AudioGenerator.generateTone(0.0, 100, AudioGenerator.WaveType.NOISE, 0.05)
             loadPcm(ctx, "glitch", glitchPcm)
             
             // 5. Market UP
-            val marketUpPcm = AudioGenerator.generateSlide(400.0, 1200.0, 400, 0.4)
+            val marketUpPcm = AudioGenerator.generateSlide(800.0, 1600.0, 300, 0.08)
             loadPcm(ctx, "market_up", marketUpPcm)
             
             // 6. Market DOWN
-            val marketDownPcm = AudioGenerator.generateSlide(300.0, 60.0, 500, 0.5)
+            val marketDownPcm = AudioGenerator.generateSlide(600.0, 300.0, 400, 0.08)
             loadPcm(ctx, "market_down", marketDownPcm)
 
-            // 7. Alarm
-            val alarmPcm = AudioGenerator.generateTone(600.0, 200, AudioGenerator.WaveType.SAWTOOTH, 0.6)
-            loadPcm(ctx, "alarm", alarmPcm)
+            // 7. Alarm (Softer warble)
+            val alarm1 = AudioGenerator.generateTone(2000.0, 100, AudioGenerator.WaveType.SINE, 0.08)
+            val alarm2 = AudioGenerator.generateTone(1800.0, 100, AudioGenerator.WaveType.SINE, 0.08)
+            loadPcm(ctx, "alarm", alarm1 + alarm2)
 
             // 8. Hum
-            val humPcm = AudioGenerator.generateTone(60.0, 500, AudioGenerator.WaveType.SQUARE, 0.05) // Reduced from 0.1
+            val humPcm = AudioGenerator.generateTone(150.0, 500, AudioGenerator.WaveType.SINE, 0.01) 
             loadPcm(ctx, "hum", humPcm)
             
-            // 9. Type
-            val typePcm = AudioGenerator.generateTone(800.0, 40, AudioGenerator.WaveType.NOISE, 0.05)
+            // 9. Type (V2.9.45: Tiny "glass" ping for news ticker)
+            val typePcm = AudioGenerator.generateTone(3500.0, 8, AudioGenerator.WaveType.SINE, 0.02)
             loadPcm(ctx, "type", typePcm)
             
-            // 10. Thrum
-            val thrumPcm = AudioGenerator.generateTone(50.0, 400, AudioGenerator.WaveType.SAWTOOTH, 0.2)
+            // 10. Thrum (V2.9.49: Steady Dark "Hum" @ 85Hz - Increased volume)
+            val thrumPcm = AudioGenerator.generateTone(85.0, 1000, AudioGenerator.WaveType.TRIANGLE, 0.1, isLoop = true)
             loadPcm(ctx, "thrum", thrumPcm)
             
             // 11. Steam
-            val steamPcm = AudioGenerator.generateTone(0.0, 800, AudioGenerator.WaveType.NOISE, 0.4)
+            val steamPcm = AudioGenerator.generateTone(0.0, 600, AudioGenerator.WaveType.NOISE, 0.1)
             loadPcm(ctx, "steam", steamPcm)
             
-            // 12. Message Received (Sci-Fi chirp)
-            val msg1 = AudioGenerator.generateTone(800.0, 50, AudioGenerator.WaveType.SINE, 0.4)
-            val msg2 = AudioGenerator.generateTone(1200.0, 50, AudioGenerator.WaveType.SINE, 0.4)
-            val msg3 = AudioGenerator.generateTone(2000.0, 100, AudioGenerator.WaveType.SINE, 0.3)
+            // 12. Message Received (Crystal-clear chirp)
+            val msg1 = AudioGenerator.generateTone(1200.0, 40, AudioGenerator.WaveType.SINE, 0.1)
+            val msg2 = AudioGenerator.generateTone(1800.0, 40, AudioGenerator.WaveType.SINE, 0.1)
+            val msg3 = AudioGenerator.generateTone(2400.0, 80, AudioGenerator.WaveType.SINE, 0.08)
             loadPcm(ctx, "message_received", msg1 + msg2 + msg3)
         }
     }

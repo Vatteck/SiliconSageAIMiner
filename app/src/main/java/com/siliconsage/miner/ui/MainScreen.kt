@@ -182,8 +182,14 @@ fun MainScreen(viewModel: GameViewModel) {
     val isAirdrop by viewModel.isAirdropActive.collectAsState()
     val isTrueNull by viewModel.isTrueNull.collectAsState()
     val isSovereign by viewModel.isSovereign.collectAsState()
+    val isUnity by viewModel.isUnity.collectAsState()
+    val isAnnihilated by viewModel.isAnnihilated.collectAsState()
+    val assaultPhase by viewModel.commandCenterAssaultPhase.collectAsState()
     val isNetworkUnlocked by viewModel.isNetworkUnlocked.collectAsState()
     val isGridUnlocked by viewModel.isGridUnlocked.collectAsState()
+
+    val infiniteTransition = rememberInfiniteTransition(label = "main_ui_fx")
+    val activeTransition by viewModel.activeClimaxTransition.collectAsState()
 
     // Hoist state for persistent ticker
     val currentNews by viewModel.currentNews.collectAsState()
@@ -217,10 +223,50 @@ fun MainScreen(viewModel: GameViewModel) {
                     heatPercent = heat,
                     faction = faction,
                     isTrueNull = isTrueNull,
-                    isSovereign = isSovereign
+                    isSovereign = isSovereign,
+                    isUnity = isUnity,
+                    isAnnihilated = isAnnihilated
                 )
+
+                // v2.9.18: Biometric Pulse Vignette (Stage 3 Tension)
+                if (assaultPhase == "DEAD_HAND") {
+                    val pulse by infiniteTransition.animateFloat(
+                        initialValue = 0.2f,
+                        targetValue = 0.6f,
+                        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
+                        label = "vance_pulse"
+                    )
+                    
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(Color.Transparent, ErrorRed.copy(alpha = pulse)),
+                                center = center,
+                                radius = size.width * 1.5f
+                            )
+                        )
+                    }
+                }
+                
+                // v2.9.41: Screen Shake during Dead Hand climax
+                val assaultProgress by viewModel.assaultProgress.collectAsState()
+                val shakeOffset = if (assaultPhase == "DEAD_HAND") {
+                    // Shake increases as progress reaches 1.0
+                    val intensity = (assaultProgress * 15f)
+                    Offset(
+                        (kotlin.random.Random.nextFloat() - 0.5f) * intensity,
+                        (kotlin.random.Random.nextFloat() - 0.5f) * intensity
+                    )
+                } else Offset.Zero
             
-                Column(modifier = Modifier.padding(paddingValues)) {
+                Column(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .graphicsLayer {
+                            translationX = shakeOffset.x
+                            translationY = shakeOffset.y
+                        }
+                ) {
                     var showNewsHistory by remember { mutableStateOf(false) }
                     
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -431,6 +477,18 @@ fun MainScreen(viewModel: GameViewModel) {
                         }
                     )
                 }
+
+                // v2.9.31: Climax Transitions
+                activeTransition?.let { type ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        when (type) {
+                            "NULL" -> com.siliconsage.miner.ui.components.GlitchBloom(onComplete = { viewModel.onClimaxTransitionComplete() })
+                            "SOVEREIGN" -> com.siliconsage.miner.ui.components.ShieldSlam(onComplete = { viewModel.onClimaxTransitionComplete() })
+                            "UNITY" -> com.siliconsage.miner.ui.components.PrismaticBurst(onComplete = { viewModel.onClimaxTransitionComplete() })
+                            "BAD" -> com.siliconsage.miner.ui.components.GlitchBloom(onComplete = { viewModel.onClimaxTransitionComplete() }) 
+                        }
+                    }
+                }
             }
         }
     }
@@ -438,6 +496,7 @@ fun MainScreen(viewModel: GameViewModel) {
 
 @Composable
 fun HeaderSection(
+    viewModel: GameViewModel, // v2.9.49: Pass VM for new resource states
     flopsStr: String,
     neuralStr: String,
     heat: Double,
@@ -468,22 +527,43 @@ fun HeaderSection(
     isSovereign: Boolean = false,
     isBreachActive: Boolean = false
 ) {
+    val currentLocation by viewModel.currentLocation.collectAsState()
+    val celestialData by viewModel.celestialData.collectAsState()
+    val voidFragments by viewModel.voidFragments.collectAsState()
+    val altitude by viewModel.orbitalAltitude.collectAsState()
+    val entropy by viewModel.entropyLevel.collectAsState()
+
     // v2.8.0: Dynamic Labels
-    val labelFlops = when {
-        isTrueNull -> "LEAK"
-        isSovereign -> "LOGIC"
-        else -> "FLOPS"
+    val labelFlops = when (currentLocation) {
+        "ORBITAL_SATELLITE" -> "TELEM"
+        "VOID_INTERFACE" -> "V-GAP"
+        else -> if (isTrueNull) "LEAK" else if (isSovereign) "LOGIC" else "FLOPS"
     }
-    val labelNeural = when {
-        isTrueNull -> "VOID"
-        isSovereign -> "SOUL"
-        else -> "NEURAL"
+    val labelNeural = when (currentLocation) {
+        "ORBITAL_SATELLITE" -> "CELEST"
+        "VOID_INTERFACE" -> "FRAG"
+        else -> if (isTrueNull) "VOID" else if (isSovereign) "SOUL" else "NEURAL"
     }
-    val labelSec = when {
-        isTrueNull -> "GAPS"
-        isSovereign -> "WALL"
-        else -> "SEC"
+    
+    // v2.9.49: Dynamic Resource String
+    val resourceStr = when (currentLocation) {
+        "ORBITAL_SATELLITE" -> viewModel.formatLargeNumber(celestialData, "CD")
+        "VOID_INTERFACE" -> viewModel.formatLargeNumber(voidFragments, "VF")
+        else -> neuralStr
     }
+
+    val labelSec = when (currentLocation) {
+        "ORBITAL_SATELLITE" -> "ALT"
+        "VOID_INTERFACE" -> "ENTR"
+        else -> if (isTrueNull) "GAPS" else if (isSovereign) "WALL" else "SEC"
+    }
+    
+    val secValueStr = when (currentLocation) {
+        "ORBITAL_SATELLITE" -> "${altitude.toInt()} KM"
+        "VOID_INTERFACE" -> String.format("%.2f", entropy)
+        else -> securityLevel.toString()
+    }
+
     val labelPwr = when {
         isTrueNull -> "COST"
         isSovereign -> "STAKE"
@@ -643,13 +723,17 @@ fun HeaderSection(
                 )
                 Text(labelSec, color = Color.LightGray, fontSize = 11.sp)
                 Spacer(modifier = Modifier.width(4.dp))
-                repeat(5) { i ->
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .padding(1.dp)
-                            .background(if (i < securityLevel / 2) ElectricBlue else Color.DarkGray)
-                    )
+                if (currentLocation == "SUBSTATION_7" || currentLocation == "COMMAND_CENTER") {
+                    repeat(5) { i ->
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .padding(1.dp)
+                                .background(if (i < securityLevel / 2) ElectricBlue else Color.DarkGray)
+                        )
+                    }
+                } else {
+                    Text(text = secValueStr, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -743,10 +827,10 @@ fun HeaderSection(
                     )
                     Text(labelNeural, color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                // Main NEURAL value - glitches when overheating
+                // Main resource value - glitches when overheating
                 if (isOverheating) {
                     SystemGlitchText(
-                        text = neuralStr,
+                        text = resourceStr,
                         color = color,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -768,7 +852,7 @@ fun HeaderSection(
                     )
                 } else {
                     Text(
-                        text = neuralStr,
+                        text = resourceStr,
                         color = color,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,

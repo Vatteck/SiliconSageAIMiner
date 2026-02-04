@@ -106,6 +106,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             val isBreach by viewModel.isBreachActive.collectAsState()
             
             HeaderSection(
+                viewModel = viewModel,
                 flopsStr = viewModel.formatLargeNumber(flops),
                 neuralStr = viewModel.formatLargeNumber(neuralTokens),
                 heat = currentHeat,
