@@ -129,86 +129,91 @@ fun NetworkScreen(viewModel: GameViewModel) {
             }
 
             if (currentTab == 0) {
-                item {
-                    // --- ASCENSION ---
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
-                            .border(BorderStroke(1.dp, themeColor), RoundedCornerShape(8.dp))
-                            .padding(16.dp)
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("SYSTEM ASCENSION", color = themeColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                "Reboot the system to gain Insight and increase effectiveness.",
-                                color = Color.Gray,
-                                fontSize = 11.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            // v2.9.41: Re-trigger victory button if already seen
-                            val hasSeenVictory by viewModel.hasSeenVictory.collectAsState()
-                            if (hasSeenVictory) {
+                if (storyStage >= 2) {
+                    item {
+                        // --- ASCENSION ---
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
+                                .border(BorderStroke(1.dp, themeColor), RoundedCornerShape(8.dp))
+                                .padding(16.dp)
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("SYSTEM ASCENSION", color = themeColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    "Reboot the system to gain Insight and increase effectiveness.",
+                                    color = Color.Gray,
+                                    fontSize = 11.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                // v2.9.41: Re-trigger victory button if already seen
+                                val hasSeenVictory by viewModel.hasSeenVictory.collectAsState()
+                                if (hasSeenVictory) {
+                                    Button(
+                                        onClick = { 
+                                            viewModel.showVictoryScreen() 
+                                            SoundManager.play("click")
+                                        },
+                                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = ConvergenceGold),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.5f))
+                                    ) {
+                                        Text("TRANSCENDENCE TERMINAL", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("POTENTIAL GAIN: ", color = Color.LightGray, fontSize = 12.sp)
+                                    Text(
+                                         "+${String.format("%.2f", potential)} Insight",
+                                         color = if (potential >= 1.0) NeonGreen else ErrorRed,
+                                         fontSize = 14.sp,
+                                         fontWeight = FontWeight.Bold
+                                     )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
                                 Button(
                                     onClick = { 
-                                        viewModel.showVictoryScreen() 
-                                        SoundManager.play("click")
+                                        if (potential >= 1.0) {
+                                            showAscensionConfirm.value = true
+                                            SoundManager.play("click")
+                                            HapticManager.vibrateClick()
+                                        } else {
+                                            SoundManager.play("error")
+                                        }
                                     },
-                                    modifier = Modifier.fillMaxWidth().height(44.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = ConvergenceGold),
+                                    enabled = potential >= 1.0,
+                                    modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp),
-                                    border = BorderStroke(2.dp, Color.White.copy(alpha = 0.5f))
-                                ) {
-                                    Text("TRANSCENDENCE TERMINAL", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (potential >= 1.0) themeColor else Color.DarkGray,
+                                        contentColor = if (potential >= 1.0) Color.Black else Color.Gray
+                                    )
+                                ) {  
+                                    Text(
+                                         "INITIATE PROTOCOL 0",
+                                         fontSize = 14.sp,
+                                          fontWeight = FontWeight.Bold
+                                     )
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("POTENTIAL GAIN: ", color = Color.LightGray, fontSize = 12.sp)
-                                Text(
-                                     "+${String.format("%.2f", potential)} Insight",
-                                     color = if (potential >= 1.0) NeonGreen else ErrorRed,
-                                     fontSize = 14.sp,
-                                     fontWeight = FontWeight.Bold
-                                 )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            Button(
-                                onClick = { 
-                                    if (potential >= 1.0) {
-                                        showAscensionConfirm.value = true
-                                        SoundManager.play("click")
-                                        HapticManager.vibrateClick()
-                                    } else {
-                                        SoundManager.play("error")
-                                    }
-                                },
-                                enabled = potential >= 1.0,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (potential >= 1.0) themeColor else Color.DarkGray,
-                                    contentColor = if (potential >= 1.0) Color.Black else Color.Gray
-                                )
-                            ) {  
-                                Text(
-                                     if (storyStage == 0) "SYSTEM REBOOT REQUIRED (STORY)" else "INITIATE PROTOCOL 0",
-                                     fontSize = 14.sp,
-                                      fontWeight = FontWeight.Bold
-                                 )
                             }
                         }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                item {
                     Text("NEURAL TECH TREE", color = themeColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
                 }

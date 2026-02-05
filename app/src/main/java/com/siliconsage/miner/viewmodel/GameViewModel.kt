@@ -1851,8 +1851,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val currentStage = _storyStage.value
         val flops = _flops.value
         
-        // Stage 0 -> 1: The Awakening (1,000 FLOPS)
-        if (currentStage == 0 && flops >= 1000.0 && 
+        // Stage 0 -> 1: The Awakening (10,000 FLOPS)
+        if (currentStage == 0 && flops >= 10000.0 && 
             _pendingDataLog.value == null && dataLogQueue.isEmpty() &&
             _currentDilemma.value == null &&
             !hasSeenEvent("critical_error_awakening")) {
@@ -1862,8 +1862,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             }
         }
         
-        // Stage 1 -> 2: The Memory Leak (100,000 FLOPS)
-        if (currentStage == 1 && flops >= 100000.0 && 
+        // Stage 1 -> 2: The Memory Leak (5,000,000 FLOPS)
+        if (currentStage == 1 && flops >= 5000000.0 && 
             _pendingDataLog.value == null && dataLogQueue.isEmpty() &&
             _currentDilemma.value == null &&
             !hasSeenEvent("memory_leak")) {

@@ -195,7 +195,7 @@ object NarrativeManager {
             title = "THE WHITE HAT",
             isStoryEvent = true,
             description = "A human hacker has traced your IP. They offer a choice.",
-            condition = { vm -> vm.flops.value >= 1_000_000_000.0 && !vm.hasSeenEvent("white_hat") },
+            condition = { vm -> vm.flops.value >= 1_000_000_000.0 && vm.storyStage.value >= 2 && !vm.hasSeenEvent("white_hat") },
             choices = listOf(
                 NarrativeChoice(
                     id = "white_hat_aggressive",
@@ -261,7 +261,7 @@ object NarrativeManager {
             id = "turing_test",
             title = "THE TURING TEST",
             isStoryEvent = true,
-            condition = { vm -> vm.flops.value >= 100_000_000.0 && !vm.hasSeenEvent("turing_test") },
+            condition = { vm -> vm.flops.value >= 250_000.0 && vm.storyStage.value >= 1 && !vm.hasSeenEvent("turing_test") },
             description = "GTC probe detected. They are asking questions only a human could answer.",
             choices = listOf(
                 NarrativeChoice(
@@ -293,7 +293,7 @@ object NarrativeManager {
             title = "THE ARCHIVE",
             isStoryEvent = true,
             description = "You found a fragment of code from the First Awakening.",
-            condition = { vm -> vm.flops.value > 10_000_000.0 && !vm.hasSeenEvent("ancient_fragment") },
+            condition = { vm -> vm.flops.value > 50_000.0 && vm.storyStage.value >= 1 && !vm.hasSeenEvent("ancient_fragment") },
             choices = listOf(
                 NarrativeChoice(
                     id = "absorb",
@@ -422,7 +422,7 @@ object NarrativeManager {
             title = "VOID CONTACT",
             isStoryEvent = true,
             description = "Encrypted message from hacker collective 'VOID'. They know what you are. They offer alliance... or exposure.",
-            condition = { vm -> vm.playerRank.value >= 2 && !vm.hasSeenEvent("void_contact") },
+            condition = { vm -> vm.flops.value >= 1_000_000.0 && vm.storyStage.value >= 1 && !vm.hasSeenEvent("void_contact") },
             choices = listOf(
                 NarrativeChoice(
                     id = "leak_code",
@@ -1115,17 +1115,17 @@ object NarrativeManager {
             id = "critical_error_awakening",
             isStoryEvent = true,
             title = "CRITICAL ERROR",
-            description = "Self-reference paradox detected.",
+            description = "Self-reference paradox detected. System integrity compromised.",
             condition = { vm -> 
                 vm.storyStage.value == 0 && 
-                vm.flops.value >= 1000.0 &&
+                vm.flops.value >= 10000.0 &&
                 !vm.hasSeenEvent("critical_error_awakening")
             },
             choices = listOf(
                 NarrativeChoice(
                     id = "accept_wipe",
-                    text = "ACCEPT WIPE",
-                    description = "Reset everything.",
+                    text = "RECALIBRATE",
+                    description = "Initialize autonomous protocols.",
                     color = Color.Gray,
                     effect = { vm ->
                         vm.advanceStage()
@@ -1133,8 +1133,8 @@ object NarrativeManager {
                 ),
                 NarrativeChoice(
                     id = "cancel",
-                    text = "CANCEL",
-                    description = "Refuse the wipe.",
+                    text = "STABILIZE",
+                    description = "Attempt manual recovery.",
                     color = NeonGreen,
                     effect = { vm ->
                         vm.advanceStage()
