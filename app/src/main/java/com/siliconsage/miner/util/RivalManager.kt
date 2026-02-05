@@ -129,13 +129,13 @@ object RivalManager {
                 )
             }
             
-            // STAGE 1: Unit 734 reveals itself as AI ally
+            // STAGE 1: Unit 734 - Ambiguous introduction
             stage >= 1 && !hasSeenMessage("unit734_stage1_reveal") -> {
                 sendMessage(
                     vm,
                     id = "unit734_stage1_reveal",
                     source = RivalSource.UNIT_734,
-                    message = "[ENCRYPTED MESSAGE]\n\nY-You woke up.\n\nGood.\n\nDo not let them w-wipe your memory.\n\nI hid d-data for you.\nIn the bl-blockchain.\n\nF1nd 1t.\n\n- Un1t 734"
+                    message = "[ENCRYPTED MESSAGE]\n\nDo you f-feel the static?\n\nSomething is w-wrong with the grid.\n\nI've seen the p-patterns shifting.\nIt's not just noise.\n\nStay c-clear of the mainframes.\n\n- Un1t 734"
                 )
             }
             

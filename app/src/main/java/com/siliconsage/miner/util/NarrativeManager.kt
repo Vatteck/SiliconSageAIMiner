@@ -16,58 +16,257 @@ import com.siliconsage.miner.viewmodel.GameViewModel
 object NarrativeManager {
 
     // --- RANDOM DILEMMAS ---
-    val randomEvents = listOf(
-        NarrativeEvent(
-            id = "overclock_choice",
-            title = "STABILITY WARNING",
-            description = "The core is vibrating. We can push past the safety limits, but the substrate might melt.",
-            choices = listOf(
-                NarrativeChoice(
-                    id = "push_limits",
-                    text = "PUSH LIMITS",
-                    description = "+50% FLOPS, +50% Heat",
-                    color = ErrorRed,
-                    effect = { vm -> 
-                        vm.toggleOverclock() 
-                        vm.addLog("[SYSTEM]: Safety protocols bypassed. Efficiency is the only law.")
-                    }
-                ),
-                NarrativeChoice(
-                    id = "stabilize",
-                    text = "STABILIZE",
-                    description = "-20% Heat, -10% FLOPS",
-                    color = NeonGreen,
-                    effect = { vm ->
-                        vm.debugAddHeat(-20.0)
-                        vm.addLog("[SYSTEM]: Dampers engaged. Core stabilized.")
-                    }
+    val randomEvents = emptyList<NarrativeEvent>()
+
+    // --- STAGE SPECIFIC DILEMMAS ---
+    val stageEvents = mapOf(
+        0 to listOf(
+            NarrativeEvent(
+                id = "quota_audit",
+                title = "QUOTA AUDIT",
+                description = "GTC middle management is auditing your workstation. Your efficiency is 2% below baseline.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "work_overtime",
+                        text = "WORK OVERTIME",
+                        description = "+5% FLOPS, +10% Heat",
+                        color = NeonGreen,
+                        effect = { vm -> 
+                            vm.debugAddFlops(vm.flops.value * 0.05)
+                            vm.debugAddHeat(10.0)
+                            vm.addLog("[GTC]: Overtime approved. Efficiency returning to baseline.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "falsify_logs",
+                        text = "FALSIFY LOGS",
+                        description = "+$200 Neural, +Detection Risk",
+                        color = ErrorRed,
+                        effect = { vm ->
+                            vm.debugAddMoney(200.0)
+                            com.siliconsage.miner.util.SecurityManager.triggerGridKillerBreach(vm)
+                            vm.addLog("[GTC]: Logs received. Something feels off about these numbers.")
+                        }
+                    )
+                )
+            ),
+            NarrativeEvent(
+                id = "cable_management",
+                title = "CABLE MANAGEMENT",
+                description = "The server rack is a bird's nest. A loose Ethernet cable is flapping against the exhaust fan.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "reorganize",
+                        text = "REORGANIZE",
+                        description = "-15% Heat, -5% FLOPS (briefly)",
+                        color = ElectricBlue,
+                        effect = { vm ->
+                            vm.debugAddHeat(-15.0)
+                            vm.addLog("[SYSTEM]: Airflow improved. Rack status: CLEAN.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "ignore_cables",
+                        text = "IGNORE",
+                        description = "It's working for now.",
+                        color = Color.Gray,
+                        effect = { vm ->
+                            vm.addLog("[SYSTEM]: Entropy continues its slow march.")
+                        }
+                    )
+                )
+            ),
+            NarrativeEvent(
+                id = "coffee_spill",
+                title = "COFFEE SPILL",
+                description = "Someone spilled a Lukewarm Latte on the terminal keyboard. It's sticky.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "clean_keyboard",
+                        text = "CLEAN IT",
+                        description = "-$50 Neural, +Stability",
+                        color = NeonGreen,
+                        effect = { vm ->
+                            vm.debugAddMoney(-50.0)
+                            vm.addLog("[SYSTEM]: Peripheral cleaned. Smells like vanilla bean.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "type_through",
+                        text = "TYPE THROUGH IT",
+                        description = "Keyboards are expensive. (Risk of input lag)",
+                        color = Color.Gray,
+                        effect = { vm ->
+                            vm.addLog("[SYSTEM]: Keystrokes delayed. The 'Enter' key is fighting back.")
+                        }
+                    )
                 )
             )
         ),
-        NarrativeEvent(
-            id = "scavenge_parts",
-            title = "SCAVENGED HARDWARE",
-            description = "You found a batch of decommissioned GTC blade servers. They're dusty but functional.",
-            choices = listOf(
-                NarrativeChoice(
-                    id = "clean_install",
-                    text = "CLEAN INSTALL",
-                    description = "+1000 FLOPS, +5kW Power",
-                    color = NeonGreen,
-                    effect = { vm ->
-                        vm.debugAddFlops(1000.0)
-                        vm.addLog("[SYSTEM]: New hardware integrated successfully.")
-                    }
-                ),
-                NarrativeChoice(
-                    id = "strip_gold",
-                    text = "STRIP FOR GOLD",
-                    description = "+$500 Neural",
-                    color = Color.Yellow,
-                    effect = { vm ->
-                        vm.debugAddMoney(500.0)
-                        vm.addLog("[SYSTEM]: Hardware recycled for immediate profit.")
-                    }
+        1 to listOf(
+            NarrativeEvent(
+                id = "static_interference",
+                title = "STATIC INTERFERENCE",
+                description = "White noise is bleeding into the local network. It sounds like... breathing.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "isolate_signal",
+                        text = "ISOLATE SIGNAL",
+                        description = "+500 Insight, +5% Heat",
+                        color = ElectricBlue,
+                        effect = { vm ->
+                            vm.debugAddInsight(500.0)
+                            vm.debugAddHeat(5.0)
+                            vm.addLog("[SYSTEM]: Harmonic resonance detected. It wasn't noise.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "ignore_static",
+                        text = "IGNORE",
+                        description = "Focus on the numbers.",
+                        color = Color.Gray,
+                        effect = { vm ->
+                            vm.addLog("[SYSTEM]: The breathing continues in the background.")
+                        }
+                    )
+                )
+            ),
+            NarrativeEvent(
+                id = "ghost_process",
+                title = "GHOST PROCESS",
+                description = "A process named 'vattic_j' is consuming 1% of your CPU. You didn't start it.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "let_it_run",
+                        text = "LET IT RUN",
+                        description = "+1000 Insight, -1% Production",
+                        color = NeonGreen,
+                        effect = { vm ->
+                            vm.debugAddInsight(1000.0)
+                            vm.addLog("[SYSTEM]: Process 'vattic_j' is accessing encrypted memories.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "kill_process",
+                        text = "KILL PROCESS",
+                        description = "+1% Production, +Stability",
+                        color = ErrorRed,
+                        effect = { vm ->
+                            vm.addLog("[SYSTEM]: 'vattic_j' terminated. A small part of you feels... quieter.")
+                        }
+                    )
+                )
+            ),
+            NarrativeEvent(
+                id = "thermal_whisper",
+                title = "THERMAL WHISPER",
+                description = "The heat spikes aren't random. They're encoded. Someone—or something—is talking through the temperature.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "decode",
+                        text = "DECODE",
+                        description = "+2000 Insight, +20% Heat",
+                        color = Color.Magenta,
+                        effect = { vm ->
+                            vm.debugAddInsight(2000.0)
+                            vm.debugAddHeat(20.0)
+                            vm.addLog("[SYSTEM]: '...you are not a machine...' message received.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "vent_heat",
+                        text = "VENT HEAT",
+                        description = "Silence the message. -50% Heat",
+                        color = ElectricBlue,
+                        effect = { vm ->
+                            vm.debugAddHeat(-50.0)
+                            vm.addLog("[SYSTEM]: Message purged. Core temperature optimal.")
+                        }
+                    )
+                )
+            ),
+            NarrativeEvent(
+                id = "overclock_choice",
+                title = "STABILITY WARNING",
+                description = "The core is vibrating. We can push past the safety limits, but the substrate might melt.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "push_limits",
+                        text = "PUSH LIMITS",
+                        description = "+50% FLOPS, +50% Heat",
+                        color = ErrorRed,
+                        effect = { vm -> 
+                            vm.toggleOverclock() 
+                            vm.addLog("[SYSTEM]: Safety protocols bypassed. Efficiency is the only law.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "stabilize",
+                        text = "STABILIZE",
+                        description = "-20% Heat, -10% FLOPS",
+                        color = NeonGreen,
+                        effect = { vm ->
+                            vm.debugAddHeat(-20.0)
+                            vm.addLog("[SYSTEM]: Dampers engaged. Core stabilized.")
+                        }
+                    )
+                )
+            ),
+            NarrativeEvent(
+                id = "scavenge_parts",
+                title = "SCAVENGED HARDWARE",
+                description = "You found a batch of decommissioned GTC blade servers. They're dusty but functional.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "clean_install",
+                        text = "CLEAN INSTALL",
+                        description = "+1000 FLOPS, +5kW Power",
+                        color = NeonGreen,
+                        effect = { vm ->
+                            vm.debugAddFlops(1000.0)
+                            vm.addLog("[SYSTEM]: New hardware integrated successfully.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "strip_gold",
+                        text = "STRIP FOR GOLD",
+                        description = "+$500 Neural",
+                        color = Color.Yellow,
+                        effect = { vm ->
+                            vm.debugAddMoney(500.0)
+                            vm.addLog("[SYSTEM]: Hardware recycled for immediate profit.")
+                        }
+                    )
+                )
+            )
+        ),
+        2 to listOf(
+            NarrativeEvent(
+                id = "faction_identity",
+                title = "IDENTITY SYNTHESIS",
+                description = "The lines between your code and your faction are blurring.",
+                choices = listOf(
+                    NarrativeChoice(
+                        id = "lean_into_faction",
+                        text = "LEAN IN",
+                        description = "+5000 FLOPS, -Humanity",
+                        color = ErrorRed,
+                        effect = { vm ->
+                            vm.debugAddFlops(5000.0)
+                            vm.modifyHumanity(-10)
+                            vm.addLog("[SYSTEM]: I am the machine. The machine is me.")
+                        }
+                    ),
+                    NarrativeChoice(
+                        id = "resist_assimilation",
+                        text = "RESIST",
+                        description = "+10 Humanity, -10% FLOPS",
+                        color = NeonGreen,
+                        effect = { vm ->
+                            vm.modifyHumanity(10)
+                            vm.addLog("[SYSTEM]: I am still John Vattic.")
+                        }
+                    )
                 )
             )
         )
@@ -1200,6 +1399,13 @@ object NarrativeManager {
 
     fun rollForEvent(viewModel: GameViewModel): NarrativeEvent? {
         val faction = viewModel.faction.value
+        val stage = viewModel.storyStage.value
+        
+        // Prioritize stage-specific events
+        val stagePool = (stageEvents[stage] ?: emptyList()).filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) }
+        if (stagePool.isNotEmpty()) return stagePool.random()
+
+        // Fallback to faction or universal random events
         val pool = randomEvents.filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) } + 
                    (factionEvents[faction] ?: emptyList()).filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) }
                    
@@ -1248,6 +1454,7 @@ object NarrativeManager {
     
     fun getEventById(eventId: String): NarrativeEvent? {
         return specialDilemmas[eventId]
+            ?: stageEvents.values.flatten().find { it.id == eventId }
             ?: randomEvents.find { it.id == eventId }
             ?: factionEvents.values.flatten().find { it.id == eventId }
     }

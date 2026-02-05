@@ -17,7 +17,7 @@ class UpdateWorker(
     override suspend fun doWork(): Result {
         return suspendCancellableCoroutine { continuation ->
             // Use UpdateManager to check for updates
-            UpdateManager.checkUpdate(BuildConfig.VERSION_NAME) { info ->
+            UpdateManager.checkUpdate(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE) { info ->
                 if (info != null) {
                     // Update found!
                     // Check rate limiting

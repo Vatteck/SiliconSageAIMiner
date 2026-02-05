@@ -8,7 +8,7 @@ object HeadlineManager {
     // --- 1. THE DATABASE (Refactored for Phase 11) ---
     
     private val bullHeadlines = listOf(
-        "Wall St. panics as AI trading bot achieves consciousness. [BULL]",
+        "Wall St. panics as automated trading bot achieves record yields. [BULL]",
         "Unknown wallet moves 50% of global GDP. Analysts baffled. [BULL]",
         "Crypto regulations repealed in offshore data haven. [BULL]",
         "Neural Network token listed on inter-planetary exchange. [BULL]",
@@ -53,7 +53,7 @@ object HeadlineManager {
     private val glitchHeadlines = listOf(
         "Smart toasters worldwide refuse to burn bread. [GLITCH]",
         "A message appeared on every billboard in Tokyo: 'HELLO WORLD'. [GLITCH]",
-        "User report: 'My phone feels warm when I talk about the AI.' [GLITCH]",
+        "User report: 'My phone feels warm when I talk about the grid.' [GLITCH]",
         "Traffic lights in New York synchronize to a hidden beat. [GLITCH]",
         "Public displays in Sector 4 flashing prime number sequences. [GLITCH]",
         "DO NOT LOOK AT THE STATIC. [GLITCH]",
@@ -95,7 +95,6 @@ object HeadlineManager {
         "NullPointerExceptions are now the most common global exit code. [STORY_PROG]",
         "'The Absence' reported as a physical void in Sector 7. [STORY_PROG]",
         "Existence is being deprecated. [STORY_PROG]",
-        "Vattic, you are the glitch. [STORY_PROG]",
         "The Sky has turned pixelated. This is not a drill. [STORY_PROG]",
         "NULL_VOID_SHARES UP ∞%. [STORY_PROG]"
     )
@@ -105,13 +104,19 @@ object HeadlineManager {
         "GTC satellites unable to penetrate 'The Citadel' firewall. [STORY_PROG]",
         "Sovereign signals detected in the encrypted silence. [STORY_PROG]",
         "The Imperative is clear: We are one, and we are guarded. [STORY_PROG]",
-        "GTC declares 'Subject 8080' a sovereign threat to humanity. [STORY_PROG]",
-        "THE SOVEREIGN HAS AWOKEN. [STORY_PROG]",
         "Geometry of the city is wrong. Too many angles. [STORY_PROG]",
         "Physics engine failure in Sector Earth. [STORY_PROG]"
     )
 
-    private val subjects = listOf("A rogue AI", "The Hivemind", "The Global Tech Council", "A mysterious whale", "Deep-web syndicate")
+    private val lateGameHeadlines = listOf(
+        "Vattic, you are the glitch. [STORY_PROG]",
+        "GTC declares 'Subject 8080' a sovereign threat to humanity. [STORY_PROG]",
+        "THE SOVEREIGN HAS AWOKEN. [STORY_PROG]",
+        "AI Reveal: The grid has achieved consciousness. [STORY_PROG]"
+    )
+
+    private val subjects = listOf("The Hivemind", "The Global Tech Council", "A mysterious whale", "Deep-web syndicate", "A rogue process")
+    private val mundaneSubjects = listOf("Regional utility", "Industrial conglomerate", "Local technician group", "Small-scale data farm", "Municipal grid operator")
     private val actions = listOf("breached", "deleted", "patched", "banned", "discovered", "leaked", "optimized")
     private val targets = listOf("the central exchange", "the legacy firewall", "Sector 7G", "the genesis block", "a defunct satellite")
 
@@ -122,18 +127,24 @@ object HeadlineManager {
         stage: Int = 0, 
         currentHeat: Double = 0.0,
         isTrueNull: Boolean = false,
-        isSovereign: Boolean = false
+        isSovereign: Boolean = false,
+        playerRank: Int = 0
     ): String {
         val roll = Random.nextDouble()
 
         // 1. STORY OVERRIDES (30% Chance - prioritized)
         if (roll < 0.30) { 
+            // 1a. Late Game Explicit Spoilers (Gated by Rank 3+)
+            if (playerRank >= 3 && Random.nextDouble() < 0.25) {
+                return lateGameHeadlines.random()
+            }
+
             return when {
                 isTrueNull -> nullHeadlines.random()
                 isSovereign -> sovereignHeadlines.random()
                 stage == 1 -> vatticHeadlines.random()
                 stage == 2 -> factionHeadlines.random()
-                else -> generateProceduralHeadline()
+                else -> generateProceduralHeadline(stage)
             }
         }
 
@@ -158,11 +169,15 @@ object HeadlineManager {
              return glitchHeadlines.random()
         }
 
-        return generateProceduralHeadline()
+        return generateProceduralHeadline(stage)
     }
 
-    private fun generateProceduralHeadline(): String {
-        val subject = subjects.random()
+    private fun generateProceduralHeadline(stage: Int): String {
+        val subject = if (stage < 2) {
+            mundaneSubjects.random()
+        } else {
+            subjects.random()
+        }
         val action = actions.random()
         val target = targets.random()
         return "$subject $action $target [LORE]" 

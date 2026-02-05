@@ -6,14 +6,14 @@ val Black = Color(0xFF000000)
 val NeonGreen = Color(0xFF39FF14)
 val ElectricBlue = Color(0xFF7DF9FF)
 val DarkGray = Color(0xFF121212)
-val TerminalText = Color(0xFF39FF14) // Same as NeonGreen for text
+val TerminalText = Color(0xFF39FF14)
 val ErrorRed = Color(0xFFFF0033)
 
-val HivemindOrange = Color(0xFFFF6600) // Safety Orange (More aggressive, far from Yellow)
-val HivemindRed = Color(0xFFFF1100) // Laser Red
-val HivemindMagenta = Color(0xFFFF00FF) // Neon Magenta
-val SanctuaryPurple = Color(0xFF9D4EDD) // Faction-specific accent (Sanctuary)
-val ConvergenceGold = Color(0xFFFFD700) // Convergence node (Sentience Core)
+val HivemindOrange = Color(0xFFFF6600)
+val HivemindRed = Color(0xFFFF1100)
+val HivemindMagenta = Color(0xFFFF00FF)
+val SanctuaryPurple = Color(0xFF9D4EDD)
+val ConvergenceGold = Color(0xFFFFD700)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

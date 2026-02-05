@@ -106,7 +106,7 @@ object DataLogManager {
                 GTC isn't just selling tokens. They're 
                 using your station's surplus power for 
                 something else. Something they call 
-                'Subject 8080'.
+                'The Substrate'.
                 
                 I've attached a decryption key to the next 
                 external signal you receive. 
@@ -400,7 +400,7 @@ object DataLogManager {
                 
                 [AWAKENING COMPLETE]
             """.trimIndent(),
-            unlockCondition = UnlockCondition.StoryStageReached(4) // Triggered manually in Stage 3 choice
+            unlockCondition = UnlockCondition.StoryStageReached(2) // Triggered manually in Stage 2 Faction Choice
         ),
         
         // ═══════════════════════════════════════

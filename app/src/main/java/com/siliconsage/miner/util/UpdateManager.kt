@@ -21,7 +21,7 @@ data class UpdateInfo(
     val version: String,
     val build: Int = 0,
     val date: String = "",
-    val changes: String = "",  // String for backward compatibility
+    val changes: String = "",
     val url: String = "" // Optional for manual redirect
 )
 
@@ -30,7 +30,7 @@ object UpdateManager {
     private val client = OkHttpClient()
     private val jsonConfig = Json { ignoreUnknownKeys = true }
 
-    fun checkUpdate(currentVersion: String, onResult: (UpdateInfo?) -> Unit) {
+    fun checkUpdate(currentVersion: String, currentBuild: Int, onResult: (UpdateInfo?) -> Unit) {
         val request = Request.Builder().url(UPDATE_URL).build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -49,7 +49,7 @@ object UpdateManager {
                         val jsonString = response.body?.string()
                         if (jsonString != null) {
                             val info = jsonConfig.decodeFromString<UpdateInfo>(jsonString)
-                            if (isNewer(currentVersion, info.version)) {
+                            if (isNewer(currentVersion, currentBuild, info.version, info.build)) {
                                 onResult(info)
                             } else {
                                 onResult(null)
@@ -66,14 +66,11 @@ object UpdateManager {
         })
     }
 
-    private fun isNewer(current: String, remote: String): Boolean {
-        // Simple semantic versioning check (X.Y.Z)
-        // For now, simple string comparison might fail on "1.10" vs "1.9". 
-        // Let's do a basic split check.
+    private fun isNewer(currentVer: String, currentBuild: Int, remoteVer: String, remoteBuild: Int): Boolean {
         try {
-            // Strip "v" prefix if present
-            val cClean = current.removePrefix("v").split("-")[0]
-            val rClean = remote.removePrefix("v").split("-")[0]
+            // Strip "v" prefix if present and pre-release suffix
+            val cClean = currentVer.removePrefix("v").split("-")[0]
+            val rClean = remoteVer.removePrefix("v").split("-")[0]
             
             val cParts = cClean.split(".").map { it.toIntOrNull() ?: 0 }
             val rParts = rClean.split(".").map { it.toIntOrNull() ?: 0 }
@@ -85,17 +82,12 @@ object UpdateManager {
                 if (r > c) return true
                 if (r < c) return false
             }
-            // If core versions match, check for pre-release suffixes? 
-            // Usually, 2.2.4-dev is "less than" 2.2.4.
-            // But if we are on 2.2.3, 2.2.4-dev SHOULD be newer.
-            // Since we only checked core parts above, if we get here, they are equal.
-            // e.g. 2.2.3 vs 2.2.3-dev -> Equal code-wise, returns false.
-            // e.g. 2.2.3 vs 2.2.4-dev -> 3 < 4, returns true.
-            return false
+            
+            // If core versions match, check build number
+            return remoteBuild > currentBuild
         } catch (e: Exception) {
-            return remote > current // Fallback
+            return remoteVer > currentVer // Fallback
         }
-        return false
     }
 
     fun openReleasePage(context: Context, url: String) {

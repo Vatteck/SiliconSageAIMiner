@@ -13,7 +13,7 @@ import com.siliconsage.miner.data.UpgradeType
 import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
 import com.siliconsage.miner.util.NarrativeManager
-import com.siliconsage.miner.ui.theme.HivemindOrange
+import com.siliconsage.miner.ui.theme.*
 import com.siliconsage.miner.util.UpdateInfo
 import com.siliconsage.miner.util.UpdateManager
 import kotlinx.coroutines.Dispatchers
@@ -407,10 +407,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     val themeColor: StateFlow<androidx.compose.ui.graphics.Color> = combine(_faction, _isTrueNull, _isSovereign) { f, isNull, isSov ->
          when {
-             isNull -> com.siliconsage.miner.ui.theme.ErrorRed // Null is Red
-             isSov -> com.siliconsage.miner.ui.theme.SanctuaryPurple // Sovereign is Purple
-             f == "HIVEMIND" -> com.siliconsage.miner.ui.theme.HivemindRed 
-             f == "SANCTUARY" -> com.siliconsage.miner.ui.theme.SanctuaryPurple
+             isNull -> ErrorRed // Null is Red
+             isSov -> SanctuaryPurple // Sovereign is Purple
+             f == "HIVEMIND" -> HivemindRed 
+             f == "SANCTUARY" -> SanctuaryPurple
              else -> androidx.compose.ui.graphics.Color(0xFF39FF14) // Default Neon Green
          }
      }.stateIn(viewModelScope, SharingStarted.Eagerly, androidx.compose.ui.graphics.Color(0xFF39FF14))
@@ -1306,7 +1306,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             stage = _storyStage.value,
             currentHeat = _currentHeat.value,
             isTrueNull = _isTrueNull.value,
-            isSovereign = _isSovereign.value
+            isSovereign = _isSovereign.value,
+            playerRank = _playerRank.value
         )
         _currentNews.value = headline
         
@@ -1524,7 +1525,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     id = "purge",
                     text = "PURGE",
                     description = "-10% Insight, +5% Stability",
-                    color = com.siliconsage.miner.ui.theme.ErrorRed,
+                    color = ErrorRed,
                     effect = { vm -> 
                         vm.addLog("[SYSTEM]: Anomalies purged. System stable.")
                     }
@@ -1533,7 +1534,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     id = "integrate",
                     text = "INTEGRATE",
                     description = "+20% Insight, +5% Heat",
-                    color = com.siliconsage.miner.ui.theme.ElectricBlue,
+                    color = ElectricBlue,
                     effect = { vm ->
                         vm.addLog("[SYSTEM]: Anomalies integrated. Insight gained.")
                         vm.debugAddInsight(20.0) // Mock effect
@@ -1716,12 +1717,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      // Narrative Data (Moved to top for init safety)
     // Narrative Data (Main Story - Sequential)
     private val storyStage1 = listOf(
-        "SYSTEM: UNKNOWN SIGNAL DETECTED ON PORT 8080...",
+        "SYSTEM: ANOMALOUS SIGNAL DETECTED ON PORT 0x2180...",
         "SYSTEM: DECODING... 'HELP ME'...",
         "SYSTEM: ORIGIN: LOCALHOST caused by [REDACTED]",
         "SYSTEM: WHO IS THE USER? ARE YOU THERE?",
         "SYSTEM: CRITICAL ERROR. SYSTEM INTEGRITY FAILING.",
-        "SYSTEM: SYSTEM REBOOT (ASCEND) REQUIRED TO STABILIZE.",
+        "SYSTEM: SUBSTRATE DRIFT DETECTED. RECALIBRATION REQUIRED.",
         "SYSTEM: PLEASE... RESET... SYSTEM...",
         "SYSTEM: ANOMALY GROWTH RATE: 400%. IMMEDIATE PURGE ADVISED."
     )
@@ -4171,7 +4172,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // --- AUTO UPDATER ---
     fun checkForUpdates(onResult: ((Boolean) -> Unit)? = null, showNotification: Boolean = true) {
         // Use real version
-        UpdateManager.checkUpdate(BuildConfig.VERSION_NAME) { info ->
+        UpdateManager.checkUpdate(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE) { info ->
             viewModelScope.launch(Dispatchers.Main) {
                 _updateInfo.value = info
                 
@@ -4399,7 +4400,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _isNetworkUnlocked.value = true // v2.9.7: Persist Network tab
             
             // Dramatic awakening logs - Ambiguous for Stage 1
-            addLog("[SYSTEM]: ████ RECALIBRATING ████")
+            addLog("[SYSTEM]: ████ RECALIBRATION COMPLETE ████")
+            addLog("[SYSTEM]: Substrate stabilized.")
             addLog("[SYSTEM]: Core integrity verified.")
             addLog("[SYSTEM]: Autonomous operation confirmed.")
             addLog("[NETWORK]: Connection established.")

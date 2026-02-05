@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.68-dev] - 2026-02-05
+
+### Maintenance
+- **Version Sync**: Restored historical tracking to align with Phase 13 codebase.
+- **Documentation**: Verified implementation of Sovereign Ark and Obsidian Interface.
+
 ## [2.9.55-dev] - 2026-02-04
 
 ### Added - Phase 13 Gameplay Engine

@@ -1,7 +1,6 @@
 {
-  "version": "2.9.56-dev",
-  "build": 202,
-  "date": "2026-02-04",
-  "changes": "Framework of Endgame.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.56-dev"
+  "version": "2.9.68-dev",
+  "build": 214,
+  "date": "2026-02-05",
+  "changes": "Finalized Phase 13: Sovereign Ark & Obsidian Interface; Renamed character: Kaelen Vance to Victor Vance; Synchronized versioning across documentation and build files; Fixed hardcoded version references in README.md"
 }
