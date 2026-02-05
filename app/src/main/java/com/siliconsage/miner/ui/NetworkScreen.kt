@@ -129,7 +129,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
             }
 
             if (currentTab == 0) {
-                if (storyStage >= 2) {
+                if (storyStage >= 2 || faction != "NONE") {
                     item {
                         // --- ASCENSION ---
                         Box(

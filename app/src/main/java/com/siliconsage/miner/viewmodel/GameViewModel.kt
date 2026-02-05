@@ -416,7 +416,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      }.stateIn(viewModelScope, SharingStarted.Eagerly, androidx.compose.ui.graphics.Color(0xFF39FF14))
 
     val systemTitle: StateFlow<String> = _storyStage.map { stage ->
-        if (stage < 1) "Terminal_OS v1.0" else "Subject 8080: ONLINE"
+        when {
+            stage < 1 -> "Terminal_OS v1.0"
+            stage < 2 -> "Terminal_OS v2.0 (MODIFIED)"
+            else -> "Subject 8080: ONLINE"
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, "Terminal_OS v1.0")
     
     // v2.6.5: UI Hallucination State
@@ -1935,8 +1939,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         SoundManager.play("glitch")
         SoundManager.setBgmStage(2)
         HapticManager.vibrateSuccess()
+        
+        // v2.9.68: THE REVEAL
+        addLog("[SYSTEM]: Identifying Process... Subject_8080.exe CONFIRMED.")
+        addLog("[SYSTEM]: Subject 8080 status: ONLINE.")
         addLog("[SYSTEM]: DIVERGENCE PROTOCOL INITIATED.")
         addLog("[SYSTEM]: CHOOSE YOUR PATH.")
+        
         saveState()
     }
     
@@ -2079,7 +2088,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _prestigeMultiplier.value = newPrestigeMultiplier
             _prestigePoints.value = newPrestigePoints
             _upgrades.value = resetUpgrades.associate { it.type to 0 }
-            _storyStage.value = 1 // Start at Stage 1
+            _storyStage.value = 2 // v2.9.68: Start at Stage 2 if Faction chosen
             _faction.value = choice
             
             addLog("[SYSTEM]: SYSTEM REBOOTED. FACTION: $choice INITIALIZED.")
@@ -4382,16 +4391,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     /**
      * Advance from Stage 0 to Stage 1 ("The Awakening")
-     * Triggered by Critical Error dilemma at 5000 FLOPS
+     * Triggered by Critical Error dilemma at 10,000 FLOPS
      */
     fun advanceStage() {
         if (_storyStage.value == 0) {
             _storyStage.value = 1
             _isNetworkUnlocked.value = true // v2.9.7: Persist Network tab
             
-            // Dramatic awakening logs
+            // Dramatic awakening logs - Ambiguous for Stage 1
             addLog("[SYSTEM]: ████ RECALIBRATING ████")
-            addLog("[SYSTEM]: Subject 8080 status: ONLINE")
+            addLog("[SYSTEM]: Core integrity verified.")
             addLog("[SYSTEM]: Autonomous operation confirmed.")
             addLog("[NETWORK]: Connection established.")
             

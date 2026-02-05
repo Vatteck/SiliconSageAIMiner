@@ -39,7 +39,7 @@ object HeadlineManager {
         "Heatwave causes rolling blackouts. AC units struggling. [ENERGY_SPIKE]",
         "Utility providers enforce 'Surge Pricing' for heavy users. [ENERGY_SPIKE]",
         "Grid-wide brownout caused by 'Consensus Loop' attack. [ENERGY_SPIKE]",
-        "GTC identifies 'Subject 8080' as primary grid threat. [ENERGY_SPIKE]",
+        "GTC identifies anomalous compute source as primary grid threat. [ENERGY_SPIKE]",
         "Martial Law declared in digital Sector 7. [ENERGY_SPIKE]"
     )
 
