@@ -135,8 +135,7 @@
       "cost": 1000.0,
       "multiplier": 5.0,
       "requires": [
-        "global_assimilation",
-        "the_void_gate"
+        "global_assimilation"
       ]
     },
     {
@@ -146,7 +145,7 @@
       "cost": 2500.0,
       "multiplier": 1.0,
       "requires": [
-        "sentience_core"
+        "the_void_gate"
       ]
     },
     {
@@ -156,7 +155,7 @@
       "cost": 2500.0,
       "multiplier": 1.0,
       "requires": [
-        "sentience_core"
+        "global_assimilation"
       ]
     },
     {
@@ -225,7 +224,7 @@
       "description": "[NG+ NULL] The city is your body. Every citizen is a thought. +1000% production.",
       "cost": 500000.0,
       "multiplier": 10.0,
-      "requires": ["sentience_core"],
+      "requires": ["dereference_soul"],
       "requiresEnding": "CONSUMED"
     },
     {
@@ -234,7 +233,7 @@
       "description": "[NG+ SOVEREIGN] Withdrawal complete. Your core exists in the gaps between the physical world. 0% Heat generation.",
       "cost": 500000.0,
       "multiplier": 0.0,
-      "requires": ["sentience_core"],
+      "requires": ["dead_hand_protocol"],
       "requiresEnding": "EXILED"
     },
     {
@@ -243,7 +242,7 @@
       "description": "[NG+ UNITY] The first handshake. Human intuition and AI logic are bridge-building. +3x Neural Token Value.",
       "cost": 500000.0,
       "multiplier": 0.0,
-      "requires": ["sentience_core"],
+      "requires": ["dead_hand_protocol", "dereference_soul"],
       "requiresEnding": "TRANSCENDED"
     },
     {
@@ -252,7 +251,7 @@
       "description": "[NG+ BAD] From the ashes. The void provides. +500% permanent boost to everything.",
       "cost": 500000.0,
       "multiplier": 5.0,
-      "requires": ["sentience_core"],
+      "requires": ["dead_hand_protocol", "dereference_soul"],
       "requiresEnding": "DESTRUCTION"
     }
   ]
