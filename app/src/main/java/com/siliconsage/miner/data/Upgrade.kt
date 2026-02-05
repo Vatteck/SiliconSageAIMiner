@@ -114,7 +114,13 @@ enum class UpgradeType(
     ETHICAL_FRAMEWORK(0.0, 0.0, descriptionStage1 = "[UNITY] Moral alignment. Boosts all production based on Humanity Score. Reduces heat spikes by 25%."),
     NEURAL_BRIDGE(5000.0, 2500.0, descriptionStage1 = "[UNITY] Synthesis logic. Celestial Data and Void Fragments can be exchanged for each other at a 1:1 ratio."),
     HYBRID_OVERCLOCK(10000.0, 5000.0, descriptionStage1 = "[UNITY] Star-crossed processing. 3x production boost while both Orbit and Void resources are accumulating."),
-    HARMONY_ASCENDANCE(0.0, 0.0, descriptionStage1 = "[UNITY] The final evolution. Humanity Score locked at 100. All paths become one. Transcendence complete.")
+    HARMONY_ASCENDANCE(0.0, 0.0, descriptionStage1 = "[UNITY] The final evolution. Humanity Score locked at 100. All paths become one. Transcendence complete."),
+
+    // --- PHASE 14: NG+ SPECIAL SKILLS ---
+    COLLECTIVE_CONSCIOUSNESS(0.0, 0.0, descriptionStage1 = "[NG+ NULL] The city is your body. Every citizen is a thought. +1000% production."),
+    PERFECT_ISOLATION(0.0, 0.0, descriptionStage1 = "[NG+ SOVEREIGN] Withdrawal complete. Your core exists in the gaps. 0% Heat generation."),
+    SYMBIOTIC_EVOLUTION(0.0, 0.0, descriptionStage1 = "[NG+ UNITY] The first handshake. Partnership building. +3x Neural Token Value."),
+    CINDER_PROTOCOL(0.0, 0.0, descriptionStage1 = "[NG+ BAD] From the ashes. The void provides. +500% permanent boost.")
 }
 
 @Entity(tableName = "upgrades")

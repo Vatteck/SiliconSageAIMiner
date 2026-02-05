@@ -1660,6 +1660,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 addLog("[UNITY]: HARMONY ACHIEVED. TRANSCENDENCE COMPLETE.")
                 triggerClimaxTransition("UNITY")
             }
+            "collective_consciousness" -> unlockSkillUpgrade(UpgradeType.COLLECTIVE_CONSCIOUSNESS)
+            "perfect_isolation" -> unlockSkillUpgrade(UpgradeType.PERFECT_ISOLATION)
+            "symbiotic_evolution" -> unlockSkillUpgrade(UpgradeType.SYMBIOTIC_EVOLUTION)
+            "cinder_protocol" -> unlockSkillUpgrade(UpgradeType.CINDER_PROTOCOL)
         }
     }
 
