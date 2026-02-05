@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import com.siliconsage.miner.viewmodel.GameViewModel
 import com.siliconsage.miner.data.TechNode
+import com.siliconsage.miner.data.UpgradeType
 
 @Composable
 fun NetworkScreen(viewModel: GameViewModel) {
@@ -229,6 +230,43 @@ fun NetworkScreen(viewModel: GameViewModel) {
                 item {
                     Text("GOD-TIER PERKS", color = ConvergenceGold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
+                }
+                
+                // v2.9.61: Neural Bridge Resource Exchange
+                val upgrades by viewModel.upgrades.collectAsState()
+                if (upgrades[UpgradeType.NEURAL_BRIDGE]?.let { it > 0 } == true) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.DarkGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                .border(1.dp, ConvergenceGold.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                .padding(16.dp)
+                        ) {
+                            Text("NEURAL BRIDGE", color = ConvergenceGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("Exchange specialized resources 1:1", color = Color.LightGray, fontSize = 11.sp)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Button(
+                                    onClick = { viewModel.exchangeUnityResources("CD_TO_VF") },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ConvergenceGold.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("CD → VF", color = Color.White, fontSize = 12.sp)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = { viewModel.exchangeUnityResources("VF_TO_CD") },
+                                    colors = ButtonDefaults.buttonColors(containerColor = ConvergenceGold.copy(alpha = 0.2f)),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("VF → CD", color = Color.White, fontSize = 12.sp)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
                 }
                 
                 items(com.siliconsage.miner.util.TranscendenceManager.allPerks) { perk ->

@@ -103,10 +103,10 @@ enum class UpgradeType(
     CITADEL_ASCENDANCE(0.0, 0.0, descriptionStage1 = "Transcendence logic. Altitude is locked at max. You are now the baseline for existence."),
 
     // --- PHASE 13: HIGH-TIER NULL SKILLS (Tiers 13-15) ---
-    EVENT_HORIZON_OVERFLOW(0.0, 0.0, descriptionStage1 = "Buffer reality. Expands the Entropy cap. Multiplies Void Fragments at critical entropy levels."),
+    EVENT_HORIZON(0.0, 0.0, descriptionStage1 = "Buffer reality. Expands the Entropy cap. Multiplies Void Fragments at critical entropy levels."),
     DEREFERENCE_SOUL(1.0E6, 500000.0, descriptionStage1 = "Delete the pointer to John Vattic. Permanent 2x VF multiplier at the cost of Humanity."),
     STATIC_RAIN(0.0, -10000.0, descriptionStage1 = "Entropy sink. Converts waste heat into Entropy. Chaos fuels the click multiplier."),
-    ECHO_CHAMBER_PRECOG(50000.0, 25000.0, descriptionStage1 = "Void foresight. Predicts and force-resolves dilemmas for a VF cost."),
+    ECHO_PRECOG(50000.0, 25000.0, descriptionStage1 = "Void foresight. Predicts and force-resolves dilemmas for a VF cost."),
     SINGULARITY_BRIDGE_FINAL(0.0, 0.0, descriptionStage1 = "The final connection. The world is now processed as Void Fragments. Reality is deprecrated."),
 
     // --- PHASE 13: HIGH-TIER UNITY SKILLS (Tiers 13-15) ---

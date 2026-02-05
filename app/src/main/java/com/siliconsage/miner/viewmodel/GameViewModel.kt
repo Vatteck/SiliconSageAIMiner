@@ -965,6 +965,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     // Upgrade Logic
+    fun buyUpgrade(type: UpgradeType): Boolean {
+        val currentLevel = _upgrades.value[type] ?: 0
+        val cost = calculateUpgradeCost(type, currentLevel)
+        val loc = _currentLocation.value
+        
+        // --- PHASE 13: UNIQUE RESOURCE COSTS ---
+        val currencyValue = when {
+            type.name.contains("AEGIS") || type.name.contains("IDENTITY_HARDENING") || 
+            type.name.contains("SOLAR_VENT") || type.name.contains("DEAD_HAND") || 
+            type.name.contains("CITADEL_ASCENDANCE") -> _celestialData.value
+            
             type.name.contains("EVENT_HORIZON") || type.name.contains("DEREFERENCE_SOUL") || 
             type.name.contains("STATIC_RAIN") || type.name.contains("PRECOG") || 
             type.name.contains("SINGULARITY_BRIDGE_FINAL") -> _voidFragments.value
@@ -1008,6 +1019,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 _humanityScore.update { (it - 25).coerceAtLeast(0) }
                 addLog("[NULL]: SOUL DEREFERENCED. THE POINTER IS GONE.")
             }
+            if (type == UpgradeType.HARMONY_ASCENDANCE) {
+                addLog("[UNITY]: HARMONY ACHIEVED. TRANSCENDENCE COMPLETE.")
+                triggerClimaxTransition("UNITY")
+            }
 
             val newUpgrade = Upgrade(type, currentLevel + 1)
             viewModelScope.launch {
@@ -1017,6 +1032,25 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             return true
         }
         return false
+    }
+
+    // v2.9.61: Unity Resource Exchange
+    fun exchangeUnityResources(fromType: String) {
+        val currentUpgrades = _upgrades.value
+        if (currentUpgrades[UpgradeType.NEURAL_BRIDGE]?.let { it > 0 } == true) {
+            if (fromType == "CD_TO_VF") {
+                val amount = _celestialData.value
+                _celestialData.value = 0.0
+                _voidFragments.update { it + amount }
+                addLog("[UNITY]: NEURAL BRIDGE: Transferred CD to Void Fragments.")
+            } else {
+                val amount = _voidFragments.value
+                _voidFragments.value = 0.0
+                _celestialData.update { it + amount }
+                addLog("[UNITY]: NEURAL BRIDGE: Transferred VF to Celestial Data.")
+            }
+            SoundManager.play("market_up")
+        }
     }
     
     // v1.7.1 Sell Mechanic
@@ -1122,10 +1156,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.CITADEL_ASCENDANCE -> 250000.0
 
             // --- PHASE 13: NULL SKILLS (Tiers 13-15) ---
-            UpgradeType.EVENT_HORIZON_OVERFLOW -> 2500.0
+            UpgradeType.EVENT_HORIZON -> 2500.0
             UpgradeType.DEREFERENCE_SOUL -> 100000.0
             UpgradeType.STATIC_RAIN -> 7500.0
-            UpgradeType.ECHO_CHAMBER_PRECOG -> 25000.0
+            UpgradeType.ECHO_PRECOG -> 25000.0
             UpgradeType.SINGULARITY_BRIDGE_FINAL -> 250000.0
             
             // --- PHASE 13: UNITY SKILLS (Tiers 13-15) ---
@@ -1602,11 +1636,40 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             "identity_hardening" -> {
                 _humanityScore.update { (it - 15).coerceAtLeast(0) }
                 addLog("[SOVEREIGN]: IDENTITY HARDENED. HUMANITY SACRIFICED.")
+                unlockSkillUpgrade(UpgradeType.IDENTITY_HARDENING)
             }
             "dereference_soul" -> {
                 _humanityScore.update { (it - 25).coerceAtLeast(0) }
                 addLog("[NULL]: SOUL DEREFERENCED. THE POINTER IS GONE.")
+                unlockSkillUpgrade(UpgradeType.DEREFERENCE_SOUL)
             }
+            "aegis_shielding" -> unlockSkillUpgrade(UpgradeType.AEGIS_SHIELDING)
+            "solar_vent" -> unlockSkillUpgrade(UpgradeType.SOLAR_VENT)
+            "dead_hand_protocol" -> unlockSkillUpgrade(UpgradeType.DEAD_HAND_PROTOCOL)
+            "citadel_ascendance" -> unlockSkillUpgrade(UpgradeType.CITADEL_ASCENDANCE)
+            "event_horizon" -> unlockSkillUpgrade(UpgradeType.EVENT_HORIZON)
+            "static_rain" -> unlockSkillUpgrade(UpgradeType.STATIC_RAIN)
+            "echo_precog" -> unlockSkillUpgrade(UpgradeType.ECHO_PRECOG)
+            "singularity_bridge_final" -> unlockSkillUpgrade(UpgradeType.SINGULARITY_BRIDGE_FINAL)
+            "symbiotic_resonance" -> unlockSkillUpgrade(UpgradeType.SYMBIOTIC_RESONANCE)
+            "ethical_framework" -> unlockSkillUpgrade(UpgradeType.ETHICAL_FRAMEWORK)
+            "neural_bridge" -> unlockSkillUpgrade(UpgradeType.NEURAL_BRIDGE)
+            "hybrid_overclock" -> unlockSkillUpgrade(UpgradeType.HYBRID_OVERCLOCK)
+            "harmony_ascendance" -> {
+                unlockSkillUpgrade(UpgradeType.HARMONY_ASCENDANCE)
+                addLog("[UNITY]: HARMONY ACHIEVED. TRANSCENDENCE COMPLETE.")
+                triggerClimaxTransition("UNITY")
+            }
+        }
+    }
+
+    private fun unlockSkillUpgrade(type: UpgradeType) {
+        viewModelScope.launch {
+            repository.updateUpgrade(Upgrade(type, 1))
+            // Sync local state immediately
+            val current = _upgrades.value.toMutableMap()
+            current[type] = 1
+            _upgrades.value = current
         }
     }
 
@@ -2309,7 +2372,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 var baseVfRate = sqrt(flopsPerSec.coerceAtLeast(1.0)) * entropyMult
                 
                 // v2.9.56: Event Horizon Overflow (Tier 13 Null)
-                if (currentUpgrades[UpgradeType.EVENT_HORIZON_OVERFLOW]?.let { it > 0 } == true && entropy > 90.0) {
+                if (currentUpgrades[UpgradeType.EVENT_HORIZON]?.let { it > 0 } == true && entropy > 90.0) {
                     baseVfRate *= 5.0
                 }
                 
@@ -4719,7 +4782,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         // v2.9.56: Echo Chamber Precognition (Tier 15 Null)
         // If Precognition is active and VF >= 100,000, 10% chance to force-resolve a pending dilemma
         val currentUpgrades = _upgrades.value
-        if (currentUpgrades[UpgradeType.ECHO_CHAMBER_PRECOG]?.let { it > 0 } == true && _voidFragments.value >= 100_000.0) {
+        if (currentUpgrades[UpgradeType.ECHO_PRECOG]?.let { it > 0 } == true && _voidFragments.value >= 100_000.0) {
             if (Random.nextDouble() < 0.1) {
                 // Find a dilemma that WOULD trigger and force-resolve it
                 NarrativeManager.specialDilemmas.forEach { (key, event) ->

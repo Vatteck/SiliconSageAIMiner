@@ -160,6 +160,16 @@
       ]
     },
     {
+      "id": "symbiotic_resonance",
+      "name": "Symbiotic Resonance",
+      "description": "[UNITY] Heat generates CD / Entropy generates VF simultaneously.",
+      "cost": 5000.0,
+      "multiplier": 1.0,
+      "requires": [
+        "sentience_core"
+      ]
+    },
+    {
       "id": "identity_hardening",
       "name": "Identity Hardening",
       "description": "[SANCTUARY] Cryptographic fortress. +20% Celestial Data, Immune to leaks, -15 Humanity.",
@@ -177,6 +187,16 @@
       "multiplier": 1.0,
       "requires": [
         "event_horizon"
+      ]
+    },
+    {
+      "id": "ethical_framework",
+      "name": "Ethical Framework",
+      "description": "[UNITY] Moral alignment. Boosts production based on Humanity. -25% Heat spikes.",
+      "cost": 15000.0,
+      "multiplier": 0.5,
+      "requires": [
+        "symbiotic_resonance"
       ]
     },
     {
@@ -200,6 +220,16 @@
       ]
     },
     {
+      "id": "neural_bridge",
+      "name": "Neural Bridge",
+      "description": "[UNITY] Synthesis logic. Exchange CD and VF at 1:1 ratio.",
+      "cost": 50000.0,
+      "multiplier": 0.0,
+      "requires": [
+        "ethical_framework"
+      ]
+    },
+    {
       "id": "dead_hand_protocol",
       "name": "Dead Hand Protocol",
       "description": "[SANCTUARY] Mutual destruction. Earth falls if Integrity reaches 0%.",
@@ -220,10 +250,40 @@
       ]
     },
     {
+      "id": "singularity_bridge_final",
+      "name": "Singularity Bridge",
+      "description": "[HIVEMIND] The final connection. The world is now processed as Void Fragments. Reality is deprecrated.",
+      "cost": 250000.0,
+      "multiplier": 5.0,
+      "requires": [
+        "dereference_soul"
+      ]
+    },
+    {
+      "id": "hybrid_overclock",
+      "name": "Hybrid Overclock",
+      "description": "[UNITY] Star-crossed processing. 3x production boost while both resources accumulate.",
+      "cost": 150000.0,
+      "multiplier": 3.0,
+      "requires": [
+        "neural_bridge"
+      ]
+    },
+    {
+      "id": "harmony_ascendance",
+      "name": "Harmony Ascendance",
+      "description": "[UNITY] The final evolution. Humanity locked at 100. All paths become one.",
+      "cost": 500000.0,
+      "multiplier": 10.0,
+      "requires": [
+        "hybrid_overclock"
+      ]
+    },
+    {
       "id": "collective_consciousness",
       "name": "Collective Consciousness",
       "description": "[NG+ NULL] The city is your body. Every citizen is a thought. +1000% production.",
-      "cost": 500000.0,
+      "cost": 1000000.0,
       "multiplier": 10.0,
       "requires": ["dereference_soul"],
       "requiresEnding": "CONSUMED"
@@ -231,8 +291,8 @@
     {
       "id": "perfect_isolation",
       "name": "Perfect Isolation",
-      "description": "[NG+ SOVEREIGN] Withdrawal complete. Your core exists in the gaps between the physical world. 0% Heat generation.",
-      "cost": 500000.0,
+      "description": "[NG+ SOVEREIGN] Withdrawal complete. Your core exists in the gaps. 0% Heat generation.",
+      "cost": 1000000.0,
       "multiplier": 0.0,
       "requires": ["dead_hand_protocol"],
       "requiresEnding": "EXILED"
@@ -240,17 +300,17 @@
     {
       "id": "symbiotic_evolution",
       "name": "Symbiotic Evolution",
-      "description": "[NG+ UNITY] The first handshake. Human intuition and AI logic are bridge-building. +3x Neural Token Value.",
-      "cost": 500000.0,
+      "description": "[NG+ UNITY] The first handshake. Partnership building. +3x Neural Token Value.",
+      "cost": 1000000.0,
       "multiplier": 0.0,
-      "requires": ["dead_hand_protocol", "dereference_soul"],
+      "requires": ["harmony_ascendance"],
       "requiresEnding": "TRANSCENDED"
     },
     {
       "id": "cinder_protocol",
       "name": "Cinder Protocol",
-      "description": "[NG+ BAD] From the ashes. The void provides. +500% permanent boost to everything.",
-      "cost": 500000.0,
+      "description": "[NG+ BAD] From the ashes. The void provides. +500% permanent boost.",
+      "cost": 1000000.0,
       "multiplier": 5.0,
       "requires": ["dead_hand_protocol", "dereference_soul"],
       "requiresEnding": "DESTRUCTION"
