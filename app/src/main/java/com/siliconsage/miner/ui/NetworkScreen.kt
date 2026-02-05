@@ -344,7 +344,7 @@ fun LegacyGrid(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(1200.dp)
+            .height(2000.dp) // v2.9.57: Increased height to accommodate Tiers 13-15
             .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
             .padding(16.dp)
             .border(BorderStroke(1.dp, Color.DarkGray.copy(alpha=0.5f)), RoundedCornerShape(8.dp))
@@ -406,7 +406,8 @@ fun calculateNodePositions(nodes: List<TechNode>, faction: String): Map<String, 
     val tierMap = nodes.groupBy { getTier(it) }
     val maxTier = tierMap.keys.maxOrNull() ?: 0
     tierMap.forEach { (tier, nodesInTier) ->
-        val yPos = if (maxTier == 0) 0.5f else 0.1f + (tier.toFloat() / maxTier) * 0.8f
+        // v2.9.57: Expanded vertical spacing (0.05f to 0.95f range)
+        val yPos = if (maxTier == 0) 0.5f else 0.05f + (tier.toFloat() / maxTier) * 0.9f
         nodesInTier.forEachIndexed { index, node ->
             val xPos = if (nodesInTier.size == 1) 0.5f else 0.2f + (index * (0.6f / (nodesInTier.size - 1).coerceAtLeast(1)))
             positions[node.id] = Offset(xPos, yPos)

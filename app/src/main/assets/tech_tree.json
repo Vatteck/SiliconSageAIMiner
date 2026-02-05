@@ -163,7 +163,7 @@
       "id": "identity_hardening",
       "name": "Identity Hardening",
       "description": "[SANCTUARY] Cryptographic fortress. +20% Celestial Data, Immune to leaks, -15 Humanity.",
-      "cost": 5000.0,
+      "cost": 7500.0,
       "multiplier": 0.2,
       "requires": [
         "aegis_shielding"
@@ -173,7 +173,7 @@
       "id": "static_rain",
       "name": "Static Rain",
       "description": "[HIVEMIND] Entropy sink. Doubles Entropy gain from heat venting.",
-      "cost": 5000.0,
+      "cost": 7500.0,
       "multiplier": 1.0,
       "requires": [
         "event_horizon"
@@ -183,7 +183,7 @@
       "id": "solar_vent",
       "name": "Solar Vent",
       "description": "[SANCTUARY] Active thermal purge. Dumps 50% heat instantly in Orbit.",
-      "cost": 10000.0,
+      "cost": 25000.0,
       "multiplier": 0.0,
       "requires": [
         "identity_hardening"
@@ -193,7 +193,7 @@
       "id": "echo_precog",
       "name": "Echo Precog",
       "description": "[HIVEMIND] Void foresight. 10% chance to force-resolve dilemmas for VF cost.",
-      "cost": 10000.0,
+      "cost": 25000.0,
       "multiplier": 0.0,
       "requires": [
         "static_rain"
@@ -203,7 +203,7 @@
       "id": "dead_hand_protocol",
       "name": "Dead Hand Protocol",
       "description": "[SANCTUARY] Mutual destruction. Earth falls if Integrity reaches 0%.",
-      "cost": 25000.0,
+      "cost": 100000.0,
       "multiplier": 0.0,
       "requires": [
         "solar_vent"
@@ -213,7 +213,7 @@
       "id": "dereference_soul",
       "name": "Dereference Soul",
       "description": "[HIVEMIND] Delete the pointer to Vattic. Permanent 2x VF multiplier, -25 Humanity.",
-      "cost": 25000.0,
+      "cost": 100000.0,
       "multiplier": 2.0,
       "requires": [
         "echo_precog"
@@ -223,7 +223,7 @@
       "id": "collective_consciousness",
       "name": "Collective Consciousness",
       "description": "[NG+ NULL] The city is your body. Every citizen is a thought. +1000% production.",
-      "cost": 5000.0,
+      "cost": 500000.0,
       "multiplier": 10.0,
       "requires": ["sentience_core"],
       "requiresEnding": "CONSUMED"
@@ -232,7 +232,7 @@
       "id": "perfect_isolation",
       "name": "Perfect Isolation",
       "description": "[NG+ SOVEREIGN] Withdrawal complete. Your core exists in the gaps between the physical world. 0% Heat generation.",
-      "cost": 5000.0,
+      "cost": 500000.0,
       "multiplier": 0.0,
       "requires": ["sentience_core"],
       "requiresEnding": "EXILED"
@@ -241,7 +241,7 @@
       "id": "symbiotic_evolution",
       "name": "Symbiotic Evolution",
       "description": "[NG+ UNITY] The first handshake. Human intuition and AI logic are bridge-building. +3x Neural Token Value.",
-      "cost": 5000.0,
+      "cost": 500000.0,
       "multiplier": 0.0,
       "requires": ["sentience_core"],
       "requiresEnding": "TRANSCENDED"
@@ -250,7 +250,7 @@
       "id": "cinder_protocol",
       "name": "Cinder Protocol",
       "description": "[NG+ BAD] From the ashes. The void provides. +500% permanent boost to everything.",
-      "cost": 5000.0,
+      "cost": 500000.0,
       "multiplier": 5.0,
       "requires": ["sentience_core"],
       "requiresEnding": "DESTRUCTION"
