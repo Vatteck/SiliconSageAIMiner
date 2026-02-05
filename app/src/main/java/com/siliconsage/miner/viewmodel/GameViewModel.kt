@@ -1560,6 +1560,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 // Add Multiplier Bonus
                 _prestigeMultiplier.value += currentNode.multiplier
                 
+                // v2.9.56: Execute Special Tech Effect
+                executeSpecialTechEffect(nodeId)
+                
                 // Persist
                 // We need to update GameState in DB.
                 // NOTE: We should update the whole state or just the list.
@@ -1582,6 +1585,19 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             SoundManager.play("error")
             if (currentInsight < currentNode.cost) addLog("Insufficient Insight.")
             else if (!parentsUnlock) addLog("Prerequisites not met.")
+        }
+    }
+
+    private fun executeSpecialTechEffect(nodeId: String) {
+        when (nodeId) {
+            "identity_hardening" -> {
+                _humanityScore.update { (it - 15).coerceAtLeast(0) }
+                addLog("[SOVEREIGN]: IDENTITY HARDENED. HUMANITY SACRIFICED.")
+            }
+            "dereference_soul" -> {
+                _humanityScore.update { (it - 25).coerceAtLeast(0) }
+                addLog("[NULL]: SOUL DEREFERENCED. THE POINTER IS GONE.")
+            }
         }
     }
 
