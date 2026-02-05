@@ -406,10 +406,26 @@ fun calculateNodePositions(nodes: List<TechNode>, faction: String): Map<String, 
     val tierMap = nodes.groupBy { getTier(it) }
     val maxTier = tierMap.keys.maxOrNull() ?: 0
     tierMap.forEach { (tier, nodesInTier) ->
-        // v2.9.57: Expanded vertical spacing (0.05f to 0.95f range)
         val yPos = if (maxTier == 0) 0.5f else 0.05f + (tier.toFloat() / maxTier) * 0.9f
         nodesInTier.forEachIndexed { index, node ->
-            val xPos = if (nodesInTier.size == 1) 0.5f else 0.2f + (index * (0.6f / (nodesInTier.size - 1).coerceAtLeast(1)))
+            // v2.9.59: Path-based X-positioning to prevent crossover mess
+            val nodeFaction = when {
+                node.description.contains("[HIVEMIND]") -> "HIVEMIND"
+                node.description.contains("[SANCTUARY]") -> "SANCTUARY"
+                node.description.contains("[NG+ NULL]") -> "HIVEMIND"
+                node.description.contains("[NG+ SOVEREIGN]") -> "SANCTUARY"
+                else -> "SHARED"
+            }
+
+            val xPos = when (nodeFaction) {
+                "HIVEMIND" -> 0.25f + (index * 0.1f) // Group Left
+                "SANCTUARY" -> 0.75f - (index * 0.1f) // Group Right
+                else -> {
+                    // Center Shared nodes
+                    if (nodesInTier.size == 1) 0.5f 
+                    else 0.4f + (index * (0.2f / (nodesInTier.size - 1).coerceAtLeast(1)))
+                }
+            }
             positions[node.id] = Offset(xPos, yPos)
         }
     }
