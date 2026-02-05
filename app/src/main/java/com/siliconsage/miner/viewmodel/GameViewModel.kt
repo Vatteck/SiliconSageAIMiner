@@ -1169,6 +1169,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.HYBRID_OVERCLOCK -> 150000.0
             UpgradeType.HARMONY_ASCENDANCE -> 500000.0
 
+            // --- PHASE 14: NG+ SPECIAL SKILLS ---
+            UpgradeType.COLLECTIVE_CONSCIOUSNESS -> 1000000.0
+            UpgradeType.PERFECT_ISOLATION -> 1000000.0
+            UpgradeType.SYMBIOTIC_EVOLUTION -> 1000000.0
+            UpgradeType.CINDER_PROTOCOL -> 1000000.0
+
             else -> 0.0
         }
         
