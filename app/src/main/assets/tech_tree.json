@@ -135,7 +135,8 @@
       "cost": 1000.0,
       "multiplier": 5.0,
       "requires": [
-        "global_assimilation"
+        "global_assimilation",
+        "the_void_gate"
       ]
     },
     {

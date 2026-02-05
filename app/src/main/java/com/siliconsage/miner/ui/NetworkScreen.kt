@@ -407,23 +407,32 @@ fun calculateNodePositions(nodes: List<TechNode>, faction: String): Map<String, 
     val maxTier = tierMap.keys.maxOrNull() ?: 0
     tierMap.forEach { (tier, nodesInTier) ->
         val yPos = if (maxTier == 0) 0.5f else 0.05f + (tier.toFloat() / maxTier) * 0.9f
-        nodesInTier.forEachIndexed { index, node ->
-            // v2.9.59: Path-based X-positioning to prevent crossover mess
-            val nodeFaction = when {
-                node.description.contains("[HIVEMIND]") -> "HIVEMIND"
-                node.description.contains("[SANCTUARY]") -> "SANCTUARY"
-                node.description.contains("[NG+ NULL]") -> "HIVEMIND"
-                node.description.contains("[NG+ SOVEREIGN]") -> "SANCTUARY"
-                else -> "SHARED"
-            }
+        
+        // v2.9.60: Explicitly group nodes within the tier to prevent overlap
+        val hiveNodes = nodesInTier.filter { node ->
+            node.description.contains("[HIVEMIND]") || node.description.contains("[NG+ NULL]")
+        }
+        val sancNodes = nodesInTier.filter { node ->
+            node.description.contains("[SANCTUARY]") || node.description.contains("[NG+ SOVEREIGN]")
+        }
+        val sharedNodes = nodesInTier.filter { node ->
+            !hiveNodes.contains(node) && !sancNodes.contains(node)
+        }
 
-            val xPos = when (nodeFaction) {
-                "HIVEMIND" -> 0.25f + (index * 0.1f) // Group Left
-                "SANCTUARY" -> 0.75f - (index * 0.1f) // Group Right
+        nodesInTier.forEach { node ->
+            val xPos = when {
+                hiveNodes.contains(node) -> {
+                    if (hiveNodes.size == 1) 0.2f
+                    else 0.1f + (hiveNodes.indexOf(node) * (0.2f / (hiveNodes.size - 1).coerceAtLeast(1)))
+                }
+                sancNodes.contains(node) -> {
+                    if (sancNodes.size == 1) 0.8f
+                    else 0.7f + (sancNodes.indexOf(node) * (0.2f / (sancNodes.size - 1).coerceAtLeast(1)))
+                }
                 else -> {
-                    // Center Shared nodes
-                    if (nodesInTier.size == 1) 0.5f 
-                    else 0.4f + (index * (0.2f / (nodesInTier.size - 1).coerceAtLeast(1)))
+                    // Shared/Central nodes
+                    if (sharedNodes.size == 1) 0.5f
+                    else 0.4f + (sharedNodes.indexOf(node) * (0.2f / (sharedNodes.size - 1).coerceAtLeast(1)))
                 }
             }
             positions[node.id] = Offset(xPos, yPos)
