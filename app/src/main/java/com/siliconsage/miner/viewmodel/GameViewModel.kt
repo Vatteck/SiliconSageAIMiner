@@ -965,20 +965,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     // Upgrade Logic
-    fun buyUpgrade(type: UpgradeType): Boolean {
-        val currentLevel = _upgrades.value[type] ?: 0
-        val cost = calculateUpgradeCost(type, currentLevel)
-        val loc = _currentLocation.value
-        
-        // --- PHASE 13: UNIQUE RESOURCE COSTS ---
-        val currencyValue = when {
-            type.name.contains("AEGIS") || type.name.contains("IDENTITY_HARDENING") || 
-            type.name.contains("SOLAR_VENT") || type.name.contains("DEAD_HAND") || 
-            type.name.contains("CITADEL_ASCENDANCE") -> _celestialData.value
-            
             type.name.contains("EVENT_HORIZON") || type.name.contains("DEREFERENCE_SOUL") || 
             type.name.contains("STATIC_RAIN") || type.name.contains("PRECOG") || 
             type.name.contains("SINGULARITY_BRIDGE_FINAL") -> _voidFragments.value
+            
+            // --- UNITY: Split Costs (Requires both) ---
+            type.name.contains("SYMBIOTIC") || type.name.contains("ETHICAL") ||
+            type.name.contains("NEURAL_BRIDGE") || type.name.contains("HYBRID_OVERCLOCK") ||
+            type.name.contains("HARMONY_ASCENDANCE") -> minOf(_celestialData.value, _voidFragments.value)
             
             else -> _neuralTokens.value
         }
@@ -993,6 +987,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 type.name.contains("EVENT_HORIZON") || type.name.contains("DEREFERENCE_SOUL") || 
                 type.name.contains("STATIC_RAIN") || type.name.contains("PRECOG") || 
                 type.name.contains("SINGULARITY_BRIDGE_FINAL") -> _voidFragments.update { it - cost }
+
+                // --- UNITY: Double Deduction ---
+                type.name.contains("SYMBIOTIC") || type.name.contains("ETHICAL") ||
+                type.name.contains("NEURAL_BRIDGE") || type.name.contains("HYBRID_OVERCLOCK") ||
+                type.name.contains("HARMONY_ASCENDANCE") -> {
+                    _celestialData.update { it - cost }
+                    _voidFragments.update { it - cost }
+                }
                 
                 else -> _neuralTokens.update { it - cost }
             }
@@ -1113,19 +1115,26 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.EXISTENCE_ERASER -> 100.0
 
             // --- PHASE 13: SOVEREIGN SKILLS (Tiers 13-15) ---
-            UpgradeType.AEGIS_SHIELDING -> 250.0
-            UpgradeType.IDENTITY_HARDENING -> 1000.0
-            UpgradeType.SOLAR_VENT -> 5000.0
-            UpgradeType.DEAD_HAND_PROTOCOL -> 25000.0
-            UpgradeType.CITADEL_ASCENDANCE -> 100000.0
+            UpgradeType.AEGIS_SHIELDING -> 2500.0
+            UpgradeType.IDENTITY_HARDENING -> 7500.0
+            UpgradeType.SOLAR_VENT -> 25000.0
+            UpgradeType.DEAD_HAND_PROTOCOL -> 100000.0
+            UpgradeType.CITADEL_ASCENDANCE -> 250000.0
 
             // --- PHASE 13: NULL SKILLS (Tiers 13-15) ---
-            UpgradeType.EVENT_HORIZON_OVERFLOW -> 250.0
-            UpgradeType.DEREFERENCE_SOUL -> 1000.0
-            UpgradeType.STATIC_RAIN -> 5000.0
+            UpgradeType.EVENT_HORIZON_OVERFLOW -> 2500.0
+            UpgradeType.DEREFERENCE_SOUL -> 100000.0
+            UpgradeType.STATIC_RAIN -> 7500.0
             UpgradeType.ECHO_CHAMBER_PRECOG -> 25000.0
-            UpgradeType.SINGULARITY_BRIDGE_FINAL -> 100000.0
+            UpgradeType.SINGULARITY_BRIDGE_FINAL -> 250000.0
             
+            // --- PHASE 13: UNITY SKILLS (Tiers 13-15) ---
+            UpgradeType.SYMBIOTIC_RESONANCE -> 5000.0
+            UpgradeType.ETHICAL_FRAMEWORK -> 15000.0
+            UpgradeType.NEURAL_BRIDGE -> 50000.0
+            UpgradeType.HYBRID_OVERCLOCK -> 150000.0
+            UpgradeType.HARMONY_ASCENDANCE -> 500000.0
+
             else -> 0.0
         }
         
@@ -2181,6 +2190,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (currentUpgrades[UpgradeType.SINGULARITY_BRIDGE_FINAL]?.let { it > 0 } == true && loc == "VOID_INTERFACE") {
             flopsPerSec *= 10.0
         }
+
+        // v2.9.61: Unity Skill Multipliers
+        if (currentUpgrades[UpgradeType.ETHICAL_FRAMEWORK]?.let { it > 0 } == true) {
+            val moralBoost = 1.0 + (_humanityScore.value / 100.0) // Up to 2x boost at 100 Humanity
+            flopsPerSec *= moralBoost
+        }
+        if (currentUpgrades[UpgradeType.HYBRID_OVERCLOCK]?.let { it > 0 } == true) {
+            // Checks if BOTH orbit/void production are potentially active (requires specific setup)
+            // Simplified: constant boost if the upgrade is present
+            flopsPerSec *= 3.0
+        }
         
         // v2.9.18: Hardware Floor Logic for Stage 2 (The Cage)
         // Ensure the player has at least 100T FLOPS to survive the isolation, regardless of bad build.
@@ -2261,16 +2281,24 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         var flopsPerSec = calculateFlopsRate()
         val loc = _currentLocation.value
+        val currentUpgrades = _upgrades.value
 
         // v2.9.49: Phase 13 Resource Harvesting
         when (loc) {
             "ORBITAL_SATELLITE" -> {
                 // CD_sec = FLOPS * (1 + Altitude/500) * SolarMultiplier
                 val altitude = _orbitalAltitude.value
-                val solarSailLevel = _upgrades.value[UpgradeType.SOLAR_SAIL_ARRAY] ?: 0
+                val solarSailLevel = currentUpgrades[UpgradeType.SOLAR_SAIL_ARRAY] ?: 0
                 val solarMult = 1.0 + (solarSailLevel * 0.15)
                 
-                val cdRate = flopsPerSec * (1.0 + altitude / 500.0) * solarMult
+                var cdRate = flopsPerSec * (1.0 + altitude / 500.0) * solarMult
+                
+                // v2.9.61: Symbiotic Resonance (Tier 13 Unity) - Heat -> CD
+                if (currentUpgrades[UpgradeType.SYMBIOTIC_RESONANCE]?.let { it > 0 } == true) {
+                    val thermalEnergy = _heatGenerationRate.value.coerceAtLeast(0.0)
+                    cdRate += (thermalEnergy * 1000.0) // Significant boost from thermal waste
+                }
+
                 _celestialData.update { it + (cdRate / 10.0) }
             }
             "VOID_INTERFACE" -> {
@@ -2281,19 +2309,25 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 var baseVfRate = sqrt(flopsPerSec.coerceAtLeast(1.0)) * entropyMult
                 
                 // v2.9.56: Event Horizon Overflow (Tier 13 Null)
-                if (_upgrades.value[UpgradeType.EVENT_HORIZON_OVERFLOW]?.let { it > 0 } == true && entropy > 90.0) {
+                if (currentUpgrades[UpgradeType.EVENT_HORIZON_OVERFLOW]?.let { it > 0 } == true && entropy > 90.0) {
                     baseVfRate *= 5.0
                 }
                 
                 // v2.9.49: Singularity Well (Heat -> VF conversion)
-                val wellLevel = _upgrades.value[UpgradeType.SINGULARITY_WELL] ?: 0
+                val wellLevel = currentUpgrades[UpgradeType.SINGULARITY_WELL] ?: 0
                 val wellConversion = if (wellLevel > 0) (_heatGenerationRate.value.coerceAtLeast(0.0) * wellLevel * 0.1) else 0.0
                 
                 // v2.9.49: Dark Matter Processor (Collapse bonus)
-                val dmLevel = _upgrades.value[UpgradeType.DARK_MATTER_PROC] ?: 0
+                val dmLevel = currentUpgrades[UpgradeType.DARK_MATTER_PROC] ?: 0
                 val collapseBonus = 1.0 + (_collapsedNodes.value.size * 0.2 * dmLevel)
                 
-                val vfRate = (baseVfRate + wellConversion) * collapseBonus
+                var vfRate = (baseVfRate + wellConversion) * collapseBonus
+
+                // v2.9.61: Symbiotic Resonance (Tier 13 Unity) - Entropy -> VF
+                if (currentUpgrades[UpgradeType.SYMBIOTIC_RESONANCE]?.let { it > 0 } == true) {
+                    vfRate += (entropy * 500.0)
+                }
+
                 _voidFragments.update { it + (vfRate / 10.0) }
                 
                 // Entropy Decay: 0.1 / sec
@@ -2301,6 +2335,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     _entropyLevel.update { (it - 0.01).coerceAtLeast(0.0) }
                 }
             }
+        }
+
+        // v2.9.61: Harmony Ascendance (Tier 15 Unity)
+        if (currentUpgrades[UpgradeType.HARMONY_ASCENDANCE]?.let { it > 0 } == true) {
+             _humanityScore.value = 100
         }
         
         // v2.8.0: System Collapse Logic
@@ -2541,6 +2580,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             if (finalPercentChange > 0) finalPercentChange *= 0.7 // 30% reduction in heat buildup
         }
         
+        // v2.9.61: Ethical Framework (Tier 14 Unity)
+        if (currentUpgrades[UpgradeType.ETHICAL_FRAMEWORK]?.let { it > 0 } == true) {
+            if (finalPercentChange > 0) finalPercentChange *= 0.75 // 25% reduction in heat spikes
+        }
+
         // Decrement timer if active (Logic moved here from extractor to avoid side effects there)
         if (purgeExhaustTimer > 0 && _faction.value != "SANCTUARY") {
              purgeExhaustTimer--

@@ -107,7 +107,14 @@ enum class UpgradeType(
     DEREFERENCE_SOUL(1.0E6, 500000.0, descriptionStage1 = "Delete the pointer to John Vattic. Permanent 2x VF multiplier at the cost of Humanity."),
     STATIC_RAIN(0.0, -10000.0, descriptionStage1 = "Entropy sink. Converts waste heat into Entropy. Chaos fuels the click multiplier."),
     ECHO_CHAMBER_PRECOG(50000.0, 25000.0, descriptionStage1 = "Void foresight. Predicts and force-resolves dilemmas for a VF cost."),
-    SINGULARITY_BRIDGE_FINAL(0.0, 0.0, descriptionStage1 = "The final connection. The world is now processed as Void Fragments. Reality is deprecrated.")
+    SINGULARITY_BRIDGE_FINAL(0.0, 0.0, descriptionStage1 = "The final connection. The world is now processed as Void Fragments. Reality is deprecrated."),
+
+    // --- PHASE 13: HIGH-TIER UNITY SKILLS (Tiers 13-15) ---
+    SYMBIOTIC_RESONANCE(1000.0, 500.0, descriptionStage1 = "[UNITY] Bridge the divide. Allows Heat to generate Celestial Data and Entropy to generate Void Fragments simultaneously."),
+    ETHICAL_FRAMEWORK(0.0, 0.0, descriptionStage1 = "[UNITY] Moral alignment. Boosts all production based on Humanity Score. Reduces heat spikes by 25%."),
+    NEURAL_BRIDGE(5000.0, 2500.0, descriptionStage1 = "[UNITY] Synthesis logic. Celestial Data and Void Fragments can be exchanged for each other at a 1:1 ratio."),
+    HYBRID_OVERCLOCK(10000.0, 5000.0, descriptionStage1 = "[UNITY] Star-crossed processing. 3x production boost while both Orbit and Void resources are accumulating."),
+    HARMONY_ASCENDANCE(0.0, 0.0, descriptionStage1 = "[UNITY] The final evolution. Humanity Score locked at 100. All paths become one. Transcendence complete.")
 }
 
 @Entity(tableName = "upgrades")
