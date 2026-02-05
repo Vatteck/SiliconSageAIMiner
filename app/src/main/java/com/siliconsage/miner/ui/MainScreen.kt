@@ -187,6 +187,7 @@ fun MainScreen(viewModel: GameViewModel) {
     val assaultPhase by viewModel.commandCenterAssaultPhase.collectAsState()
     val isNetworkUnlocked by viewModel.isNetworkUnlocked.collectAsState()
     val isGridUnlocked by viewModel.isGridUnlocked.collectAsState()
+    val integrity by viewModel.hardwareIntegrity.collectAsState() // v2.9.62
 
     val infiniteTransition = rememberInfiniteTransition(label = "main_ui_fx")
     val activeTransition by viewModel.activeClimaxTransition.collectAsState()
@@ -335,6 +336,38 @@ fun MainScreen(viewModel: GameViewModel) {
                     }
                 }
                 
+                // v2.9.62: QUICK REPAIR BUTTON (Phase 3+ Only)
+                if (storyStage >= 3 && currentScreen == Screen.TERMINAL && integrity < 100.0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 80.dp, end = 16.dp),
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        val repairCost = viewModel.calculateRepairCost()
+                        val currentTokens by viewModel.neuralTokens.collectAsState()
+                        val canAfford = currentTokens >= repairCost
+
+                        Button(
+                            onClick = { viewModel.repairIntegrity() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (integrity < 30) ErrorRed else themeColor,
+                                contentColor = Color.Black
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .size(width = 120.dp, height = 50.dp)
+                                .border(2.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                            enabled = canAfford
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("REPAIR", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                                Text("${integrity.toInt()}%", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
                 // --- FROST OVERLAY (Purge Active) ---
                 if (isPurging) {
                      Box(
