@@ -64,6 +64,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
     
     val unlockedNodes by viewModel.unlockedTechNodes.collectAsState()
     val unlockedPerks by viewModel.unlockedPerks.collectAsState()
+    val upgrades by viewModel.upgrades.collectAsState()
     val potential = viewModel.calculatePotentialPrestige()
     val themeColor by viewModel.themeColor.collectAsState()
     
@@ -233,7 +234,6 @@ fun NetworkScreen(viewModel: GameViewModel) {
                 }
                 
                 // v2.9.61: Neural Bridge Resource Exchange
-                val upgrades by viewModel.upgrades.collectAsState()
                 if (upgrades[UpgradeType.NEURAL_BRIDGE]?.let { it > 0 } == true) {
                     item {
                         Column(
