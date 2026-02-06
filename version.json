@@ -1,6 +1,7 @@
 {
   "version": "2.9.72-dev",
-  "build": 220,
+  "build": 221,
   "date": "2026-02-05",
-  "changes": "Progressive terminology reveal (Hash/Credit -> Telemetry/Data -> FLOPS/Neural); Fixed full-width terminal background scaling; Optimized dilemma buttons for small displays using FlowRow; Refactored early-game manual actions to fit technician role-play."
+  "changes": "UI-Scaling/Early-game lore fixes",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.72-dev"
 }

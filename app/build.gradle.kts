@@ -17,7 +17,7 @@ android {
         // ║  DO NOT MANUALLY EDIT VERSION BELOW                           ║
         // ║  Use ./release.sh <version> to bump versions automatically    ║
         // ╚═══════════════════════════════════════════════════════════════╝
-        versionCode = 220
+        versionCode = 221
         versionName = "2.9.72-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
