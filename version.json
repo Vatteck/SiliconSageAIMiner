@@ -1,8 +1,8 @@
 {
-  "version": "2.9.75-dev",
-  "build": 226,
-  "date": "2026-02-05",
-  "changes": "Narrative terminology scrub, lore expansion (MEM_006-MEM_015), GTC Audit challenges, and PID 1 identity migration.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.75-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.75-dev/Sage_2.9.75-dev.apk"
+  "version": "2.9.76-dev",
+  "build": 227,
+  "date": "2026-02-06",
+  "changes": "UI performance optimizations for News Ticker and Terminal scrolling.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.76-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.76-dev/Sage_2.9.76-dev.apk"
 }

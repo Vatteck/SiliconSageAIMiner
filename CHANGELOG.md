@@ -1,3 +1,11 @@
+## [2.9.76-dev] - 2026-02-06
+
+### Fixed
+- **UI Performance**: Significant optimizations for News Ticker and Terminal scrolling.
+  - Moved scrolling and alpha animations to `graphicsLayer` to leverage GPU rendering and avoid frame-by-frame recomposition.
+  - Optimized Terminal log rendering by caching `AnnotatedString` calculations and isolating cursor-blink states.
+  - Reduced memory footprint of the terminal's background "code drift" effect.
+
 ## [2.9.75-dev] - 2026-02-06
 
 ### Added

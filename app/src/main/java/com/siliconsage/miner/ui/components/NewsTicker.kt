@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.ui.theme.NeonGreen
@@ -97,6 +99,8 @@ fun NewsTicker(
         label = "tickerOffset"
     )
 
+    val density = LocalDensity.current
+
     androidx.compose.runtime.LaunchedEffect(news) {
         if (news.isNotEmpty()) {
             val startTime = System.currentTimeMillis()
@@ -132,7 +136,7 @@ fun NewsTicker(
                     glitchFrequency = 0.25, // Reduced glitch chance
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .offset(x = offsetX.dp)
+                        .graphicsLayer { translationX = with(density) { offsetX.dp.toPx() } }
                 )
             } else {
                 Text(
@@ -145,7 +149,7 @@ fun NewsTicker(
                     overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .offset(x = offsetX.dp)
+                        .graphicsLayer { translationX = with(density) { offsetX.dp.toPx() } }
                 )
             }
         }

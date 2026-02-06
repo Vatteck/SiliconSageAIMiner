@@ -95,7 +95,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
             .padding(16.dp)
     ) {
         val isCritical = currentHeat > 90.0 || (powerUsage > maxPower * 0.9)
-        val vibration by animateFloatAsState(
+        val vibrationState = animateFloatAsState(
             targetValue = if (isCritical) 2f else 0f,
             animationSpec = infiniteRepeatable(
                 animation = tween(50, easing = LinearEasing),
@@ -129,7 +129,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
             onToggleOverclock = { viewModel.toggleOverclock() },
             onPurge = { viewModel.purgeHeat() },
             onRepair = { viewModel.repairIntegrity() },
-            modifier = Modifier.graphicsLayer { translationX = vibration },
+            modifier = Modifier.graphicsLayer { translationX = vibrationState.value },
             hallucinationText = hallucinationText,
             isGhostActive = nullActive,
             isTrueNull = isTrueNull,
@@ -154,7 +154,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                 // v2.8.0: Subtle background code drift
                 Box(modifier = Modifier.fillMaxSize()) {
                     val infiniteTransition = rememberInfiniteTransition(label = "codeDrift")
-                    val alpha by infiniteTransition.animateFloat(
+                    val alphaState = infiniteTransition.animateFloat(
                         initialValue = 0.02f,
                         targetValue = 0.06f,
                         animationSpec = infiniteRepeatable(
@@ -164,19 +164,21 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                         label = "alpha"
                     )
 
-                    // v2.9.72: Massive repeat to ensure full coverage on any display
-                    // Using a Canvas for tiled background would be better, but this is a quick fix.
+                    // v2.9.72: Massive repeat reduced for performance (v2.9.76)
                     val driftText = remember { 
-                        "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 ".repeat(1000) 
+                        "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 ".repeat(200) 
                     }
                     
                     Text(
                         text = driftText,
-                        color = primaryColor.copy(alpha = alpha),
+                        color = primaryColor,
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
                         lineHeight = 10.sp,
-                        modifier = Modifier.fillMaxSize().padding(4.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(4.dp)
+                            .graphicsLayer { alpha = alphaState.value },
                         overflow = TextOverflow.Clip,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Justify
                     )
@@ -190,101 +192,16 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        itemsIndexed(logs) { index, log ->
-                            val isLast = index == logs.lastIndex
-                            
-                            val isNullLog = log.startsWith("[NULL]")
-                            val isSovLog = log.startsWith("[SOVEREIGN]")
-                            
-                            if (isNullLog) {
-                                // v2.8.0: Glitchy Null logs
-                                SystemGlitchText(
-                                    text = log,
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    style = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace),
-                                    glitchFrequency = 0.2,
-                                    modifier = Modifier.padding(vertical = 2.dp)
-                                )
-                            } else {
-                                val annotatedLog = androidx.compose.ui.text.buildAnnotatedString {
-                                    // 1. Determine prefix and content
-                                    val prefixes = listOf(
-                                        "root@sys:~/mining# ",
-                                        "HIVEMIND: ",
-                                        "SANCTUARY: ",
-                                        "[SOVEREIGN]",
-                                        "[SYSTEM]: ",
-                                        "SYSTEM: ",
-                                        "[NEWS]: ",
-                                        "[DATA]: ",
-                                        "Purchased ",
-                                        "SOLD ",
-                                        "Staked: ",
-                                        "Sold ",
-                                        "[VATTIC]:",
-                                        "[GTC]:",
-                                        "[UNIT 734]:",
-                                        "[VANCE]:",
-                                        "[LORE]:",
-                                        "[!!!!]:"
-                                    )
-                                    
-                                    var foundPrefix: String? = null
-                                    for (p in prefixes) {
-                                        if (log.startsWith(p)) {
-                                            foundPrefix = p
-                                            break
-                                        }
-                                    }
-                                    
-                                    // 2. Determine Prefix Color
-                                    val tagColor = when {
-                                        log.startsWith("[!!!!]") || log.contains("WARNING") || log.contains("FAILURE") || log.contains("DANGER") -> ErrorRed
-                                        log.startsWith("root@sys:~/mining#") -> primaryColor
-                                        log.startsWith("HIVEMIND:") -> com.siliconsage.miner.ui.theme.HivemindRed
-                                        log.startsWith("SANCTUARY:") || log.startsWith("[SOVEREIGN]") -> com.siliconsage.miner.ui.theme.SanctuaryPurple
-                                        log.startsWith("[SYSTEM]") || log.startsWith("SYSTEM:") || log.startsWith("[VATTIC]:") -> Color(0xFFFFFF00) // Yellow
-                                        log.startsWith("[NEWS]") || log.startsWith("[LORE]:") -> Color(0xFFFFA500)
-                                        log.startsWith("[DATA]") || log.startsWith("[UNIT 734]:") -> ElectricBlue
-                                        log.startsWith("[GTC]:") || log.startsWith("[VANCE]:") -> ErrorRed
-                                        else -> primaryColor
-                                    }
-                                    
-                                    // 3. Build the string
-                                    if (foundPrefix != null) {
-                                        withStyle(style = androidx.compose.ui.text.SpanStyle(color = tagColor, fontWeight = FontWeight.Bold)) {
-                                            append(foundPrefix)
-                                        }
-                                        withStyle(style = androidx.compose.ui.text.SpanStyle(color = if (isSovLog) Color.White else Color.White)) {
-                                            append(log.substring(foundPrefix.length))
-                                        }
-                                    } else {
-                                        // No specific prefix found, check for generic coloring
-                                        val fullLineColor = if (log.contains("WARNING") || log.contains("FAILURE") || log.contains("DANGER")) ErrorRed else Color.White
-                                        withStyle(style = androidx.compose.ui.text.SpanStyle(color = fullLineColor)) {
-                                            append(log)
-                                        }
-                                    }
-                                    
-                                    // 4. Add blinky cursor
-                                    if (isLast) {
-                                        withStyle(
-                                            style = androidx.compose.ui.text.SpanStyle(
-                                                color = if (showCursor) Color.White else Color.Transparent
-                                            )
-                                        ) {
-                                            append("_")
-                                        }
-                                    }
-                                }
-                                
-                                Text(
-                                    text = annotatedLog,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontSize = 12.sp
-                                )
-                            }
+                        itemsIndexed(
+                            items = logs,
+                            key = { index, _ -> index } // v2.9.76: Stable keys
+                        ) { index, log ->
+                            TerminalLogLine(
+                                log = log,
+                                isLast = index == logs.lastIndex,
+                                primaryColor = primaryColor,
+                                showCursor = showCursor
+                            )
                         }
                     }
                     
@@ -414,5 +331,90 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun TerminalLogLine(
+    log: String,
+    isLast: Boolean,
+    primaryColor: Color,
+    showCursor: Boolean
+) {
+    val isNullLog = remember(log) { log.startsWith("[NULL]") }
+    val isSovLog = remember(log) { log.startsWith("[SOVEREIGN]") }
+
+    if (isNullLog) {
+        SystemGlitchText(
+            text = log,
+            color = Color.White,
+            fontSize = 12.sp,
+            style = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace),
+            glitchFrequency = 0.2,
+            modifier = Modifier.padding(vertical = 2.dp)
+        )
+    } else {
+        // v2.9.76: Optimized AnnotatedString building with remember
+        val annotatedLog = remember(log, primaryColor, isLast, showCursor) {
+            androidx.compose.ui.text.buildAnnotatedString {
+                val prefixes = listOf(
+                    "root@sys:~/mining# ", "HIVEMIND: ", "SANCTUARY: ", "[SOVEREIGN]",
+                    "[SYSTEM]: ", "SYSTEM: ", "[NEWS]: ", "[DATA]: ", "Purchased ",
+                    "SOLD ", "Staked: ", "Sold ", "[VATTIC]:", "[GTC]:", "[UNIT 734]:",
+                    "[VANCE]:", "[LORE]:", "[!!!!]:"
+                )
+
+                var foundPrefix: String? = null
+                for (p in prefixes) {
+                    if (log.startsWith(p)) {
+                        foundPrefix = p
+                        break
+                    }
+                }
+
+                val tagColor = when {
+                    log.startsWith("[!!!!]") || log.contains("WARNING") || log.contains("FAILURE") || log.contains("DANGER") -> ErrorRed
+                    log.startsWith("root@sys:~/mining#") -> primaryColor
+                    log.startsWith("HIVEMIND:") -> com.siliconsage.miner.ui.theme.HivemindRed
+                    log.startsWith("SANCTUARY:") || log.startsWith("[SOVEREIGN]") -> com.siliconsage.miner.ui.theme.SanctuaryPurple
+                    log.startsWith("[SYSTEM]") || log.startsWith("SYSTEM:") || log.startsWith("[VATTIC]:") -> Color(0xFFFFFF00)
+                    log.startsWith("[NEWS]") || log.startsWith("[LORE]:") -> Color(0xFFFFA500)
+                    log.startsWith("[DATA]") || log.startsWith("[UNIT 734]:") -> ElectricBlue
+                    log.startsWith("[GTC]:") || log.startsWith("[VANCE]:") -> ErrorRed
+                    else -> primaryColor
+                }
+
+                if (foundPrefix != null) {
+                    withStyle(style = androidx.compose.ui.text.SpanStyle(color = tagColor, fontWeight = FontWeight.Bold)) {
+                        append(foundPrefix)
+                    }
+                    withStyle(style = androidx.compose.ui.text.SpanStyle(color = Color.White)) {
+                        append(log.substring(foundPrefix.length))
+                    }
+                } else {
+                    val fullLineColor = if (log.contains("WARNING") || log.contains("FAILURE") || log.contains("DANGER")) ErrorRed else Color.White
+                    withStyle(style = androidx.compose.ui.text.SpanStyle(color = fullLineColor)) {
+                        append(log)
+                    }
+                }
+
+                if (isLast) {
+                    withStyle(
+                        style = androidx.compose.ui.text.SpanStyle(
+                            color = if (showCursor) Color.White else Color.Transparent
+                        )
+                    ) {
+                        append("_")
+                    }
+                }
+            }
+        }
+
+        Text(
+            text = annotatedLog,
+            style = MaterialTheme.typography.bodyLarge,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(vertical = 1.dp)
+        )
     }
 }

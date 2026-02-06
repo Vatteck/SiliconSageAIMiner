@@ -17,8 +17,8 @@ android {
         // ║  DO NOT MANUALLY EDIT VERSION BELOW                           ║
         // ║  Use ./release.sh <version> to bump versions automatically    ║
         // ╚═══════════════════════════════════════════════════════════════╝
-        versionCode = 226
-        versionName = "2.9.75-dev"
+        versionCode = 227
+        versionName = "2.9.76-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
