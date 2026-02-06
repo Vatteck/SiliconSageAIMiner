@@ -1,7 +1,7 @@
 {
-  "version": "2.9.70-dev",
-  "build": 217,
+  "version": "2.9.71-dev",
+  "build": 219,
   "date": "2026-02-05",
-  "changes": "Faction-select screen bug fixes",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.70-dev"
+  "changes": "Legacy device fixes",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.71-dev"
 }
