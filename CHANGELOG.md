@@ -1,3 +1,12 @@
+## [2.9.73-dev] - 2026-02-05
+
+### Added
+- **Direct In-App Updates**: Implemented an automated installer that downloads and installs APK updates directly from GitHub without requiring a browser redirect.
+
+### Fixed
+- **Terminal UI**: Resolved background code drift scaling issue where the binary pattern did not extend to the full width on wide displays.
+- **Story Continuity**: Progressive terminology reveal Phase 2 - further refinement of Stage 0/1 technical jargon.
+
 ## [2.9.71-dev] - 2026-02-05
 
 ### Changed

@@ -1,7 +1,8 @@
 {
-  "version": "2.9.72-dev",
-  "build": 221,
+  "version": "2.9.73-dev",
+  "build": 222,
   "date": "2026-02-05",
-  "changes": "UI-Scaling/Early-game lore fixes",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.72-dev"
+  "changes": "Implemented Direct In-App Update Installer (No more browser redirect); Fixed terminal background full-width scaling; Progressive terminology reveal phase 2.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.73-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.73-dev/Sage_2.9.73-dev.apk"
 }

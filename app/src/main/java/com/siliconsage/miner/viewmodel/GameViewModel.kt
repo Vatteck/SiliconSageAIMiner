@@ -4214,11 +4214,34 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun startUpdateDownload(context: android.content.Context) {
         val info = _updateInfo.value ?: return
         
-        // Browser Redirect Flow
-        UpdateManager.openReleasePage(context, "https://github.com/Vatteck/SiliconSageAIMiner/releases")
-        
-        // Hide update prompt as we've handled it
-        _updateInfo.value = null
+        // v2.9.73: Direct In-App Installation Flow
+        if (info.downloadUrl.isNotEmpty()) {
+            _isUpdateDownloading.value = true
+            _updateDownloadProgress.value = 0f
+            
+            UpdateManager.downloadUpdate(
+                url = info.downloadUrl,
+                context = context,
+                onProgress = { progress ->
+                    _updateDownloadProgress.value = progress
+                },
+                onComplete = { file ->
+                    viewModelScope.launch(Dispatchers.Main) {
+                        _isUpdateDownloading.value = false
+                        if (file != null) {
+                            UpdateManager.installUpdate(context, file)
+                        } else {
+                            addLog("[SYSTEM]: ERROR: Update download failed.")
+                        }
+                        _updateInfo.value = null // Close overlay after attempt
+                    }
+                }
+            )
+        } else {
+            // Fallback to release page if no direct download URL provided
+            UpdateManager.openReleasePage(context, info.url.ifEmpty { "https://github.com/Vatteck/SiliconSageAIMiner/releases" })
+            _updateInfo.value = null
+        }
     }
     
     fun debugTriggerDiagnostics() {

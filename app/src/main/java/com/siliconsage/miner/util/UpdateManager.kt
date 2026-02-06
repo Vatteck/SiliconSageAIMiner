@@ -22,7 +22,8 @@ data class UpdateInfo(
     val build: Int = 0,
     val date: String = "",
     val changes: String = "",
-    val url: String = "" // Optional for manual redirect
+    val url: String = "", // Release page URL
+    val downloadUrl: String = "" // Direct APK download URL
 )
 
 object UpdateManager {
