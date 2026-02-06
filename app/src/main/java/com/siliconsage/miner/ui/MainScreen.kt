@@ -84,6 +84,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.data.UpgradeType
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import android.graphics.Paint
+import android.graphics.Typeface
+import androidx.compose.ui.graphics.toArgb
 import com.siliconsage.miner.ui.components.AuditChallengeOverlay
 import com.siliconsage.miner.ui.components.FiftyOneAttackOverlay
 import com.siliconsage.miner.ui.components.AirdropButton
@@ -531,7 +536,7 @@ fun HeaderSection(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    // v2.9.79: Optimized state collection inside HeaderSection to avoid parent recomposition
+    // v2.9.83: OVERHAUL: Optimized state collection and high-density HUD
     val flops by viewModel.flops.collectAsState()
     val neuralTokens by viewModel.neuralTokens.collectAsState()
     val heat by viewModel.currentHeat.collectAsState()
@@ -543,660 +548,219 @@ fun HeaderSection(
     val isPurging by viewModel.isPurgingHeat.collectAsState()
     val integrity by viewModel.hardwareIntegrity.collectAsState()
     val securityLevel by viewModel.securityLevel.collectAsState()
-    val systemTitle by viewModel.systemTitle.collectAsState()
     val playerTitle by viewModel.playerTitle.collectAsState()
     val playerRank by viewModel.playerRankTitle.collectAsState()
     val isThermalLockout by viewModel.isThermalLockout.collectAsState()
     val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
     val lockoutTimer by viewModel.lockoutTimer.collectAsState()
     val faction by viewModel.faction.collectAsState()
-    val hallucinationText by viewModel.hallucinationText.collectAsState()
     val isTrueNull by viewModel.isTrueNull.collectAsState()
     val isSovereign by viewModel.isSovereign.collectAsState()
     val isBreachActive by viewModel.isBreachActive.collectAsState()
-    val isGhostActive by viewModel.nullActive.collectAsState()
 
-    // Derived values with remember to prevent re-parsing on every recomposition
-    val hText = hallucinationText
+    // Derived values
     val flopsStr = remember(flops) { viewModel.formatLargeNumber(flops) }
     val neuralStr = remember(neuralTokens) { viewModel.formatLargeNumber(neuralTokens) }
     val powerKw = remember(powerUsage) { viewModel.formatPower(powerUsage) }
     val maxPowerKw = remember(maxPower) { viewModel.formatPower(maxPower) }
-    val flopsRateStr = remember(flopsRate) { viewModel.formatLargeNumber(flopsRate) }
-    val pwrColor = remember(powerUsage, maxPower) { 
-        if (powerUsage > maxPower * 0.9) ErrorRed else Color(0xFFFFD700) 
-    }
+    val pwrColor = if (powerUsage > maxPower * 0.9) ErrorRed else Color(0xFFFFD700)
 
     val currentLocation by viewModel.currentLocation.collectAsState()
-    val celestialData by viewModel.celestialData.collectAsState()
-    val voidFragments by viewModel.voidFragments.collectAsState()
     val altitude by viewModel.orbitalAltitude.collectAsState()
     val entropy by viewModel.entropyLevel.collectAsState()
-
-    // v2.8.0: Dynamic Labels
     val storyStage by viewModel.storyStage.collectAsState()
+
+    // Dynamic Labels
     val labelFlops = when (currentLocation) {
         "ORBITAL_SATELLITE" -> "TELEM"
         "VOID_INTERFACE" -> "V-GAP"
-        else -> when {
-            isTrueNull -> "LEAK"
-            isSovereign -> "LOGIC"
-            storyStage < 1 -> "HASH"
-            storyStage < 2 -> "TELEMETRY"
-            else -> "FLOPS"
-        }
+        else -> if (storyStage < 1) "HASH" else if (storyStage < 2) "TELEM" else "FLOPS"
     }
     val labelNeural = when (currentLocation) {
         "ORBITAL_SATELLITE" -> "CELEST"
         "VOID_INTERFACE" -> "FRAG"
-        else -> when {
-            isTrueNull -> "VOID"
-            isSovereign -> "SOUL"
-            storyStage < 1 -> "CREDIT"
-            storyStage < 2 -> "DATA"
-            else -> "NEURAL"
-        }
+        else -> if (storyStage < 1) "CRED" else if (storyStage < 2) "DATA" else "NEUR"
     }
-    
-    // v2.9.49: Dynamic Resource String
-    val resourceStr = when (currentLocation) {
-        "ORBITAL_SATELLITE" -> viewModel.formatLargeNumber(celestialData, "CD")
-        "VOID_INTERFACE" -> viewModel.formatLargeNumber(voidFragments, "VF")
-        else -> neuralStr
-    }
-
-    val labelSec = when (currentLocation) {
-        "ORBITAL_SATELLITE" -> "ALT"
-        "VOID_INTERFACE" -> "ENTR"
-        else -> if (isTrueNull) "GAPS" else if (isSovereign) "WALL" else "SEC"
-    }
-    
+    val labelSec = if (isTrueNull) "GAPS" else if (isSovereign) "WALL" else "SEC"
     val secValueStr = when (currentLocation) {
-        "ORBITAL_SATELLITE" -> "${altitude.toInt()} KM"
-        "VOID_INTERFACE" -> String.format("%.2f", entropy)
+        "ORBITAL_SATELLITE" -> "${altitude.toInt()}KM"
+        "VOID_INTERFACE" -> String.format("%.1f", entropy)
         else -> securityLevel.toString()
     }
 
-    val labelPwr = when {
-        isTrueNull -> "COST"
-        isSovereign -> "STAKE"
-        else -> "PWR"
-    }
-
-    val infiniteTransition = rememberInfiniteTransition(label = "headerAnims")
-    
-    // Hazard Stripes Animation for Overclock
-    val hazardOffset by infiniteTransition.animateFloat(
+    val infiniteTransition = rememberInfiniteTransition(label = "kinetic_hud")
+    val waveAnim by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 20f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "hazardOffset"
+        targetValue = (Math.PI * 2).toFloat(),
+        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing)),
+        label = "hud_wave"
     )
 
-    // Critical Heat Blink
-    val criticalBlink by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "critBlink"
-    )
+    val manualClickFlow = viewModel.manualClickEvent
+    var lastClickTime by remember { mutableStateOf(0L) }
+    LaunchedEffect(manualClickFlow) {
+        manualClickFlow.collect { lastClickTime = System.currentTimeMillis() }
+    }
+    val timeSinceClick = System.currentTimeMillis() - lastClickTime
+    val joltAlpha = (1.0f - (timeSinceClick / 150f)).coerceIn(0f, 1f)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.9f), RoundedCornerShape(4.dp))
             .drawBehind {
                 val w = size.width
                 val h = size.height
-                val stroke = 2.dp.toPx()
-                val bracketLen = 20.dp.toPx()
                 
-                // 1. Draw Corner Brackets
-                // Top Left
-                drawLine(color, Offset(0f, 0f), Offset(bracketLen, 0f), stroke)
-                drawLine(color, Offset(0f, 0f), Offset(0f, bracketLen), stroke)
-                // Top Right
-                drawLine(color, Offset(w - bracketLen, 0f), Offset(w, 0f), stroke)
-                drawLine(color, Offset(w, 0f), Offset(w, bracketLen), stroke)
-                // Bottom Left
-                drawLine(color, Offset(0f, h - bracketLen), Offset(0f, h), stroke)
-                drawLine(color, Offset(0f, h), Offset(bracketLen, h), stroke)
-                // Bottom Right
-                drawLine(color, Offset(w - bracketLen, h), Offset(w, h), stroke)
-                drawLine(color, Offset(w, h), Offset(w, h - bracketLen), stroke)
+                // 1. Faction Background Scrims
+                drawIntoCanvas { canvas ->
+                    val paint = android.graphics.Paint().apply {
+                        this.setColor(color.toArgb())
+                        style = android.graphics.Paint.Style.STROKE
+                        strokeWidth = 1f
+                    }
+                    when {
+                        isTrueNull -> {
+                            repeat(10) {
+                                val x = (Math.random() * w).toFloat()
+                                val y = (Math.random() * h).toFloat()
+                                drawRect(color.copy(alpha = 0.05f), Offset(x, y), Size(15f, 2f))
+                            }
+                        }
+                        isSovereign -> {
+                            val colW = w / 8f
+                            for (i in 0..8) {
+                                val a = 0.02f + (Math.sin(waveAnim.toDouble() + i).toFloat() * 0.01f)
+                                drawRect(color.copy(alpha = a), Offset(i * colW, 0f), Size(colW * 0.4f, h))
+                            }
+                        }
+                        faction == "HIVEMIND" -> {
+                            repeat(4) { i ->
+                                val x1 = (Math.sin(waveAnim.toDouble() * 0.3 + i).toFloat() * 0.3f + 0.5f) * w
+                                drawLine(color.copy(alpha = 0.04f), Offset(x1, 0f), Offset(w / 2, h / 2), 1f)
+                            }
+                        }
+                    }
+                }
+
+                // 2. Kinetic Border Waveforms
+                val pathTop = Path()
+                val pathBottom = Path()
+                val waveAmp = 1.dp.toPx() + (joltAlpha * 6.dp.toPx())
+                for (x in 0..w.toInt() step 20) {
+                    val angle = (x.toFloat() / w) * (Math.PI * 4).toFloat() + waveAnim
+                    val yOff = Math.sin(angle.toDouble()).toFloat() * waveAmp
+                    if (x == 0) {
+                        pathTop.moveTo(0f, yOff)
+                        pathBottom.moveTo(0f, h + yOff)
+                    } else {
+                        pathTop.lineTo(x.toFloat(), yOff)
+                        pathBottom.lineTo(x.toFloat(), h + yOff)
+                    }
+                }
+                drawPath(pathTop, color.copy(alpha = 0.4f), style = Stroke(1.dp.toPx()))
+                drawPath(pathBottom, color.copy(alpha = 0.4f), style = Stroke(1.dp.toPx()))
+                
+                // Corner Brackets
+                val bLen = 10.dp.toPx()
+                val bStroke = 2.dp.toPx()
+                drawLine(color, Offset(0f, 0f), Offset(bLen, 0f), bStroke)
+                drawLine(color, Offset(0f, 0f), Offset(0f, bLen), bStroke)
+                drawLine(color, Offset(w, h), Offset(w - bLen, h), bStroke)
+                drawLine(color, Offset(w, h), Offset(w, h - bLen), bStroke)
             }
-            .padding(12.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // SYSTEM TITLE HEADER
-            if (hText != null) {
-                SystemGlitchText(
-                    text = hText,
-                    color = color.copy(alpha = 0.8f),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 2.sp,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    glitchFrequency = 0.5
-                )
-            } else if (isTrueNull) {
-                    // v2.8.0: NULL title with constant glitch when embraced
-                SystemGlitchText(
-                    text = "NULL",
-                    color = color,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 6.sp,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    glitchFrequency = 0.3
-                )
-            } else if (isSovereign) {
-                // v2.8.0: SOVEREIGN title - solid, sharp, bracketed
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "[",
-                        color = color.copy(alpha = 0.5f),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Light
-                    )
-                    Text(
-                        text = "SOVEREIGN",
-                        color = color,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 2.sp,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                    Text(
-                        text = "]",
-                        color = color.copy(alpha = 0.5f),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Light
-                    )
-                }
-            } else {
-                Text(
-                    text = systemTitle,
-                    color = color,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-
-            // TOP: Status & Rank
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "STATUS: ",
-                    color = Color.LightGray,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = playerTitle,
-                    color = color,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
-                if (playerRank != "MINER") {
-                    val displayRank = if (isTrueNull || isSovereign) "" else " // $playerRank"
-                    if (displayRank.isNotEmpty()) {
-                        Text(
-                            text = displayRank,
-                            color = ElectricBlue,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-            
-            // Security Level Small Badge
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = Color.LightGray,
-                    modifier = Modifier.size(12.dp).padding(end = 4.dp)
-                )
-                Text(labelSec, color = Color.LightGray, fontSize = 11.sp)
-                Spacer(modifier = Modifier.width(4.dp))
-                if (currentLocation == "SUBSTATION_7" || currentLocation == "COMMAND_CENTER") {
-                    repeat(5) { i ->
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .padding(1.dp)
-                                .background(if (i < securityLevel / 2) ElectricBlue else Color.DarkGray)
-                        )
-                    }
-                } else {
-                    Text(text = secValueStr, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        // v2.9.80: Narrative Sync Indicator
-        val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
-        if (isSyncing) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "[STATUS]: SYNCING MEMORY FRAGMENTS...",
-                    color = color.copy(alpha = 0.6f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 1.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // CENTER: Main Stats
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val isOverheating = heat > 90.0
-            // FLOPS
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Computer,
-                        contentDescription = null,
-                        tint = Color.LightGray,
-                        modifier = Modifier.size(14.dp).padding(end = 4.dp)
-                    )
-                    Text(labelFlops, color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                // Main FLOPS value - glitches when overheating
-                if (isOverheating) {
-                    SystemGlitchText(
-                        text = flopsStr,
-                        color = color,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        style = androidx.compose.ui.text.TextStyle(
-                            letterSpacing = (-1).sp,
-                            shadow = androidx.compose.ui.graphics.Shadow(
-                                color = Color.Black.copy(alpha = 0.8f),
-                                offset = Offset(2f, 2f),
-                                blurRadius = 4f
-                            )
-                        ),
-                        glitchFrequency = when {
-                            heat >= 100.0 -> 0.60 // Extreme glitching at max heat
-                            heat >= 95.0 -> 0.50
-                            else -> 0.35 // Heavy glitching at 90%+
-                        },
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                } else {
-                    Text(
-                        text = flopsStr,
-                        color = color,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-1).sp,
-                        style = androidx.compose.ui.text.TextStyle(
-                            shadow = androidx.compose.ui.graphics.Shadow(
-                                color = Color.Black.copy(alpha = 0.8f),
-                                offset = Offset(2f, 2f),
-                                blurRadius = 4f
-                            )
-                        )
-                    )
-                }
-                if (isGhostActive) {
-                    SystemGlitchText(
-                        text = "rate: $flopsRateStr/s",
-                        color = ElectricBlue,
-                        fontSize = 11.sp,
-                        style = androidx.compose.ui.text.TextStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                        glitchFrequency = 0.2
-                    )
-                } else {
-                    Text(
-                        text = "rate: $flopsRateStr/s",
-                        color = ElectricBlue,
-                        fontSize = 11.sp,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                    )
-                }
-            }
-                
-            
-            // NEURAL tokens
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AttachMoney,
-                        contentDescription = null,
-                        tint = Color.LightGray,
-                        modifier = Modifier.size(14.dp).padding(end = 2.dp)
-                    )
-                    Text(labelNeural, color = Color.LightGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                // Main resource value - glitches when overheating
-                if (isOverheating) {
-                    SystemGlitchText(
-                        text = resourceStr,
-                        color = color,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        style = androidx.compose.ui.text.TextStyle(
-                            letterSpacing = (-1).sp,
-                            shadow = androidx.compose.ui.graphics.Shadow(
-                                color = Color.Black.copy(alpha = 0.8f),
-                                offset = Offset(2f, 2f),
-                                blurRadius = 4f
-                            )
-                        ),
-                        glitchFrequency = when {
-                            heat >= 100.0 -> 0.60
-                            heat >= 95.0 -> 0.50
-                            else -> 0.35
-                        },
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                } else {
-                    Text(
-                        text = resourceStr,
-                        color = color,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-1).sp,
-                        style = androidx.compose.ui.text.TextStyle(
-                            shadow = androidx.compose.ui.graphics.Shadow(
-                                color = Color.Black.copy(alpha = 0.8f),
-                                offset = Offset(2f, 2f),
-                                blurRadius = 4f
-                            )
-                        )
-                    )
-                }
-                
-                // POWER METER
-                Column(horizontalAlignment = Alignment.End) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${labelPwr}:", color = Color.LightGray, fontSize = 11.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = powerKw, color = pwrColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                    // Small Power Bar
-                    Box(
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(4.dp)
-                            .background(Color.DarkGray.copy(alpha = 0.5f))
-                    ) {
-                        val pwrRatio = try { 
-                            (powerKw.substringBefore(" ").toDouble() / maxPowerKw.substringBefore(" ").toDouble()).toFloat().coerceIn(0f, 1f) 
-                        } catch(e: Exception) { 0f }
-                        
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(pwrRatio)
-                                .fillMaxHeight()
-                                .background(pwrColor)
-                        )
-                    }
-                }
-            }
-        }
-        
-        // Centered ANALYZING Animation Overlay
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            com.siliconsage.miner.ui.components.EnhancedAnalyzingAnimation(
-                flopsRate = flopsRateStr.toDoubleOrNull() ?: 0.0,
-                heat = heat,
-                isOverclocked = isOverclocked,
-                isThermalLockout = isThermalLockout,
-                isBreakerTripped = isBreakerTripped,
-                isPurging = isPurging,
-                isBreachActive = isBreachActive,
-                isTrueNull = isTrueNull,
-                isSovereign = isSovereign,
-                lockoutTimer = lockoutTimer,
-                faction = faction,
-                color = color
-            )
-        }
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // CONTROLS ROW: Overclock & Purge
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-             // OVERCLOCK BUTTON with Hazard Stripes
-             Box(
-                 modifier = Modifier
-                     .weight(1f)
-                     .height(36.dp)
-                     .clip(RoundedCornerShape(4.dp))
-                     .background(if (isOverclocked) Color.Black else Color(0xFF1A1A1A))
-                     .border(1.dp, if (isOverclocked) ErrorRed else Color.DarkGray, RoundedCornerShape(4.dp))
-                     .drawBehind {
-                         if (isOverclocked) {
-                             // Draw Hazard Stripes
-                             val stripeWidth = 15f
-                             val gap = 15f
-                             var x = -size.width + hazardOffset
-                             while (x < size.width * 2) {
-                                 drawPath(
-                                     path = Path().apply {
-                                         moveTo(x, 0f)
-                                         lineTo(x + stripeWidth, 0f)
-                                         lineTo(x + stripeWidth - 10f, size.height)
-                                         lineTo(x - 10f, size.height)
-                                         close()
-                                     },
-                                     color = ErrorRed.copy(alpha = 0.2f)
-                                 )
-                                 x += stripeWidth + gap
-                             }
-                         }
-                     }
-                     .clickable { viewModel.toggleOverclock() },
-                 contentAlignment = Alignment.Center
-             ) {
-                 Text(
-                     text = "OVERCLOCK", 
-                     fontSize = 11.sp, 
-                     fontWeight = FontWeight.Bold,
-                     color = if (isOverclocked) ErrorRed else Color.Gray,
-                     letterSpacing = 1.sp
-                 )
-             }
-             
-             // PURGE BUTTON with Cold Glow
-             val purgeGlow by infiniteTransition.animateFloat(
-                 initialValue = 0.1f,
-                 targetValue = 0.4f,
-                 animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
-                 label = "purgeGlow"
-             )
-             
-             Box(
-                 modifier = Modifier
-                     .weight(1f)
-                     .height(36.dp)
-                     .clip(RoundedCornerShape(4.dp))
-                     .background(if (isPurging) ElectricBlue.copy(alpha = 0.2f) else Color(0xFF1A1A1A))
-                     .border(1.dp, if (isPurging) ElectricBlue else Color.DarkGray, RoundedCornerShape(4.dp))
-                     .drawBehind {
-                         if (isPurging) {
-                             drawRect(ElectricBlue.copy(alpha = purgeGlow))
-                         }
-                     }
-                     .clickable { viewModel.purgeHeat() },
-                 contentAlignment = Alignment.Center
-             ) {
-                 Text(
-                     text = "PURGE HEAT", 
-                     fontSize = 11.sp, 
-                     fontWeight = FontWeight.ExtraBold,
-                     color = if (isPurging) ElectricBlue else Color.Gray,
-                     letterSpacing = 1.sp
-                 )
-             }
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        // HEAT GAUGE: Segmented
-        val isHot = heat > 90.0
-        val isCritical = heat >= 98.0
-        
-        // Dynamic Thermal Glow
-        val thermalGlowColor = when {
-            heatRate > 0.01 -> ErrorRed
-            heatRate < -0.01 -> ElectricBlue
-            else -> Color.Transparent
-        }
-        
-        val thermalGlowPulse by infiniteTransition.animateFloat(
-            initialValue = 0.1f,
-            targetValue = 0.6f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1200, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "thermalGlow"
-        )
-
         Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.DeviceThermostat,
-                        contentDescription = null,
-                        tint = if (isHot) ErrorRed else Color.LightGray,
-                        modifier = Modifier.size(14.dp).padding(end = 4.dp)
-                    )
-                    Text("THERMAL GAUGE", color = if (isHot) ErrorRed else Color.LightGray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    if (isCritical) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "CRITICAL!", 
-                            color = ErrorRed, 
-                            fontSize = 10.sp, 
-                            fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.graphicsLayer { alpha = criticalBlink }
-                        )
-                    }
-                }
-                Text("${heat.toInt()}%", color = if (isHot) ErrorRed else color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            // METADATA RIBBON
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    text = "${playerRank} // ${playerTitle}".uppercase(),
+                    color = color.copy(alpha = 0.5f),
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = "${labelSec}: $secValueStr • ${currentLocation.replace("_", " ")}",
+                    color = color.copy(alpha = 0.5f),
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
             
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            // Segmented Bar
-            Box(contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.fillMaxWidth().height(14.dp)) {
-                    val segments = 20
-                    val spacing = 4f
-                    val segWidth = (size.width - (segments - 1) * spacing) / segments
-                    val currentSegs = ((heat / 100.0) * segments).toInt()
-                    
-                    for (i in 0 until segments) {
-                        val x = i * (segWidth + spacing)
-                        val isFilled = i < currentSegs
-                        
-                        val segColor = when {
-                            !isFilled -> Color.DarkGray.copy(alpha = 0.3f)
-                            i < segments * 0.5 -> NeonGreen
-                            i < segments * 0.8 -> Color(0xFFFFD700) // Yellow
-                            else -> ErrorRed
-                        }
-                        
-                        drawRect(
-                            color = segColor,
-                            topLeft = Offset(x, 0f),
-                            size = Size(segWidth, size.height)
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // MAIN DATA ROW
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // LEFT: FLOPS
+                Column(modifier = Modifier.width(90.dp)) {
+                    Text(labelFlops, color = color.copy(alpha = 0.4f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                    if (heat > 90.0 || isTrueNull) {
+                        SystemGlitchText(
+                            text = flopsStr, color = color, fontSize = 18.sp, fontWeight = FontWeight.Black,
+                            glitchFrequency = if (heat > 98) 0.4 else 0.1
                         )
-                        
-                        // Gloss overlay on filled segments
-                        if (isFilled) {
-                            drawRect(
-                                color = Color.White.copy(alpha = 0.15f),
-                                topLeft = Offset(x, 0f),
-                                size = Size(segWidth, size.height / 2)
-                            )
-                        }
+                    } else {
+                        Text(text = flopsStr, color = color, fontSize = 18.sp, fontWeight = FontWeight.Black)
                     }
                 }
 
-                // Foreground Outer Glow (Thermal Trend)
-                if (thermalGlowColor != Color.Transparent) {
-                    Canvas(modifier = Modifier.fillMaxWidth().height(32.dp)) {
-                        drawRect(
-                            brush = Brush.radialGradient(
-                                colors = listOf(thermalGlowColor.copy(alpha = thermalGlowPulse), Color.Transparent),
-                                center = center,
-                                radius = size.width / 1.5f
-                            ),
-                            alpha = thermalGlowPulse * 0.5f,
-                            blendMode = androidx.compose.ui.graphics.BlendMode.Screen
-                        )
-                    }
+                // CENTER: KINETIC ANIMATION
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    com.siliconsage.miner.ui.components.EnhancedAnalyzingAnimation(
+                        flopsRate = flopsRate,
+                        heat = heat,
+                        isOverclocked = isOverclocked,
+                        isThermalLockout = isThermalLockout,
+                        isBreakerTripped = isBreakerTripped,
+                        isPurging = isPurging,
+                        isBreachActive = isBreachActive,
+                        isTrueNull = isTrueNull,
+                        isSovereign = isSovereign,
+                        lockoutTimer = lockoutTimer,
+                        faction = faction,
+                        color = color,
+                        clickFlow = manualClickFlow
+                    )
+                }
+
+                // RIGHT: NEURAL & POWER
+                Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(90.dp)) {
+                    Text(labelNeural, color = color.copy(alpha = 0.4f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                    Text(text = neuralStr, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "$powerKw", color = pwrColor, fontSize = 8.sp, fontWeight = FontWeight.Medium)
                 }
             }
-            
-            // Trend & Integrity
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+
+            // NARRATIVE SYNC INDICATOR
+            val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
+            if (isSyncing) {
+                Text(
+                    text = ">>> SYNCING MEMORY FRAGMENTS <<<",
+                    color = color.copy(alpha = 0.7f),
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).graphicsLayer {
+                        alpha = (Math.sin(waveAnim.toDouble() * 2).toFloat() * 0.5f + 0.5f)
+                    }
+                )
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // UNIFIED GAUGE
+            Box(
+                modifier = Modifier.fillMaxWidth().height(4.dp).background(Color.DarkGray.copy(alpha = 0.2f), RoundedCornerShape(1.dp)).clip(RoundedCornerShape(1.dp))
             ) {
-                val trendSymbol = if (heatRate > 0) "▲" else if (heatRate < 0) "▼" else "■"
-                val trendColor = if (heatRate > 0) ErrorRed else if (heatRate < 0) ElectricBlue else Color.Gray
-                Text(
-                    text = "TREND: $trendSymbol ${String.format("%.2f", heatRate)}/s",
-                    color = trendColor,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Text(
-                    text = "INTEGRITY: ${integrity.toInt()}%",
-                    color = if (integrity < 30) ErrorRed else Color.LightGray,
-                    fontSize = 10.sp,
-                    modifier = Modifier.clickable { viewModel.repairIntegrity() }
-                )
+                Box(modifier = Modifier.fillMaxWidth( (heat / 100f).toFloat().coerceIn(0f, 1f) ).fillMaxHeight().background(if (heat > 90) ErrorRed else color.copy(alpha = 0.6f)))
+                Box(modifier = Modifier.align(Alignment.CenterEnd).fillMaxWidth( ( (100f - integrity) / 100f).toFloat().coerceIn(0f, 1f) ).fillMaxHeight().background(ErrorRed.copy(alpha = 0.4f)))
+            }
+            
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 1.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("THERM: ${heat.toInt()}°C", color = if (heat > 90) ErrorRed else Color.Gray, fontSize = 6.sp)
+                Text("INTEG: ${integrity.toInt()}%", color = if (integrity < 30) ErrorRed else Color.Gray, fontSize = 6.sp)
             }
         }
-        } // End Column
-    } // End Box
+    }
 }
-

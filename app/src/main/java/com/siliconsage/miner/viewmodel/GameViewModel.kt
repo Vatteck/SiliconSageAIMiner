@@ -32,8 +32,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -95,6 +98,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _logs = MutableStateFlow<List<LogEntry>>(emptyList())
     val logs: StateFlow<List<LogEntry>> = _logs.asStateFlow()
     private var logCounter = 0L
+
+    // v2.9.83: High-frequency click events for UI "jolt" FX
+    private val _manualClickEvent = MutableSharedFlow<Unit>(replay = 0)
+    val manualClickEvent: SharedFlow<Unit> = _manualClickEvent.asSharedFlow()
     
     private val _upgrades = MutableStateFlow<Map<UpgradeType, Int>>(emptyMap())
     val upgrades: StateFlow<Map<UpgradeType, Int>> = _upgrades.asStateFlow()
@@ -995,6 +1002,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         addLog("root@sys:~/mining# $command ${System.currentTimeMillis() % 1000}... OK (+${formatLargeNumber(gain)})")
         // Manual training increases heat slightly
         _currentHeat.update { (it + 0.8).coerceAtMost(100.0) }
+        
+        // Trigger click event for UI FX
+        viewModelScope.launch {
+            _manualClickEvent.emit(Unit)
+        }
         
         // Check for unlocks
         DataLogManager.checkUnlocks(this)

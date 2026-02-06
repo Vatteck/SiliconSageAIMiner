@@ -1,8 +1,8 @@
 {
-  "version": "2.9.82-dev",
-  "build": 231,
+  "version": "2.9.83-dev",
+  "build": 232,
   "date": "2026-02-06",
-  "changes": "Narrative throttler, interactive 51% attack, and early-game thermal re-balance.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.82-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.82-dev/Sage_2.9.82-dev.apk"
+  "changes": "Kinetic HUD overhaul: Metadata ribbon, reactive waveforms, click jolt FX, and unified gauges.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.83-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.83-dev/Sage_2.9.83-dev.apk"
 }

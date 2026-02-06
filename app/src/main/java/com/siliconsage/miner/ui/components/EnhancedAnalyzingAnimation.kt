@@ -16,6 +16,7 @@ import com.siliconsage.miner.ui.theme.NeonGreen
 import com.siliconsage.miner.ui.theme.ErrorRed
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharedFlow
 import kotlin.math.abs
 import com.siliconsage.miner.ui.components.SystemGlitchText
 
@@ -27,16 +28,27 @@ fun EnhancedAnalyzingAnimation(
     isThermalLockout: Boolean = false,
     isBreakerTripped: Boolean = false,
     isPurging: Boolean = false,
-    isBreachActive: Boolean = false, // v2.8.0
-    isTrueNull: Boolean = false, // v2.8.0
-    isSovereign: Boolean = false, // v2.8.0
+    isBreachActive: Boolean = false,
+    isTrueNull: Boolean = false,
+    isSovereign: Boolean = false,
     lockoutTimer: Int = 0,
     faction: String = "",
     color: Color,
+    clickFlow: SharedFlow<Unit>? = null, // v2.9.83
     modifier: Modifier = Modifier
 ) {
     var currentFrame by remember { mutableStateOf(0) }
+    var isJolting by remember { mutableStateOf(false) }
     
+    // v2.9.83: Collect click events for reactive jolt
+    LaunchedEffect(clickFlow) {
+        clickFlow?.collect {
+            isJolting = true
+            delay(80) // Short sharp jolt
+            isJolting = false
+        }
+    }
+
     // Determine animation state based on priority
     val animationState = when {
         isBreachActive -> AnimationState.BREACH
@@ -50,13 +62,14 @@ fun EnhancedAnalyzingAnimation(
         else -> AnimationState.NORMAL
     }
     
-    // Calculate frame delay based on FLOPS rate
+    // v2.9.83: Dynamic speed based on rate
     val frameDelay = when {
-        flopsRate < 1.0 -> 1200L
-        flopsRate < 100.0 -> 1000L
+        flopsRate <= 0.0 -> 2000L
+        flopsRate < 10.0 -> 1200L
         flopsRate < 1000.0 -> 800L
-        flopsRate < 100000.0 -> 600L
-        else -> 400L
+        flopsRate < 100_000.0 -> 400L
+        flopsRate < 10_000_000.0 -> 200L
+        else -> 100L // Fast as hell for end-game
     }
     
     // State-specific frames
@@ -148,6 +161,17 @@ fun EnhancedAnalyzingAnimation(
         }
     }
     
+    // v2.9.83: Jolt randomized text (split second scramble)
+    val displayedText = if (isJolting) {
+        val chars = text.toCharArray()
+        for (i in chars.indices) {
+            if (chars[i] != '[' && chars[i] != ']' && chars[i] != ' ') {
+                chars[i] = listOf('0', '1', '!', '#', 'X', '?', ':').random()
+            }
+        }
+        String(chars)
+    } else text
+
     // Pulsing alpha animation (speed varies by state)
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val alpha by infiniteTransition.animateFloat(
@@ -160,7 +184,8 @@ fun EnhancedAnalyzingAnimation(
         label = "alpha"
     )
     
-    // Shake effect for LOCKOUT state
+    // Shake effect for LOCKOUT state or JOLT
+    val joltShake = if (isJolting) (kotlin.random.Random.nextFloat() * 4f - 2f) else 0f
     val shakeOffset by if (animationState == AnimationState.LOCKOUT) {
         infiniteTransition.animateFloat(
             initialValue = -2f,
@@ -186,39 +211,39 @@ fun EnhancedAnalyzingAnimation(
     }
     
     Box(
-        modifier = modifier.padding(top = 8.dp)
+        modifier = modifier.padding(top = 4.dp)
     ) {
-        if (animationState == AnimationState.NORMAL) {
+        if (animationState == AnimationState.NORMAL && !isJolting) {
             Text(
-                text = text,
+                text = displayedText,
                 fontFamily = FontFamily.Monospace,
                 color = frameColor.copy(alpha = alpha * 0.8f),
-                fontSize = 12.sp,
+                fontSize = 11.sp, // Squeezed (v2.9.83)
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp,
                 modifier = Modifier.graphicsLayer(
-                    shadowElevation = 4f
+                    shadowElevation = 4f,
+                    translationX = joltShake
                 )
             )
         } else {
             SystemGlitchText(
-                text = text,
-                // Pass monospace/letterSpacing via style
+                text = displayedText,
                 style = androidx.compose.ui.text.TextStyle(
                     fontFamily = FontFamily.Monospace,
                     letterSpacing = 0.5.sp
                 ),
-                color = frameColor.copy(alpha = alpha * 0.8f),
-                fontSize = 12.sp,
+                color = if (isJolting) Color.White else frameColor.copy(alpha = alpha * 0.8f),
+                fontSize = 11.sp, // Squeezed (v2.9.83)
                 fontWeight = FontWeight.Bold,
                 glitchFrequency = when(animationState) {
-                    AnimationState.LOCKOUT, AnimationState.REDLINE -> 0.40 // Very frequent for critical
+                    AnimationState.LOCKOUT, AnimationState.REDLINE -> 0.40
                     AnimationState.PURGING -> 0.25
-                    else -> 0.15
+                    else -> if (isJolting) 0.8 else 0.15
                 },
                 modifier = Modifier.graphicsLayer(
                     shadowElevation = 4f,
-                    translationX = shakeOffset
+                    translationX = shakeOffset + joltShake
                 )
             )
         }

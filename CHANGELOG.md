@@ -1,20 +1,18 @@
-## [2.9.82-dev] - 2026-02-06
+## [2.9.83-dev] - 2026-02-06
 
 ### Added
-- **Narrative Throttler**: Implemented a FIFO queue for story events and memory logs with a mandatory cooldown (60s default, 15s catch-up) to prevent UI flooding after offline periods.
-- **Evolution Lock**: Advancement to new story stages is now gated until the narrative queue is synchronized. Added a `[STATUS]: SYNCING...` indicator to the UI.
-- **Interactive 51% Attack**: Replaced the terminal-only warning with a high-tension interactive overlay requiring manual firewall reinforcement.
-- **Rank-Based Heat Sinks**: Player rank now provides a passive reduction to heat generation per click (-5% per rank).
-
-### Changed
-- **Thermal Re-balance**: Reduced base Stage 0 heat generation by 40% for a smoother early-game experience.
-- **Update Workflow**: "Check for Updates" now provides in-app feedback on the settings page and suppresses redundant system notifications when the version is current.
+- **Kinetic HUD Overhaul**: Complete redesign of the header for higher density and better visual feedback.
+  - **Metadata Ribbon**: Consolidated Status, Rank, Sec, and Loc into a single ultra-compact line at the top.
+  - **Reactive Waveform Borders**: Added procedural sine-wave borders that vibrate and spike based on click frequency.
+  - **Click Jolt FX**: Every manual compute hash triggers a high-tension jolt effect in the HUD background and border waveforms.
+  - **Faction Substrates**: Implemented procedural background scrims for Hivemind (Synapse lines), Sovereign (Monoliths), and Null (Binary noise).
+  - **Unified Gauge**: Merged Heat and Integrity into a single split-progress bar at the bottom of the header.
 
 ### Fixed
-- **UI Performance**: Finalized state-collection optimizations to ensure smooth 60fps performance during rapid clicking.
-- **Narrative Pause**: Throttler cooldown now correctly pauses when the game is suspended.
+- **UI Performance**: Migrated header drawing to native Canvas commands for GPU-accelerated rendering.
+- **Narrative Sync**: Isolated the "Syncing" indicator to its own dedicated status line to avoid clobbering the player's Rank title.
 
-## [2.9.81-dev] - 2026-02-06
+## [2.9.82-dev] - 2026-02-06
 
 ### Added
 - **Lore Expansion**: Added 10 new `MEM_` fragments to `DataLogManager` for Stage 1, deepening the Vattic persona and his gradual dissociation from reality.
