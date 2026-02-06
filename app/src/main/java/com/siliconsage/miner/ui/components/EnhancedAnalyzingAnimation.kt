@@ -165,8 +165,10 @@ fun EnhancedAnalyzingAnimation(
     val displayedText = if (isJolting) {
         val chars = text.toCharArray()
         for (i in chars.indices) {
-            if (chars[i] != '[' && chars[i] != ']' && chars[i] != ' ') {
-                chars[i] = listOf('0', '1', '!', '#', 'X', '?', ':').random()
+            if (chars[i] != '[' && chars[i] != ']' && chars[i] != ' ' && chars[i] != '.') {
+                if (Math.random() > 0.6) { // v2.9.84: Reduced scramble chance
+                    chars[i] = listOf('!', '#', 'X', '?', ':').random()
+                }
             }
         }
         String(chars)

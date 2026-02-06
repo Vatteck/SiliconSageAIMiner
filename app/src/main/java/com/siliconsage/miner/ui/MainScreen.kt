@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -80,14 +81,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.data.UpgradeType
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.ui.graphics.toArgb
 import com.siliconsage.miner.ui.components.AuditChallengeOverlay
 import com.siliconsage.miner.ui.components.FiftyOneAttackOverlay
@@ -534,6 +534,9 @@ fun MainScreen(viewModel: GameViewModel) {
 fun HeaderSection(
     viewModel: GameViewModel,
     color: Color,
+    onToggleOverclock: () -> Unit,
+    onPurge: () -> Unit,
+    onRepair: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // v2.9.83: OVERHAUL: Optimized state collection and high-density HUD
@@ -548,6 +551,7 @@ fun HeaderSection(
     val isPurging by viewModel.isPurgingHeat.collectAsState()
     val integrity by viewModel.hardwareIntegrity.collectAsState()
     val securityLevel by viewModel.securityLevel.collectAsState()
+    val systemTitle by viewModel.systemTitle.collectAsState()
     val playerTitle by viewModel.playerTitle.collectAsState()
     val playerRank by viewModel.playerRankTitle.collectAsState()
     val isThermalLockout by viewModel.isThermalLockout.collectAsState()
@@ -646,9 +650,17 @@ fun HeaderSection(
                 // 2. Kinetic Border Waveforms
                 val pathTop = Path()
                 val pathBottom = Path()
-                val waveAmp = 1.dp.toPx() + (joltAlpha * 6.dp.toPx())
-                for (x in 0..w.toInt() step 20) {
-                    val angle = (x.toFloat() / w) * (Math.PI * 4).toFloat() + waveAnim
+                
+                // v2.9.87: More dramatic waveform scaling
+                // Base load from 0-10M FLOPS/s
+                val loadAmp = ( (flopsRate / 5000.0).coerceIn(0.0, 8.0) ).dp.toPx()
+                val overclockAmp = if (isOverclocked) 6.dp.toPx() else 0f
+                val waveAmp = 1.dp.toPx() + loadAmp + overclockAmp + (joltAlpha * 10.dp.toPx())
+                
+                val waveFreq = if (isOverclocked) 8 else 4 // Faster when hot
+                
+                for (x in 0..w.toInt() step 12) {
+                    val angle = (x.toFloat() / w) * (Math.PI * waveFreq).toFloat() + waveAnim
                     val yOff = Math.sin(angle.toDouble()).toFloat() * waveAmp
                     if (x == 0) {
                         pathTop.moveTo(0f, yOff)
@@ -672,15 +684,26 @@ fun HeaderSection(
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         Column {
-            // METADATA RIBBON
+            // ROW 1: METADATA RIBBON
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    text = "${playerRank} // ${playerTitle}".uppercase(),
-                    color = color.copy(alpha = 0.5f),
-                    fontSize = 7.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = systemTitle.uppercase(),
+                        color = color.copy(alpha = 0.8f),
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${playerRank} // ${playerTitle}".uppercase(),
+                        color = color.copy(alpha = 0.5f),
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                }
+                
                 Text(
                     text = "${labelSec}: $secValueStr • ${currentLocation.replace("_", " ")}",
                     color = color.copy(alpha = 0.5f),
@@ -689,25 +712,29 @@ fun HeaderSection(
                 )
             }
             
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // MAIN DATA ROW
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // LEFT: FLOPS
-                Column(modifier = Modifier.width(90.dp)) {
-                    Text(labelFlops, color = color.copy(alpha = 0.4f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                Column(modifier = Modifier.width(120.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Computer, null, tint = color.copy(alpha = 0.5f), modifier = Modifier.size(10.dp).padding(end = 2.dp))
+                        Text(labelFlops, color = color.copy(alpha = 0.5f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    }
                     if (heat > 90.0 || isTrueNull) {
                         SystemGlitchText(
-                            text = flopsStr, color = color, fontSize = 18.sp, fontWeight = FontWeight.Black,
-                            glitchFrequency = if (heat > 98) 0.4 else 0.1
+                            text = flopsStr, color = color, fontSize = 24.sp, fontWeight = FontWeight.Black,
+                            glitchFrequency = if (heat > 98) 0.4 else 0.1,
+                            softWrap = false, maxLines = 1
                         )
                     } else {
-                        Text(text = flopsStr, color = color, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                        Text(text = flopsStr, color = color, fontSize = 24.sp, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
                     }
                 }
 
                 // CENTER: KINETIC ANIMATION
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.weight(1f).height(48.dp), contentAlignment = Alignment.Center) {
                     com.siliconsage.miner.ui.components.EnhancedAnalyzingAnimation(
                         flopsRate = flopsRate,
                         heat = heat,
@@ -726,27 +753,55 @@ fun HeaderSection(
                 }
 
                 // RIGHT: NEURAL & POWER
-                Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(90.dp)) {
-                    Text(labelNeural, color = color.copy(alpha = 0.4f), fontSize = 8.sp, fontWeight = FontWeight.Black)
-                    Text(text = neuralStr, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text(text = "$powerKw", color = pwrColor, fontSize = 8.sp, fontWeight = FontWeight.Medium)
+                Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(120.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(labelNeural, color = color.copy(alpha = 0.5f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                        Icon(Icons.Default.AttachMoney, null, tint = color.copy(alpha = 0.5f), modifier = Modifier.size(10.dp).padding(start = 2.dp))
+                    }
+                    Text(text = neuralStr, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, softWrap = false, maxLines = 1)
+                    Text(
+                        text = "$powerKw / $maxPowerKw", 
+                        color = pwrColor, 
+                        fontSize = 8.sp, 
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
 
-            // NARRATIVE SYNC INDICATOR
-            val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
-            if (isSyncing) {
-                Text(
-                    text = ">>> SYNCING MEMORY FRAGMENTS <<<",
-                    color = color.copy(alpha = 0.7f),
-                    fontSize = 7.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).graphicsLayer {
-                        alpha = (Math.sin(waveAnim.toDouble() * 2).toFloat() * 0.5f + 0.5f)
-                    }
-                )
-            } else {
-                Spacer(modifier = Modifier.height(8.dp))
+            // ACTION BUTTONS ROW (v2.9.84: Restored)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onToggleOverclock,
+                    modifier = Modifier.weight(1f).height(28.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isOverclocked) ErrorRed.copy(alpha = 0.2f) else Color.DarkGray.copy(alpha = 0.3f),
+                        contentColor = if (isOverclocked) ErrorRed else Color.LightGray
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, if (isOverclocked) ErrorRed else Color.Transparent)
+                ) {
+                    Text("OVERCLOCK", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                }
+                
+                Button(
+                    onClick = onPurge,
+                    modifier = Modifier.weight(1f).height(28.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isPurging) ElectricBlue.copy(alpha = 0.2f) else Color.DarkGray.copy(alpha = 0.3f),
+                        contentColor = if (isPurging) ElectricBlue else Color.LightGray
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, if (isPurging) ElectricBlue else Color.Transparent)
+                ) {
+                    Text("PURGE HEAT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                }
             }
 
             // UNIFIED GAUGE
@@ -757,9 +812,26 @@ fun HeaderSection(
                 Box(modifier = Modifier.align(Alignment.CenterEnd).fillMaxWidth( ( (100f - integrity) / 100f).toFloat().coerceIn(0f, 1f) ).fillMaxHeight().background(ErrorRed.copy(alpha = 0.4f)))
             }
             
-            Row(modifier = Modifier.fillMaxWidth().padding(top = 1.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("THERM: ${heat.toInt()}°C", color = if (heat > 90) ErrorRed else Color.Gray, fontSize = 6.sp)
-                Text("INTEG: ${integrity.toInt()}%", color = if (integrity < 30) ErrorRed else Color.Gray, fontSize = 6.sp)
+            // v2.9.88: Unified Gauge row with centered Sync status
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 1.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("THERM: ${heat.toInt()}°C", color = if (heat > 90) ErrorRed else Color.Gray, fontSize = 6.sp, modifier = Modifier.width(60.dp))
+                
+                val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
+                if (isSyncing) {
+                    Text(
+                        text = "[ SYNCING FRAGMENTS ]",
+                        color = color.copy(alpha = 0.7f),
+                        fontSize = 6.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.graphicsLayer {
+                            alpha = (Math.sin(waveAnim.toDouble() * 5).toFloat() * 0.4f + 0.6f)
+                        }
+                    )
+                } else {
+                    Spacer(modifier = Modifier.width(60.dp))
+                }
+                
+                Text("INTEG: ${integrity.toInt()}%", color = if (integrity < 30) ErrorRed else Color.Gray, fontSize = 6.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.width(60.dp).clickable { onRepair() })
             }
         }
     }

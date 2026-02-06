@@ -1,8 +1,8 @@
 {
-  "version": "2.9.83-dev",
-  "build": 232,
+  "version": "2.9.88-dev",
+  "build": 233,
   "date": "2026-02-06",
-  "changes": "Kinetic HUD overhaul: Metadata ribbon, reactive waveforms, click jolt FX, and unified gauges.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.83-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.83-dev/Sage_2.9.83-dev.apk"
+  "changes": "HUD refinements: Metadata ribbon with systemTitle, fixed wrapping, and reactive waveforms.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.88-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.88-dev/Sage_2.9.88-dev.apk"
 }

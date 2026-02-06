@@ -108,6 +108,9 @@ fun UpgradesScreen(viewModel: GameViewModel) {
             HeaderSection(
                 viewModel = viewModel,
                 color = themeColor,
+                onToggleOverclock = { viewModel.toggleOverclock() },
+                onPurge = { viewModel.purgeHeat() },
+                onRepair = { viewModel.repairIntegrity() },
                 modifier = Modifier.padding(16.dp)
             )
 

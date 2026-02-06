@@ -3,6 +3,7 @@ package com.siliconsage.miner.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -31,15 +32,15 @@ fun AuditChallengeOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f)),
+            .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .padding(24.dp)
-                .border(2.dp, ElectricBlue)
-                .background(Color.Black)
-                .padding(24.dp),
+                .width(320.dp) // Fixed width for non-blocking feel
+                .border(2.dp, ElectricBlue, RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.95f), RoundedCornerShape(8.dp))
+                .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(

@@ -113,6 +113,9 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
         HeaderSection(
             viewModel = viewModel,
             color = primaryColor,
+            onToggleOverclock = { viewModel.toggleOverclock() },
+            onPurge = { viewModel.purgeHeat() },
+            onRepair = { viewModel.repairIntegrity() },
             modifier = Modifier.graphicsLayer { translationX = vibrationState.value }
         )
         
