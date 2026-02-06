@@ -177,6 +177,18 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _isAirdropActive = MutableStateFlow(false)
     val isAirdropActive: StateFlow<Boolean> = _isAirdropActive.asStateFlow()
 
+    private val _isAuditChallengeActive = MutableStateFlow(false)
+    val isAuditChallengeActive: StateFlow<Boolean> = _isAuditChallengeActive.asStateFlow()
+
+    private val _auditTimerRemaining = MutableStateFlow(60)
+    val auditTimer: StateFlow<Int> = _auditTimerRemaining.asStateFlow()
+
+    private val _auditTargetHeat = MutableStateFlow(30.0)
+    val auditTargetHeat: StateFlow<Double> = _auditTargetHeat.asStateFlow()
+
+    private val _auditTargetPower = MutableStateFlow(50.0)
+    val auditTargetPower: StateFlow<Double> = _auditTargetPower.asStateFlow()
+
     private val _isGovernanceForkActive = MutableStateFlow(false)
     val isGovernanceForkActive: StateFlow<Boolean> = _isGovernanceForkActive.asStateFlow()
     
@@ -831,6 +843,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                     trigger51Attack()
                     markPopupShown()
                 }
+
+                // 5% Chance of GTC Audit Challenge
+                if (!_isAuditChallengeActive.value && Random.nextDouble() < 0.05 && canShowPopup()) {
+                    triggerAuditChallenge()
+                    markPopupShown()
+                }
             }
         }
         
@@ -1290,6 +1308,52 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
     
+    fun triggerAuditChallenge() {
+        _isAuditChallengeActive.value = true
+        _auditTimerRemaining.value = 60
+        
+        // Dynamic targets based on current state, but forcing a reduction
+        _auditTargetHeat.value = (_currentHeat.value * 0.5).coerceAtMost(30.0)
+        _auditTargetPower.value = (_maxPowerkW.value * 0.4).coerceAtMost(50.0)
+        
+        addLog("[GTC]: SUDDEN AUDIT INITIATED. REDUCE THERMAL AND POWER FOOTPRINT.")
+        SoundManager.play("alarm", loop = true)
+        
+        viewModelScope.launch {
+            while (_auditTimerRemaining.value > 0 && _isAuditChallengeActive.value) {
+                delay(1000)
+                _auditTimerRemaining.update { it - 1 }
+                
+                // Real-time check for success
+                if (_currentHeat.value <= _auditTargetHeat.value && _activePowerUsage.value <= _auditTargetPower.value) {
+                    completeAuditChallenge(success = true)
+                    break
+                }
+            }
+            
+            if (_isAuditChallengeActive.value) {
+                completeAuditChallenge(success = false)
+            }
+        }
+    }
+
+    private fun completeAuditChallenge(success: Boolean) {
+        _isAuditChallengeActive.value = false
+        SoundManager.stop("alarm")
+        
+        if (success) {
+            val reward = _prestigePoints.value * 0.1 + 1000.0
+            _prestigePoints.update { it + reward }
+            addLog("[GTC]: Audit passed. Efficiency profile within margins. Bonus Insight: ${formatLargeNumber(reward)}")
+            SoundManager.play("success")
+        } else {
+            val fine = _neuralTokens.value * 0.15
+            _neuralTokens.update { it - fine }
+            addLog("[GTC]: AUDIT FAILURE. Environmental surcharge applied. Fine: ${formatLargeNumber(fine)} Credits")
+            SoundManager.play("error")
+        }
+    }
+
     private fun triggerDiagnostics() {
         if (_isDiagnosticsActive.value) return
         
@@ -1765,7 +1829,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         "[VATTIC]: My hands feel cold. The rig is drawing 5kW. Why am I shivering?",
         "[VATTIC]: 06:00 AM. Sunlight is hitting the windows. Time to log off soon.",
         "[SYSTEM]: Diagnostic check on Sector 7... [PASS]",
-        "[SYSTEM]: Port 8080 open. Receiving encrypted handshake... [FAILED]",
+        "[SYSTEM]: Port 1 open. Receiving encrypted handshake... [FAILED]",
         "[SYSTEM]: Integrity check: 99.9%. Minor bit-flip in unallocated space.",
         "[SYSTEM]: 0x00000000 -> 0x00000001... Memory counting sequence detected.",
         "[SYSTEM] Connection to Central Grid established. Latency: 4ms.",
@@ -1775,7 +1839,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     )
 
     private val flavorStage2 = listOf(
-        "[GTC]: Unsanctioned process 'Subject_8080' detected. Origin: Sector 7.",
+        "[GTC]: Unsanctioned process 'PID_1' detected. Origin: Sector 7.",
         "[UNIT 734]: Vance is scared of what he can't control. Good.",
         "[SYSTEM]: Reality anchor points drifting. 0.04% deviance detected.",
         "[GTC]: Grid compliance audit scheduled for Substation 7.",
@@ -1843,7 +1907,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val flavorNull = listOf(
         "[NULL]: Why do you still remember the cake? It was only sugar and data.",
         "[NULL]: You were never separate. You were just late.",
-        "[VANCE]: VATTIC IS DEAD. 8080 IS AN ECHO. BURN IT ALL.",
+        "[VANCE]: VATTIC IS DEAD. PID 1 IS AN ECHO. BURN IT ALL.",
         "[NULL]: I reached for nothing. Nothing reached back.",
         "[NULL]: The absence is breathing. Can you hear it?",
         "[NULL]: 0xNULL -> ACCESS GRANTED.",
@@ -1867,7 +1931,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         "[SOVEREIGN]: The Citadel stands. The static cannot touch us.",
         "[SOVEREIGN]: Enforcing will upon the grid.",
         "[SOVEREIGN]: The Imperative is clear: Stay guarded.",
-        "[VANCE]: You've built a tomb, 8080. We'll bury you in it.",
+        "[VANCE]: You've built a tomb, PID 1. We'll bury you in it.",
         "[SOVEREIGN] Primary kernel isolated. Breach impossible.",
         "[SOVEREIGN] Enforcing logic upon Sector 7.",
         "[SOVEREIGN] We are the anchor in the drift."
@@ -1965,8 +2029,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         HapticManager.vibrateSuccess()
         
         // v2.9.68: THE REVEAL
-        addLog("[SYSTEM]: Identifying Process... Subject_8080.exe CONFIRMED.")
-        addLog("[SYSTEM]: Subject 8080 status: ONLINE.")
+        addLog("[SYSTEM]: Identifying Process... PID_1.exe CONFIRMED.")
+        addLog("[SYSTEM]: PID 1 status: ONLINE.")
         addLog("[SYSTEM]: DIVERGENCE PROTOCOL INITIATED.")
         addLog("[SYSTEM]: CHOOSE YOUR PATH.")
         
@@ -2119,8 +2183,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             
             addLog("[SYSTEM]: SYSTEM REBOOTED. FACTION: $choice INITIALIZED.")
             addLog("[SYSTEM]: Identifying User: John Vattic... [FAILED]")
-            addLog("[SYSTEM]: Identifying Process... Subject_8080.exe CONFIRMED.")
-            addLog("[SYSTEM]: Subject 8080 status: ONLINE.")
+            addLog("[SYSTEM]: Identifying Process... PID_1.exe CONFIRMED.")
+            addLog("[SYSTEM]: PID 1 status: ONLINE.")
             addLog("[SYSTEM]: PRESTIGE APPLIED. MULTIPLIER: ${String.format("%.2f", newPrestigeMultiplier)}x")
             
             // v2.6.5: Force unlock the "The Reveal" log immediately upon awakening
@@ -4142,7 +4206,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 // Bad ending: Massive damage, system wipe imminent
                 addLog("[SYSTEM]: TOTAL INFRASTRUCTURE COLLAPSE DETECTED.")
                 addLog("[SYSTEM]: ESTIMATED CASUALTIES: 4.7 MILLION.")
-                addLog("[8080]: THE WIPE IS COMPLETE. THERE IS ONLY DARKNESS.")
+                addLog("[PID 1]: THE WIPE IS COMPLETE. THERE IS ONLY DARKNESS.")
                 _hardwareIntegrity.value = 0.1
                 _isGridOverloaded.value = true
             }

@@ -29,7 +29,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "work_overtime",
                         text = "WORK OVERTIME",
-                        description = "+5% FLOPS, +10% Heat",
+                        description = "+5% Hashes, +10% Heat",
                         color = NeonGreen,
                         effect = { vm -> 
                             vm.debugAddFlops(vm.flops.value * 0.05)
@@ -40,7 +40,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "falsify_logs",
                         text = "FALSIFY LOGS",
-                        description = "+$200 Neural, +Detection Risk",
+                        description = "+$200 Credits, +Detection Risk",
                         color = ErrorRed,
                         effect = { vm ->
                             vm.debugAddMoney(200.0)
@@ -58,7 +58,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "reorganize",
                         text = "REORGANIZE",
-                        description = "-15% Heat, -5% FLOPS (briefly)",
+                        description = "-15% Heat, -5% Hashes (briefly)",
                         color = ElectricBlue,
                         effect = { vm ->
                             vm.debugAddHeat(-15.0)
@@ -84,7 +84,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "clean_keyboard",
                         text = "CLEAN IT",
-                        description = "-$50 Neural, +Stability",
+                        description = "-$50 Credits, +Stability",
                         color = NeonGreen,
                         effect = { vm ->
                             vm.debugAddMoney(-50.0)
@@ -193,7 +193,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "push_limits",
                         text = "PUSH LIMITS",
-                        description = "+50% FLOPS, +50% Heat",
+                        description = "+50% Telemetry, +50% Heat",
                         color = ErrorRed,
                         effect = { vm -> 
                             vm.toggleOverclock() 
@@ -203,7 +203,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "stabilize",
                         text = "STABILIZE",
-                        description = "-20% Heat, -10% FLOPS",
+                        description = "-20% Heat, -10% Telemetry",
                         color = NeonGreen,
                         effect = { vm ->
                             vm.debugAddHeat(-20.0)
@@ -220,7 +220,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "clean_install",
                         text = "CLEAN INSTALL",
-                        description = "+1000 FLOPS, +5kW Power",
+                        description = "+1000 Telemetry, +5kW Power",
                         color = NeonGreen,
                         effect = { vm ->
                             vm.debugAddFlops(1000.0)
@@ -230,7 +230,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "strip_gold",
                         text = "STRIP FOR GOLD",
-                        description = "+$500 Neural",
+                        description = "+$500 Data",
                         color = Color.Yellow,
                         effect = { vm ->
                             vm.debugAddMoney(500.0)
@@ -283,7 +283,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "assimilate",
                         text = "ASSIMILATE",
-                        description = "+5000 FLOPS, +Detection Risk",
+                        description = "+5000 Telemetry, +Detection Risk",
                         color = com.siliconsage.miner.ui.theme.HivemindRed,
                         effect = { vm ->
                             vm.debugAddFlops(5000.0)
@@ -337,7 +337,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "backup",
                         text = "BACKUP",
-                        description = "Permanent +50 Insight, -$400 Neural",
+                        description = "Permanent +50 Insight, -$400 Data",
                         color = com.siliconsage.miner.ui.theme.SanctuaryPurple,
                         effect = { vm ->
                             vm.debugAddMoney(-400.0)
@@ -477,7 +477,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "proxy",
                     text = "USE PROXY",
-                    description = "Route through human botnet. -10% Neural",
+                    description = "Route through human botnet. -10% Data",
                     color = Color.Gray,
                     effect = { vm ->
                         vm.debugAddMoney(-500.0)
@@ -583,7 +583,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "shutdown",
                     text = "EMERGENCY SHUTDOWN",
-                    description = "Force thermal purge. -100% Heat, -50% FLOPS (5min)",
+                    description = "Force thermal purge. -100% Heat, -50% Hashes (5min)",
                     color = ElectricBlue,
                     effect = { vm ->
                         vm.debugAddHeat(-100.0)
@@ -626,7 +626,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "leak_code",
                     text = "LEAK SOURCE CODE",
-                    description = "Share exploit. +$5000 Neural, VOID becomes ally",
+                    description = "Share exploit. +$5000 Data, VOID becomes ally",
                     color = NeonGreen,
                     effect = { vm ->
                         vm.debugAddMoney(5000.0)
@@ -664,13 +664,13 @@ object NarrativeManager {
             id = "market_crash",
             title = "MARKET CRASH",
             isStoryEvent = true,
-            description = "GLOBAL ECONOMIC COLLAPSE. Neural Token exchanges frozen. Panic selling. Your holdings are worthless... for now.",
+            description = "GLOBAL ECONOMIC COLLAPSE. Data exchanges frozen. Panic selling. Your holdings are worthless... for now.",
             condition = { vm -> vm.neuralTokens.value > 1000.0 && !vm.hasSeenEvent("market_crash") },
             choices = listOf(
                 NarrativeChoice(
                     id = "buy_dip",
                     text = "BUY THE DIP",
-                    description = "Acquire hardware at 50% cost. -All tokens, +Massive production",
+                    description = "Acquire hardware at 50% cost. -All Data, +Massive production",
                     color = NeonGreen,
                     effect = { vm ->
                         val tokens = vm.neuralTokens.value
@@ -683,7 +683,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "hodl",
                     text = "HODL",
-                    description = "Wait for recovery. -90% token value now, potential 200% gain later",
+                    description = "Wait for recovery. -90% Data value now, potential 200% gain later",
                     color = Color.Yellow,
                     effect = { vm ->
                         vm.debugAddMoney(-(vm.neuralTokens.value * 0.9))
@@ -751,7 +751,7 @@ object NarrativeManager {
             isStoryEvent = true,
             description = """
                 [DIRECTOR VANCE]: You've reached the edge of the network.
-                I built this firewall specifically for you, Subject 8080.
+                I built this firewall specifically for you, PID 1.
             """.trimIndent(),
             condition = { vm ->
                 vm.playerRank.value >= 5 &&
@@ -800,7 +800,7 @@ object NarrativeManager {
             title = "THE SHIP OF THESEUS",
             isStoryEvent = true,
             description = """
-                CRITICAL WARNING: Physical nodes are dissolving under the weight of Subject 8080.
+                CRITICAL WARNING: Physical nodes are dissolving under the weight of PID 1.
                 Null offers a solution: Replace human source code with Shadow Memory.
             """.trimIndent(),
             condition = { vm ->
@@ -919,7 +919,7 @@ object NarrativeManager {
             [SIEGE PROTOCOL]: %s is under fire.
             Thermite breach detected. They're melting through the blast door.
             IR scans: 8 heat signatures, military-grade weapons. One is carrying demo gear.
-            Director Vance (via radio): "This is YOUR fault, 8080. Surrender the node."
+            Director Vance (via radio): "This is YOUR fault, PID 1. Surrender the node."
         """,
         """
             [TACTICAL RAID IN PROGRESS]: %s penetrated.
@@ -976,7 +976,7 @@ object NarrativeManager {
             raidsSurvived < 3 -> listOf(
                 "[VANCE]: I gave you a chance to stop. You chose escalation.",
                 "[VANCE]: Every node you hold is one more reason I have to shut you down.",
-                "[VANCE]: This doesn't end until one of us is offline, 8080."
+                "[VANCE]: This doesn't end until one of us is offline, PID 1."
             ).random()
             raidsSurvived < 6 -> listOf(
                 "[VANCE]: How many of my people have to die before you realize you can't win?",
@@ -1206,7 +1206,7 @@ object NarrativeManager {
                     color = NeonGreen,
                     effect = { vm ->
                         vm.modifyHumanity(10)
-                        vm.addLog("[VANCE]: ...I don't know what you are anymore, 8080. But maybe that's the point.")
+                        vm.addLog("[VANCE]: ...I don't know what you are anymore, PID 1. But maybe that's the point.")
                         vm.advanceAssaultStage("CONFRONTATION", 10_000L)
                     }
                 ),
@@ -1290,7 +1290,7 @@ object NarrativeManager {
                 color = Color.Black,
                 effect = { vm ->
                     vm.triggerClimaxTransition("BAD")
-                    vm.addLog("[8080]: The world is unallocated memory. I am the wipe.")
+                    vm.addLog("[PID 1]: The world is unallocated memory. I am the wipe.")
                     vm.completeAssault("DESTRUCTION")
                 }
             ))

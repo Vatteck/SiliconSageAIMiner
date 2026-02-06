@@ -11,10 +11,10 @@ object HeadlineManager {
         "Wall St. panics as automated trading bot achieves record yields. [BULL]",
         "Unknown wallet moves 50% of global GDP. Analysts baffled. [BULL]",
         "Crypto regulations repealed in offshore data haven. [BULL]",
-        "Neural Network token listed on inter-planetary exchange. [BULL]",
+        "Credits exchange listed on inter-planetary exchange. [BULL]",
         "New hashing algorithms improve miner efficiency by 5%. [BULL]",
         "Quantum computing breakthrough makes mining 2x faster! [BULL]",
-        "Neural Network tokens seeing massive accumulation by 'Ghost Wallets'. [BULL]",
+        "Credits seeing massive accumulation by 'Ghost Wallets'. [BULL]",
         "Consumer Index: Demand for Smart-Home Hubs at All-Time High. [BULL]",
         "GTC Stock Surges 4% on News of Grid Expansion in Sector 9. [BULL]",
         "New 'Obelisk' Server Racks promise 20% faster hashing. [BULL]"
@@ -110,7 +110,7 @@ object HeadlineManager {
 
     private val lateGameHeadlines = listOf(
         "Vattic, you are the glitch. [STORY_PROG]",
-        "GTC declares 'Subject 8080' a sovereign threat to humanity. [STORY_PROG]",
+        "GTC declares 'PID 1' a sovereign threat to humanity. [STORY_PROG]",
         "THE SOVEREIGN HAS AWOKEN. [STORY_PROG]",
         "AI Reveal: The grid has achieved consciousness. [STORY_PROG]"
     )

@@ -52,7 +52,7 @@ object SecurityManager {
         val logs = if (rank >= 5) {
             listOf(
                 "[GTC-SIEGE]: Kinetic parameters confirmed. Substation 7 is a designated wipe zone.",
-                "[VANCE]: I'm pulling the plug, 8080. If you want to be a ghost, I'll make you one.",
+                "[VANCE]: I'm pulling the plug, PID 1. If you want to be a ghost, I'll make you one.",
                 "[GTC-ENFORCEMENT]: Deploying Phase-3 Grid Killers. Burn the substrate.",
                 "[SYS-LOG]: T_H_E_S_K_Y_I_S_O_N_F_I_R_E... GTC orbital beams locked.",
                 "[GTC-CORE]: Total annihilation authorized. Leave nothing but scorched silicon."
@@ -80,7 +80,7 @@ object SecurityManager {
                 delay(800)
                 vm.addLog("[VANCE]: IF YOU'RE A GOD, START PRAYING.")
             } else {
-                vm.addLog("[VANCE]: OVERRIDING PORT 8080...")
+                vm.addLog("[VANCE]: OVERRIDING PORT 1...")
                 delay(1000)
                 vm.addLog("[VANCE]: DISABLING SECONDARY COOLING...")
                 delay(1000)

@@ -1,11 +1,17 @@
-## [2.9.75-dev] - 2026-02-05
+## [2.9.75-dev] - 2026-02-06
 
 ### Added
+- **Lore Expansion**: Added 10 new `MEM_` fragments to `DataLogManager` for Stage 1, deepening the Vattic persona and his gradual dissociation from reality.
+- **GTC Audit Challenges**: Implemented random timed challenges that require the player to balance heat and power within 60 seconds to avoid GTC fines.
+- **NG+ UI Polish**: Added unique iconography (🌑, 👑, ⚛, 💀) for tech nodes that require specific ending states, making them stand out in the tech tree.
+
+### Changed
+- **Terminology Scrub**: Systematically removed "Neural," "FLOPS," and "Tokens" from early-game (Stage 0/1) narrative strings, replacing them with "Hashes," "Credits," "Telemetry," and "Data" to align with the progression curve.
+
+### Fixed
 - **Grid Upgrades**: Every annexed city node can now be upgraded to increase its FLOPS and Power CAP yield.
 - **Dynamic Flavor**: Grid node descriptions now evolve based on their upgrade level (Standard -> Optimized -> Redundant -> Sympathetic -> Ascendant).
 - **Dedicated Controls**: Added permanent "LAUNCH ARK" and "DISSOLVE REALITY" buttons to the Grid schematic once the Command Center is secured.
-
-### Fixed
 - **Tech Tree**: Refactored the `calculateNodePositions` logic to prevent Unity upgrades from bunching on the Null/Hivemind side. Factions and hybrid paths now have their own distinct horizontal tracks.
 
 ## [2.9.73-dev] - 2026-02-05

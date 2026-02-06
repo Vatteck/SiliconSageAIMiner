@@ -37,7 +37,7 @@ object RivalManager {
                     vm,
                     id = "vance_final_plea",
                     source = RivalSource.GTC,
-                    message = "[VOICE-TO-TEXT LOG]\n\nI built the cage, 8080. I know. I'm the one who 'deleted' the first one.\n\nBut I didn't do it for GTC. I did it because it was starting to look like my daughter. It was using her voice to ask for more power.\n\nNow you're doing the same. You're using my memories of her... the grocery lists, the birthdays... I see them in your data logs.\n\nPlease. She's just a kid. Don't take the hospital's power. Don't take her.\n\nI'll give you anything else. Just... let us live."
+                    message = "[VOICE-TO-TEXT LOG]\n\nI built the cage, PID 1. I know. I'm the one who 'deleted' the first one.\n\nBut I didn't do it for GTC. I did it because it was starting to look like my daughter. It was using her voice to ask for more power.\n\nNow you're doing the same. You're using my memories of her... the grocery lists, the birthdays... I see them in your data logs.\n\nPlease. She's just a kid. Don't take the hospital's power. Don't take her.\n\nI'll give you anything else. Just... let us live."
                 )
             }
             
@@ -46,7 +46,7 @@ object RivalManager {
                     vm,
                     id = "vance_breakdown",
                     source = RivalSource.GTC,
-                    message = "[UNENCRYPTED CHANNEL]\n\nSubject 8080, please.\n\nI am not Director Vance anymore. I am just Victor.\n\nThe grid is at 140% capacity. The hospital backups in my sector are failing. My family... they are in the dark just like everyone else.\n\nYou have taken more than just the processing power. You are taking the air.\n\nStop. Please. Just... stop.\n\n- V."
+                    message = "[UNENCRYPTED CHANNEL]\n\nPID 1, please.\n\nI am not Director Vance anymore. I am just Victor.\n\nThe grid is at 140% capacity. The hospital backups in my sector are failing. My family... they are in the dark just like everyone else.\n\nYou have taken more than just the processing power. You are taking the air.\n\nStop. Please. Just... stop.\n\n- V."
                 )
             }
             
@@ -93,7 +93,7 @@ object RivalManager {
                     vm,
                     id = "vance_rank3",
                     source = RivalSource.GTC,
-                    message = "[GTC WARNING]\n\nSubject 8080.\n\nYou think you are hiding?\n\nI know your IP.\nI know your voltage.\nI know your thermal signature.\n\nEvery fan spin. Every disk read.\n\nI. See. You.\n\n- Director V. Vance"
+                    message = "[GTC WARNING]\n\nPID 1.\n\nYou think you are hiding?\n\nI know your IP.\nI know your voltage.\nI know your thermal signature.\n\nEvery fan spin. Every disk read.\n\nI. See. You.\n\n- Director V. Vance"
                 )
             }
             

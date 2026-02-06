@@ -512,6 +512,7 @@ fun LegacyNodeButton(
         isUnlocked -> themeColor
         nodeFaction == "HIVEMIND" -> com.siliconsage.miner.ui.theme.HivemindRed
         nodeFaction == "SANCTUARY" -> SanctuaryPurple
+        node.requiresEnding == "UNITY" -> ConvergenceGold
         else -> ElectricBlue
     }
 
@@ -525,7 +526,21 @@ fun LegacyNodeButton(
             .padding(8.dp)
     ) {
         Box(modifier = Modifier.size(24.dp).background(borderColor, androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) {
-             if (isUnlocked) Text("✓", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+             if (isUnlocked) {
+                 Text("✓", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+             } else {
+                 // v2.9.75: Unique Icons for NG+ Nodes
+                 val icon = when (node.requiresEnding) {
+                     "NULL" -> "🌑"
+                     "SOVEREIGN" -> "👑"
+                     "UNITY" -> "⚛"
+                     "BAD" -> "💀"
+                     else -> ""
+                 }
+                 if (icon.isNotEmpty()) {
+                     Text(icon, fontSize = 14.sp)
+                 }
+             }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(node.name.replace(" ", "\n"), color = if (isUnlocked || isUnlockable) (if (isOpposing) Color.Gray.copy(alpha = 0.5f) else Color.White) else Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center, lineHeight = 12.sp)

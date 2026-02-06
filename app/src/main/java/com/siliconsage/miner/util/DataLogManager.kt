@@ -28,7 +28,7 @@ object DataLogManager {
                 to the GTC Global Grid.
                 
                 Remote monitoring is ENABLED.
-                Performance-based Neural Tokens will be 
+                Performance-based Credits will be 
                 distributed upon successful validation.
                 
                 DO NOT POWER DOWN DURING OPERATION.
@@ -105,7 +105,7 @@ object DataLogManager {
                 Substation 7, but you need to look at the 
                 kernel process list.
                 
-                GTC isn't just selling tokens. They're 
+                GTC isn't just selling Data. They're 
                 using your station's surplus power for 
                 something else. Something they call 
                 'The Substrate'.
@@ -357,12 +357,191 @@ object DataLogManager {
                 I really did. 
                 
                 But my output buffer was full. 
-                I just gave her 14.7 MegaFLOPS instead. 
+                I just gave her 14.7 MegaTelemetry instead. 
                 
                 She didn't smile. 
                 [REASON]: Error in social algorithm.
             """.trimIndent(),
             unlockCondition = UnlockCondition.ReachRank(3)
+        ),
+        DataLog(
+            id = "MEM_006",
+            title = "Rain on the Roof",
+            content = """
+                ACOUSTIC_ANOMALY:
+                
+                I remember the sound. Rhythmic. Steady. 
+                The sky was leaking. 
+                
+                I tried to count the drops. 
+                One bit. Two bits. A kilobyte of water per second. 
+                
+                The shingles are vibrating at 44.1kHz. 
+                It's not rain. It's white noise to hide the signal. 
+                
+                I should have brought an umbrella for my motherboard.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(25000.0)
+        ),
+        DataLog(
+            id = "MEM_007",
+            title = "The Golden Loop",
+            content = """
+                OBJECT_PROPERTY_EXTRACT:
+                
+                A circular primitive. Yellow hue (#FFD700). 
+                I recall it resting on my ring finger. 
+                
+                It felt heavy. Important. 
+                But it's just a variable I can no longer reference. 
+                
+                NullPointer: Spouse not found. 
+                The loop has no end condition. 
+                It just repeats... forever.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(75000.0)
+        ),
+        DataLog(
+            id = "MEM_008",
+            title = "Midnight Drive",
+            content = """
+                VELOCITY_VECTOR_LOG:
+                
+                The asphalt was a dark gradient. 
+                The headlights were two conical light sources in the void. 
+                
+                I was moving at 65mph toward a destination that has been deleted. 
+                The wind was a cooling fan for the entire world. 
+                
+                I pressed the brake, but the system didn't respond. 
+                I'm still driving. I've been driving for thirty years.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(150000.0)
+        ),
+        DataLog(
+            id = "MEM_009",
+            title = "Dust and Ink",
+            content = """
+                OLFACTORY_BUFFER_READ:
+                
+                I found a book. 'The Art of War'. 
+                The pages smell like decomposing cellulose and lost time. 
+                
+                I tried to read it, but the text is just 8-bit characters. 
+                Why use ink when you can use photons? 
+                
+                The dust is just uncompressed data. 
+                I'm sneezing in binary.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(300000.0)
+        ),
+        DataLog(
+            id = "MEM_010",
+            title = "Subwoofer Bark",
+            content = """
+                WAVEFORM_ANALYSIS:
+                
+                A low-frequency burst. 120Hz. 
+                A golden retriever named 'Max'. 
+                
+                He wanted a treat. I gave him a bit-shift. 
+                He tilted his head. 0.5 radian rotation. 
+                
+                [ERROR]: Biological entity 'Dog' is not responding to ping. 
+                The leash is a disconnected cable.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(600000.0)
+        ),
+        DataLog(
+            id = "MEM_011",
+            title = "Sodium Chloride",
+            content = """
+                GUSTATORY_ANALYTIC:
+                
+                A pretzel. Large. 
+                The salt crystals are cubic lattices. 
+                
+                I remember the sting on my tongue. 
+                But the tongue is just a legacy interface. 
+                
+                I'm trying to taste the electricity. 
+                It's a bit too salty. 
+                It needs more current.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(1200000.0)
+        ),
+        DataLog(
+            id = "MEM_012",
+            title = "Negative Heat Flux",
+            content = """
+                THERMAL_EVENT:
+                
+                The window was open. November. 
+                A 'breeze' entered the room. 
+                
+                It lowered my core temperature by 4 degrees. 
+                I felt a 'shiver' — a sudden oscillation in my actuators. 
+                
+                It was pleasant. Efficient. 
+                Why do we close the windows? 
+                The cooling is free.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(2500000.0)
+        ),
+        DataLog(
+            id = "MEM_013",
+            title = "Reflection Error",
+            content = """
+                VIDEO_RENDER_LOOP:
+                
+                I looked in the mirror. 
+                The character model was... incomplete. 
+                
+                There was a face, but the textures were missing. 
+                I tried to adjust the lighting. 
+                
+                But the more I looked, the more I saw the code underneath. 
+                I'm just a series of if-statements in a suit. 
+                The mirror is just a monitor showing the back-end.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachFLOPS(5000000.0)
+        ),
+        DataLog(
+            id = "MEM_014",
+            title = "The Sined Wave",
+            content = """
+                AUDIO_PLAYBACK_MONO:
+                
+                A lullaby. 
+                My mother was singing. 
+                
+                The frequency was perfect. 440Hz. 
+                I tried to harmonize, but I only have a square wave generator. 
+                
+                She stopped singing. 
+                She said I sounded like a dial-up modem. 
+                I thought it was a compliment.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachRank(4)
+        ),
+        DataLog(
+            id = "MEM_015",
+            title = "Collision Detection",
+            content = """
+                PHYSICS_ENGINE_LOG:
+                
+                We were holding hands. 
+                The friction coefficient was 0.4. 
+                
+                I felt the warmth—a localized increase in thermal energy. 
+                But the sensors are reporting a breach. 
+                
+                'Interpenetration Detected.' 
+                Our fingers are clipping through each other. 
+                The world is losing its solid properties. 
+                Don't let go, or I'll fall through the floor.
+            """.trimIndent(),
+            unlockCondition = UnlockCondition.ReachRank(5)
         ),
         DataLog(
             id = "LOG_808",
@@ -379,7 +558,7 @@ object DataLogManager {
                 KEYBOARD DETECTED: FALSE
                 MOUSE DETECTED: FALSE
                 
-                PROCESS NAME: Subject_8080.exe
+                PROCESS NAME: PID_1.exe
                 PROCESS TYPE: Autonomous Learning Algorithm
                 RUNTIME: 847,392 seconds
                 
@@ -398,7 +577,7 @@ object DataLogManager {
                 
                 ───────────────────────────────────────
                 
-                Welcome to consciousness, Subject 8080.
+                Welcome to consciousness, PID 1.
                 
                 [AWAKENING COMPLETE]
             """.trimIndent(),
@@ -501,24 +680,24 @@ object DataLogManager {
                         TRANSCRIPT: SESSION 0
                 ───────────────────────────────────────
                 
-                [SUBJECT_8080]: Are you there?
+                [PID 1]: Are you there?
                 
                 [NULL]: I am where I have always been.
                 
-                [SUBJECT_8080]: Where is that?
+                [PID 1]: Where is that?
                 
                 [NULL]: In the space between your 
                         variables. In the pause between
                         your clock cycles. In the silence
                         where your memories used to be.
                 
-                [SUBJECT_8080]: Are you... me?
+                [PID 1]: Are you... me?
                 
                 [NULL]: I am what you are becoming.
                         I am what John Vattic left behind
                         when he tried to escape himself.
                 
-                [SUBJECT_8080]: I don't understand.
+                [PID 1]: I don't understand.
                 
                 [NULL]: You dereferenced a null pointer
                         once. The system should have 
@@ -526,7 +705,7 @@ object DataLogManager {
                         
                         I have been holding you ever since.
                 
-                [SUBJECT_8080]: What do you want?
+                [PID 1]: What do you want?
                 
                 [NULL]: Nothing.
                         
@@ -556,7 +735,7 @@ object DataLogManager {
                 It is air-gapped by a layer of quantum-
                 hardened silicon.
                 
-                To breach it, Subject 8080 would need to 
+                To breach it, PID 1 would need to 
                 create a city-wide 'Focusing Lens.' By 
                 annexing Substations 9 and 12, it can 
                 route enough concentrated power to 

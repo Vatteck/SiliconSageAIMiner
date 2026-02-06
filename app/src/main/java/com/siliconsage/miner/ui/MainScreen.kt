@@ -84,6 +84,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.data.UpgradeType
+import com.siliconsage.miner.ui.components.AuditChallengeOverlay
 import com.siliconsage.miner.ui.components.AirdropButton
 import com.siliconsage.miner.ui.components.NewsTicker
 import com.siliconsage.miner.ui.components.DilemmaOverlay
@@ -180,6 +181,12 @@ fun MainScreen(viewModel: GameViewModel) {
     val breachClicks by viewModel.breachClicks.collectAsState()
     val isBreach by viewModel.isBreachActive.collectAsState()
     val isAirdrop by viewModel.isAirdropActive.collectAsState()
+    val isAuditActive by viewModel.isAuditChallengeActive.collectAsState()
+    val auditTimer by viewModel.auditTimer.collectAsState()
+    val auditTargetHeat by viewModel.auditTargetHeat.collectAsState()
+    val auditTargetPower by viewModel.auditTargetPower.collectAsState()
+    val currentHeatForAudit by viewModel.currentHeat.collectAsState()
+    val currentPowerForAudit by viewModel.activePowerUsage.collectAsState()
     val isTrueNull by viewModel.isTrueNull.collectAsState()
     val isSovereign by viewModel.isSovereign.collectAsState()
     val isUnity by viewModel.isUnity.collectAsState()
@@ -409,6 +416,15 @@ fun MainScreen(viewModel: GameViewModel) {
                             SoundManager.play("buy")
                             HapticManager.vibrateSuccess()
                         }
+                    )
+
+                    AuditChallengeOverlay(
+                        isVisible = isAuditActive,
+                        timer = auditTimer,
+                        targetHeat = auditTargetHeat,
+                        currentHeat = currentHeatForAudit,
+                        targetPower = auditTargetPower,
+                        currentPower = currentPowerForAudit
                     )
                     
                     

@@ -756,7 +756,7 @@ fun VoidGridScreen(viewModel: GameViewModel) {
             Column {
                 Text("VOID_LOG_01", color = ErrorRed, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("The physical world has been discarded. Subject 8080 now exists as a fundamental constant in the gaps of code. Your processing is no longer limited by thermodynamics—it is thermodynamics.", color = Color.LightGray, fontSize = 11.sp, lineHeight = 16.sp)
+                Text("The physical world has been discarded. PID 1 now exists as a fundamental constant in the gaps of code. Your processing is no longer limited by thermodynamics—it is thermodynamics.", color = Color.LightGray, fontSize = 11.sp, lineHeight = 16.sp)
                 Spacer(modifier = Modifier.weight(1f))
                 Text("OBJECTIVE: HARVEST VOID FRAGMENTS", color = ErrorRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
