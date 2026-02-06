@@ -112,35 +112,8 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
 
         HeaderSection(
             viewModel = viewModel,
-            flopsStr = viewModel.formatLargeNumber(flops),
-            neuralStr = viewModel.formatLargeNumber(neuralTokens),
-            heat = currentHeat,
             color = primaryColor,
-            powerKw = viewModel.formatPower(powerUsage),
-            maxPowerKw = viewModel.formatPower(maxPower),
-            pwrColor = if (powerUsage > maxPower * 0.9) ErrorRed else Color(0xFFFFD700),
-            heatRate = heatRate,
-            flopsRateStr = viewModel.formatLargeNumber(flopsRate),
-            isOverclocked = isOverclocked,
-            isPurging = isPurging,
-            integrity = integrity,
-            securityLevel = securityLevel,
-            systemTitle = systemTitle,
-            playerTitle = playerTitle,
-            playerRank = playerRank,
-            isThermalLockout = isThermalLockout,
-            isBreakerTripped = isBreakerTripped,
-            lockoutTimer = lockoutTimer,
-            faction = viewModel.faction.collectAsState().value,
-            onToggleOverclock = { viewModel.toggleOverclock() },
-            onPurge = { viewModel.purgeHeat() },
-            onRepair = { viewModel.repairIntegrity() },
-            modifier = Modifier.graphicsLayer { translationX = vibrationState.value },
-            hallucinationText = hallucinationText,
-            isGhostActive = nullActive,
-            isTrueNull = isTrueNull,
-            isSovereign = isSovereign,
-            isBreachActive = isBreach
+            modifier = Modifier.graphicsLayer { translationX = vibrationState.value }
         )
         
         Spacer(modifier = Modifier.height(16.dp))

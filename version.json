@@ -1,8 +1,8 @@
 {
-  "version": "2.9.78-dev",
-  "build": 229,
+  "version": "2.9.79-dev",
+  "build": 230,
   "date": "2026-02-06",
-  "changes": "Terminal scroll stabilization: fixed 'size-lock' and replaced animate with instant scroll.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.78-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.78-dev/Sage_2.9.78-dev.apk"
+  "changes": "UI performance optimizations: Graphics acceleration, state-collection refactor, and stable log keys.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.79-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.79-dev/Sage_2.9.79-dev.apk"
 }

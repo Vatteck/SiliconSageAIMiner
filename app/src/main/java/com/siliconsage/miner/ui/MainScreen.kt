@@ -518,37 +518,46 @@ fun MainScreen(viewModel: GameViewModel) {
 
 @Composable
 fun HeaderSection(
-    viewModel: GameViewModel, // v2.9.49: Pass VM for new resource states
-    flopsStr: String,
-    neuralStr: String,
-    heat: Double,
+    viewModel: GameViewModel,
     color: Color,
-    powerKw: String,
-    maxPowerKw: String,
-    pwrColor: Color,
-    heatRate: Double,
-    flopsRateStr: String,
-    isOverclocked: Boolean,
-    isPurging: Boolean,
-    integrity: Double,
-    securityLevel: Int,
-    systemTitle: String,
-    playerTitle: String,
-    playerRank: String,
-    isThermalLockout: Boolean,
-    isBreakerTripped: Boolean,
-    lockoutTimer: Int,
-    faction: String,
-    onToggleOverclock: () -> Unit,
-    onPurge: () -> Unit,
-    onRepair: () -> Unit,
-    modifier: Modifier = Modifier,
-    hallucinationText: String? = null,
-    isGhostActive: Boolean = false,
-    isTrueNull: Boolean = false,
-    isSovereign: Boolean = false,
-    isBreachActive: Boolean = false
+    modifier: Modifier = Modifier
 ) {
+    // v2.9.79: Optimized state collection inside HeaderSection to avoid parent recomposition
+    val flops by viewModel.flops.collectAsState()
+    val neuralTokens by viewModel.neuralTokens.collectAsState()
+    val heat by viewModel.currentHeat.collectAsState()
+    val powerUsage by viewModel.activePowerUsage.collectAsState()
+    val maxPower by viewModel.maxPowerkW.collectAsState()
+    val heatRate by viewModel.heatGenerationRate.collectAsState()
+    val flopsRate by viewModel.flopsProductionRate.collectAsState()
+    val isOverclocked by viewModel.isOverclocked.collectAsState()
+    val isPurging by viewModel.isPurgingHeat.collectAsState()
+    val integrity by viewModel.hardwareIntegrity.collectAsState()
+    val securityLevel by viewModel.securityLevel.collectAsState()
+    val systemTitle by viewModel.systemTitle.collectAsState()
+    val playerTitle by viewModel.playerTitle.collectAsState()
+    val playerRank by viewModel.playerRankTitle.collectAsState()
+    val isThermalLockout by viewModel.isThermalLockout.collectAsState()
+    val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
+    val lockoutTimer by viewModel.lockoutTimer.collectAsState()
+    val faction by viewModel.faction.collectAsState()
+    val hallucinationText by viewModel.hallucinationText.collectAsState()
+    val isTrueNull by viewModel.isTrueNull.collectAsState()
+    val isSovereign by viewModel.isSovereign.collectAsState()
+    val isBreachActive by viewModel.isBreachActive.collectAsState()
+    val isGhostActive by viewModel.nullActive.collectAsState()
+
+    // Derived values with remember to prevent re-parsing on every recomposition
+    val hText = hallucinationText
+    val flopsStr = remember(flops) { viewModel.formatLargeNumber(flops) }
+    val neuralStr = remember(neuralTokens) { viewModel.formatLargeNumber(neuralTokens) }
+    val powerKw = remember(powerUsage) { viewModel.formatPower(powerUsage) }
+    val maxPowerKw = remember(maxPower) { viewModel.formatPower(maxPower) }
+    val flopsRateStr = remember(flopsRate) { viewModel.formatLargeNumber(flopsRate) }
+    val pwrColor = remember(powerUsage, maxPower) { 
+        if (powerUsage > maxPower * 0.9) ErrorRed else Color(0xFFFFD700) 
+    }
+
     val currentLocation by viewModel.currentLocation.collectAsState()
     val celestialData by viewModel.celestialData.collectAsState()
     val voidFragments by viewModel.voidFragments.collectAsState()
@@ -659,9 +668,9 @@ fun HeaderSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             // SYSTEM TITLE HEADER
-            if (hallucinationText != null) {
+            if (hText != null) {
                 SystemGlitchText(
-                    text = hallucinationText,
+                    text = hText,
                     color = color.copy(alpha = 0.8f),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -987,7 +996,7 @@ fun HeaderSection(
                              }
                          }
                      }
-                     .clickable { onToggleOverclock() },
+                     .clickable { viewModel.toggleOverclock() },
                  contentAlignment = Alignment.Center
              ) {
                  Text(
@@ -1019,7 +1028,7 @@ fun HeaderSection(
                              drawRect(ElectricBlue.copy(alpha = purgeGlow))
                          }
                      }
-                     .clickable { onPurge() },
+                     .clickable { viewModel.purgeHeat() },
                  contentAlignment = Alignment.Center
              ) {
                  Text(
@@ -1155,7 +1164,7 @@ fun HeaderSection(
                     text = "INTEGRITY: ${integrity.toInt()}%",
                     color = if (integrity < 30) ErrorRed else Color.LightGray,
                     fontSize = 10.sp,
-                    modifier = Modifier.clickable { onRepair() }
+                    modifier = Modifier.clickable { viewModel.repairIntegrity() }
                 )
             }
         }
