@@ -1,7 +1,6 @@
 {
-  "version": "2.9.71-dev",
-  "build": 219,
+  "version": "2.9.72-dev",
+  "build": 220,
   "date": "2026-02-05",
-  "changes": "Legacy device fixes",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.71-dev"
+  "changes": "Progressive terminology reveal (Hash/Credit -> Telemetry/Data -> FLOPS/Neural); Fixed full-width terminal background scaling; Optimized dilemma buttons for small displays using FlowRow; Refactored early-game manual actions to fit technician role-play."
 }
