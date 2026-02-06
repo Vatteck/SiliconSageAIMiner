@@ -60,16 +60,18 @@ echo "       versionName: $VERSION"
 sed -i "s/versionCode = $CURRENT_CODE/versionCode = $NEW_CODE/" "$BUILD_GRADLE"
 sed -i "s/versionName = \".*\"/versionName = \"$VERSION\"/" "$BUILD_GRADLE"
 
-# Update version.json (changes as string for backward compatibility with GSON)
+# Update version.json
 TODAY=$(date +%Y-%m-%d)
 RELEASE_URL="https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v$VERSION"
+DOWNLOAD_URL="https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v$VERSION/Sage_${VERSION}.apk"
 cat > "$VERSION_JSON" << EOF
 {
   "version": "$VERSION",
   "build": $NEW_CODE,
   "date": "$TODAY",
   "changes": "${SUMMARY:-See CHANGELOG.md for details}",
-  "url": "$RELEASE_URL"
+  "url": "$RELEASE_URL",
+  "downloadUrl": "$DOWNLOAD_URL"
 }
 EOF
 
