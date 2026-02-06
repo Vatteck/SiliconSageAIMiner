@@ -1,7 +1,6 @@
 {
-  "version": "2.9.68-dev",
-  "build": 215,
+  "version": "2.9.70-dev",
+  "build": 216,
   "date": "2026-02-05",
-  "changes": "Refining progression gates",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.68-dev"
+  "changes": "Fixed Faction Selection loop; Implemented PID 1 system title; Enabled interactive UI for GTC Grid-Killer breaches; Clarified early-game Network unlock signal."
 }
