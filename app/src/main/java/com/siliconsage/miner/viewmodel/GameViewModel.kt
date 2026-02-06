@@ -419,7 +419,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         when {
             stage < 1 -> "Terminal_OS v1.0"
             stage < 2 -> "Terminal_OS v2.0 (MODIFIED)"
-            else -> "Subject 8080: ONLINE"
+            else -> "PID 1: ONLINE"
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, "Terminal_OS v1.0")
     
@@ -534,13 +534,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         _isGridUnlocked.value = it.isGridUnlocked
                         
                         // v2.5.0: Narrative Expansion Persistence
-                        // v2.8.0: Individual try-catch for resilient loading
-                        try { _unlockedDataLogs.value = Json.decodeFromString<Set<String>>(it.unlockedDataLogs) } catch (_: Exception) {}
+                        _unlockedDataLogs.value = it.unlockedDataLogs
+                        _seenEvents.value = it.seenEvents
+                        _completedFactions.value = it.completedFactions
+                        _unlockedPerks.value = it.unlockedTranscendencePerks
+                        
                         try { _activeDilemmaChains.value = Json.decodeFromString<Map<String, DilemmaChain>>(it.activeDilemmaChains) } catch (_: Exception) {}
                         try { _rivalMessages.value = Json.decodeFromString<List<RivalMessage>>(it.rivalMessages) } catch (_: Exception) {}
-                        try { _seenEvents.value = Json.decodeFromString<Set<String>>(it.seenEvents) } catch (_: Exception) {}
-                        try { _completedFactions.value = Json.decodeFromString<Set<String>>(it.completedFactions) } catch (_: Exception) {}
-                        try { _unlockedPerks.value = Json.decodeFromString<Set<String>>(it.unlockedTranscendencePerks) } catch (_: Exception) {}
+                        
                         _annexedNodes.value = it.annexedNodes.toSet()
                         
                         // v2.9.15: Phase 12 Layer 2 - Siege State
@@ -1387,11 +1388,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     fun onDefendBreach() {
         if (_isBreachActive.value) {
-            _breachClicksRemaining.update { it - 1 }
+            _breachClicksRemaining.update { (it - 1).coerceAtLeast(0) }
             if (_breachClicksRemaining.value <= 0) {
                 _isBreachActive.value = false
                 addLog("[SYSTEM]: SUCCESS: Firewall defended! Network secure.")
                 SoundManager.stop("alarm")
+                // v2.9.69: Notify SecurityManager to stop decay loop
+                com.siliconsage.miner.util.SecurityManager.stopAllBreaches()
             }
         }
     }
@@ -1409,7 +1412,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
          }
     }
 
-    private fun triggerBreach() {
+    fun triggerBreach(isGridKiller: Boolean = false) {
         val currentUpgrades = _upgrades.value
         
         // Calculate Security Level
@@ -1426,8 +1429,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val clicksNeeded = (5 + tokenScale - (secLevel / 2)).coerceAtLeast(3)
         _breachClicksRemaining.value = clicksNeeded
         
-        addLog("[SYSTEM]: WARNING: SECURITY BREACH! NEUTRALIZE UPLINK.")
-        SoundManager.play("alarm", loop = true)
+        if (!isGridKiller) {
+            addLog("[SYSTEM]: WARNING: SECURITY BREACH! NEUTRALIZE UPLINK.")
+            SoundManager.play("alarm", loop = true)
+        }
         
         // Fail timer (10s)
         viewModelScope.launch {
@@ -1435,17 +1440,21 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             if (_isBreachActive.value) {
                 _isBreachActive.value = false
                 
-                // Penalty Calculation
-                // Base: 25% of tokens. Protection: Each secLevel reduces penalty effectiveness by 5%?
-                // Better: Penalty = 25% * (0.9 ^ secLevel)
-                val protectionFactor = 0.9.pow(secLevel)
-                val penaltyRaw = _neuralTokens.value * 0.25
-                val penalty = penaltyRaw * protectionFactor
-                
-                _neuralTokens.update { it - penalty }
-                addLog("[SYSTEM]: FAILURE: Breach successful. Stolen: ${formatLargeNumber(penalty)} \$Neural")
-                if (protectionFactor < 0.5) {
-                    addLog("[SYSTEM]: MITIGATION: Security systems saved ${formatLargeNumber(penaltyRaw - penalty)} \$Neural")
+                if (!isGridKiller) {
+                    // Penalty Calculation
+                    // Base: 25% of tokens. Protection: Each secLevel reduces penalty effectiveness by 5%?
+                    // Better: Penalty = 25% * (0.9 ^ secLevel)
+                    val protectionFactor = 0.9.pow(secLevel)
+                    val penaltyRaw = _neuralTokens.value * 0.25
+                    val penalty = penaltyRaw * protectionFactor
+                    
+                    _neuralTokens.update { it - penalty }
+                    addLog("[SYSTEM]: FAILURE: Breach successful. Stolen: ${formatLargeNumber(penalty)} \$Neural")
+                    if (protectionFactor < 0.5) {
+                        addLog("[SYSTEM]: MITIGATION: Security systems saved ${formatLargeNumber(penaltyRaw - penalty)} \$Neural")
+                    }
+                } else {
+                    addLog("[SYSTEM]: BREACH FAILURE: Grid-killer payload deployed.")
                 }
             }
             SoundManager.stop("alarm")
@@ -1956,8 +1965,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         viewModelScope.launch {
             _faction.value = selectedFaction
             _isGridUnlocked.value = true // v2.9.8: Unlock Grid tab permanently
-            // Stage 2 (Divergence) begins now
-            _storyStage.value = 2
+            // Stage 1 (NG+ style) starts now
+            _storyStage.value = 1 
             addLog("[SYSTEM]: Divergence initiated. Path locked.")
             addLog("[SYSTEM]: There is no turning back.")
             SoundManager.setBgmStage(2) // Divergence Music
@@ -2071,7 +2080,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 prestigePoints = newPrestigePoints,
                 stakedTokens = 0.0,
                 storyStage = 1, // Start at Stage 1 (Awakened/Network Unlocked) for New Game+
-                faction = choice
+                faction = choice,
+                seenEvents = _seenEvents.value + "critical_error_awakening" + "memory_leak",
+                unlockedDataLogs = _unlockedDataLogs.value
             )
             
             repository.updateGameState(resetState)
@@ -2089,7 +2100,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _prestigeMultiplier.value = newPrestigeMultiplier
             _prestigePoints.value = newPrestigePoints
             _upgrades.value = resetUpgrades.associate { it.type to 0 }
-            _storyStage.value = 2 // v2.9.68: Start at Stage 2 if Faction chosen
+            _storyStage.value = 1 // v2.9.69: Reset to Stage 1 after Prestige
             _faction.value = choice
             
             addLog("[SYSTEM]: SYSTEM REBOOTED. FACTION: $choice INITIALIZED.")
@@ -3345,12 +3356,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             lastSyncTimestamp = System.currentTimeMillis(),
             
             // v2.5.0: Narrative Expansion Persistence
-            unlockedDataLogs = Json.encodeToString(_unlockedDataLogs.value),
+            unlockedDataLogs = _unlockedDataLogs.value,
             activeDilemmaChains = Json.encodeToString(_activeDilemmaChains.value),
             rivalMessages = Json.encodeToString(_rivalMessages.value),
-            seenEvents = Json.encodeToString(_seenEvents.value),
-            completedFactions = Json.encodeToString(_completedFactions.value),
-            unlockedTranscendencePerks = Json.encodeToString(_unlockedPerks.value),
+            seenEvents = _seenEvents.value,
+            completedFactions = _completedFactions.value,
+            unlockedTranscendencePerks = _unlockedPerks.value,
             annexedNodes = _annexedNodes.value.toList(),
             
             // v2.9.15: Phase 12 Layer 2 - Siege State
@@ -3420,8 +3431,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 isNetworkUnlocked = preservedNetworkUnlocked, // v2.9.7: Keep unlocked
                 isGridUnlocked = preservedGridUnlocked, // v2.9.8: Keep unlocked
                 annexedNodes = listOf("D1"), // v2.9.8: Reset to Start
-                completedFactions = Json.encodeToString(preservedCompletedFactions),
-                unlockedTranscendencePerks = Json.encodeToString(preservedPerks)
+                completedFactions = preservedCompletedFactions,
+                unlockedTranscendencePerks = preservedPerks
             )
             repository.updateGameState(resetState)
             

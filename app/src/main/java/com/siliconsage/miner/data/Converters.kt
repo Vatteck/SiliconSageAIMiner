@@ -49,4 +49,19 @@ class Converters {
             emptyMap()
         }
     }
+
+    // Set<String> Converter (v2.9.69)
+    @TypeConverter
+    fun fromSet(value: Set<String>): String {
+        return Json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toSet(value: String): Set<String> {
+        return try {
+            Json.decodeFromString<Set<String>>(value)
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
 }

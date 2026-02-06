@@ -68,6 +68,9 @@ object SecurityManager {
         }
         vm.addLog(logs.random())
         
+        // Trigger the interactive UI overlay
+        vm.triggerBreach(isGridKiller = true)
+
         // v2.7.5: Terminal Takeover - Inject direct GTC commands into the terminal logs
         vm.viewModelScope.launch {
             if (rank >= 5) {

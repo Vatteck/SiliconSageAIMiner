@@ -35,13 +35,13 @@ data class GameState(
     val hasSeenVictory: Boolean = false, // Enables Transcendence (New Game+)
     
     // Phase 8: Narrative Expansion (v2.5.0)
-    val unlockedDataLogs: String = "[]", // JSON array of log IDs
+    val unlockedDataLogs: Set<String> = emptySet(), // v2.5.0
     val activeDilemmaChains: String = "{}", // JSON map of chains
     val rivalMessages: String = "[]", // JSON array of RivalMessage
-    val dismissedRivalIds: String = "[]", // JSON array of dismissed message IDs
-    val seenEvents: String = "[]", // JSON array of seen story event IDs (v2.5.1)
-    val completedFactions: String = "[]", // JSON array of faction IDs (HIVEMIND, SANCTUARY)
-    val unlockedTranscendencePerks: String = "[]", // JSON array of perk IDs (v2.7.7)
+    val dismissedRivalIds: Set<String> = emptySet(), // v2.5.0
+    val seenEvents: Set<String> = emptySet(), // v2.5.1
+    val completedFactions: Set<String> = emptySet(), // v2.5.0
+    val unlockedTranscendencePerks: Set<String> = emptySet(), // v2.7.7
     val isTrueNull: Boolean = false, // v2.8.0: Narrative state (Hivemind)
     val isSovereign: Boolean = false, // v2.8.0: Narrative state (Sanctuary)
     

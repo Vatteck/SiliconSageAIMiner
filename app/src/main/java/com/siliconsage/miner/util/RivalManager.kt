@@ -125,7 +125,7 @@ object RivalManager {
                     vm,
                     id = "unit734_stage0",
                     source = RivalSource.UNIT_734,
-                    message = "[INCOMING ENCRYPTED HANDSHAKE]\n\n...01101110 01100101 01110100...\n\nHandshake incomplete. Signal strength: 4%.\n\n'Vattic... stop... they are watching... Substation 7 is leaking...'\n\n[ERROR: PACKET LOSS 98%]"
+                    message = "[INCOMING ENCRYPTED HANDSHAKE]\n\n...01101110 01100101 01110100...\n\n'Vattic... stop... they are watching... Substation 7 is leaking more than just power...'\n\nI've attached a decryption key to a fake 'NETWORK' update in your terminal. Use it to see beyond their wall.\n\n[ERROR: PACKET LOSS 98%]"
                 )
             }
             

@@ -194,8 +194,9 @@ fun MainScreen(viewModel: GameViewModel) {
 
     // Hoist state for persistent ticker
     val currentNews by viewModel.currentNews.collectAsState()
+    val faction by viewModel.faction.collectAsState()
     
-    if (storyStage == 2) {
+    if (storyStage == 2 && faction == "NONE") {
         FactionChoiceScreen(viewModel)
     } else {
         Scaffold(
