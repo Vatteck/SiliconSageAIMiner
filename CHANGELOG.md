@@ -1,6 +1,9 @@
-# Changelog
+## [2.9.71-dev] - 2026-02-05
 
-## [2.9.68-dev] - 2026-02-05
+### Changed
+- **Narrative Polish**: Rewrote "Personal Login: Vattic_J" data log to better align with early-game technician groundedness. Removed mentions of "GTC Blades" and "Token Validation" before the player has discovered them.
+- **Accessibility**: Fixed button contrast for low power mode grayscale overrides.
+- **UI**: Made update popup truly global across all screens. Fixed upgrade quantity badge truncation on high-DPI displays.
 
 ### Maintenance
 - **Version Sync**: Restored historical tracking to align with Phase 13 codebase.

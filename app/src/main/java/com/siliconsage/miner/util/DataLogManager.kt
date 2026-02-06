@@ -48,18 +48,20 @@ object DataLogManager {
                 
                 WELCOME BACK, JOHN.
                 
-                Last Login: 06:00 AM (Substation 7 Local)
+                Last Login: 06:14 AM (Substation 7 Local)
                 
-                Status Report:
-                - Scavenged GTC Blades... STABLE
-                - Fan Speed... 100% (Substation AC is failing)
-                - Local Grid... 480V 3-PHASE NORM
+                Workstation Status:
+                - External Terminals... 1/1 ONLINE
+                - Cooling Fans... 100% (Manual Bypass Active)
+                - Room Ambient... 29°C (Warning: High)
                 
-                Note to self: Pushing the decommissioned 
-                hardware hard today. GTC won't miss a few 
-                hundred kilowatts from an 'offline' 
-                substation. If I can validate these 
-                tokens, I'm done with the night shift.
+                Note to self: The AC unit in the rack-room 
+                is still rattling. Supervisor T says the 
+                repair budget is frozen until Q4. 
+                
+                Just run the telemetry scans and keep the 
+                load stable. Another night at Substation 7,
+                another batch of grid hashes. Almost done.
                 
                 [ENGINEERING CONSOLE ONLINE]
             """.trimIndent(),
