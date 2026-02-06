@@ -200,7 +200,12 @@ fun CityGridScreen(viewModel: GameViewModel) {
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     shape = RoundedCornerShape(4.dp)
                 ) {
-                    Text("REPAIR CORE", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        if (storyStage < 1) "REPAIR HARDWARE" else "REPAIR CORE",
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
             }
         }

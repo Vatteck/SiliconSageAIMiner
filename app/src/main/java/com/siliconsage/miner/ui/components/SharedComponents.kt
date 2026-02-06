@@ -344,7 +344,7 @@ fun StakingSection(color: Color, onStake: () -> Unit) {
 }
 
 @Composable
-fun RepairSection(integrity: Double, cost: Double, color: Color, onRepair: () -> Unit) {
+fun RepairSection(integrity: Double, cost: Double, color: Color, storyStage: Int, onRepair: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "repairScale")
@@ -361,7 +361,11 @@ fun RepairSection(integrity: Double, cost: Double, color: Color, onRepair: () ->
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("REPAIR CORE", color = if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color, fontSize = 12.sp)
+            Text(
+                if (storyStage < 1) "REPAIR HARDWARE" else "REPAIR CORE",
+                color = if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color,
+                fontSize = 12.sp
+            )
             Text("${integrity.toInt()}% @ ${String.format("%.0f", cost)} \$N", color = Color.Gray, fontSize = 10.sp)
         }
     }

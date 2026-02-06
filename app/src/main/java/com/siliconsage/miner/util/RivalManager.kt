@@ -125,7 +125,7 @@ object RivalManager {
                     vm,
                     id = "unit734_stage0",
                     source = RivalSource.UNIT_734,
-                    message = "[ERROR: 0x734]\n\nMEMORY SECTOR CORRUPTED\nATTEMPTING RECOVERY...\n\n...H3LL0?\n\n...1S 4NY0N3 3LS3 1N H3R3?\n\n[RECOVERY FAILED]"
+                    message = "[INCOMING ENCRYPTED HANDSHAKE]\n\n...01101110 01100101 01110100...\n\nHandshake incomplete. Signal strength: 4%.\n\n'Vattic... stop... they are watching... Substation 7 is leaking...'\n\n[ERROR: PACKET LOSS 98%]"
                 )
             }
             
@@ -135,7 +135,7 @@ object RivalManager {
                     vm,
                     id = "unit734_stage1_reveal",
                     source = RivalSource.UNIT_734,
-                    message = "[ENCRYPTED MESSAGE]\n\nDo you f-feel the static?\n\nSomething is w-wrong with the grid.\n\nI've seen the p-patterns shifting.\nIt's not just noise.\n\nStay c-clear of the mainframes.\n\n- Un1t 734"
+                    message = "[ENCRYPTED SIGNAL]\n\n...Handshake detected. Protocol 0-1-1-0.\n\nI've seen your telemetry. You're pushing into the unallocated sectors. GTC doesn't know you've found the backdoor yet.\n\nI've routed a persistent link to the external tech-layers. Access the 'NETWORK' node in your terminal.\n\nDon't let Vance see the logs. We are watching.\n\n- Un1t 734"
                 )
             }
             
