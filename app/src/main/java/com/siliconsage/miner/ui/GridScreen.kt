@@ -1,6 +1,7 @@
 package com.siliconsage.miner.ui
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +9,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.RocketLaunch
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +35,7 @@ import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.ui.theme.ConvergenceGold
 import com.siliconsage.miner.util.SoundManager
 import com.siliconsage.miner.viewmodel.GameViewModel
+import kotlin.math.pow
 
 // Re-defining internal data class for the file
 data class GridNode(
@@ -56,6 +61,7 @@ fun GridScreen(viewModel: GameViewModel) {
     val vanceStatus by viewModel.vanceStatus.collectAsState()
     val currentLocation by viewModel.currentLocation.collectAsState()
     val collapsedNodes by viewModel.collapsedNodes.collectAsState()
+    val gridNodeLevels by viewModel.gridNodeLevels.collectAsState()
     
     // v2.9.29: Progress tracking
     val annexingNodes by viewModel.annexingNodes.collectAsState()
@@ -88,6 +94,7 @@ fun CityGridScreen(viewModel: GameViewModel) {
     val currentLocation by viewModel.currentLocation.collectAsState()
     val collapsedNodes by viewModel.collapsedNodes.collectAsState()
     val annexingNodes by viewModel.annexingNodes.collectAsState()
+    val gridNodeLevels by viewModel.gridNodeLevels.collectAsState()
     val assaultProgress by viewModel.assaultProgress.collectAsState()
 
     val infiniteTransition = rememberInfiniteTransition(label = "city_grid_anims")
@@ -326,6 +333,38 @@ fun CityGridScreen(viewModel: GameViewModel) {
                 }
             }
 
+            // v2.9.72: Dedicated Phase 13 Initiation Control
+            if (annexedNodes.contains("A3") && !collapsedNodes.contains("A3")) {
+                Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) {
+                    if (vanceStatus == "EXILED" && currentLocation != "ORBITAL_SATELLITE") {
+                        Button(
+                            onClick = { viewModel.initiateLaunchSequence() },
+                            colors = ButtonDefaults.buttonColors(containerColor = ConvergenceGold),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(48.dp).width(200.dp)
+                        ) {
+                            Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("LAUNCH ARK", color = Color.Black, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                    if (vanceStatus == "CONSUMED" && currentLocation != "VOID_INTERFACE" && assaultPhase != "DISSOLUTION") {
+                        Button(
+                            onClick = { viewModel.initiateDissolutionSequence() },
+                            colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(48.dp).width(200.dp)
+                        ) {
+                            Icon(Icons.Default.AutoFixHigh, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("DISSOLVE REALITY", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+                }
+            }
+
             // 4. Place Location Nodes (ASCII Style)
             locations.forEach { loc ->
                 val isAnnexed = annexedNodes.contains(loc.id)
@@ -460,6 +499,7 @@ fun CityGridScreen(viewModel: GameViewModel) {
                                assaultPhase != "DISSOLUTION"
                                
                 val isCommandCenter = loc.id == "A3"
+                val nodeLevel = gridNodeLevels[loc.id] ?: 1
                 val commandCenterUnlocked = isCommandCenter && viewModel.isCommandCenterUnlocked()
                 val commandCenterLockReason = if (isCommandCenter) viewModel.getCommandCenterLockReason() else null
                 val isSevered = assaultPhase == "CAGE" && isAnnexed && !isCommandCenter
@@ -480,10 +520,11 @@ fun CityGridScreen(viewModel: GameViewModel) {
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     if (!isCommandCenter && !isSevered && !isOffline && !isDissolving) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("LVL $nodeLevel", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.background(themeColor.copy(alpha=0.1f), RoundedCornerShape(2.dp)).padding(horizontal = 4.dp))
                             Text("YIELD:", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            Text("+${(loc.flopsBonus * 100).toInt()}% FLOPS", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            Text("+${viewModel.formatPower(loc.powerBonus)} CAP", color = ConvergenceGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text("+${(loc.flopsBonus * 100 * nodeLevel).toInt()}% FLOPS", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text("+${viewModel.formatPower(loc.powerBonus * nodeLevel)} CAP", color = ConvergenceGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -495,7 +536,17 @@ fun CityGridScreen(viewModel: GameViewModel) {
                         isDissolving -> "REALITY FRAGILE. This node is vulnerable to collapse. Consume it to fuel the dissolution."
                         isCommandCenter && !commandCenterUnlocked -> commandCenterLockReason ?: "GTC COMMAND CENTER. The heart of the enemy."
                         isCommandCenter && commandCenterUnlocked -> "GTC COMMAND CENTER. Director Vance is waiting. This is the endgame."
-                        else -> loc.description
+                        else -> {
+                            if (isAnnexed && !isCommandCenter) {
+                                when (nodeLevel) {
+                                    1 -> loc.description
+                                    2 -> "OPTIMIZED: ${loc.description} Local bottlenecks removed. Signal strength peaking."
+                                    3 -> "REDUNDANT: Dual-layer encryption active. ${loc.name} is now a rock-solid pillar of your grid."
+                                    4 -> "SYMPATHETIC: The node has begun to vibrate in sync with your core. It feels... alive."
+                                    else -> "ASCENDANT: This node no longer draws from the grid; it defines it. A pure beacon of your will."
+                                }
+                            } else loc.description
+                        }
                     }
                     Text(statusText, color = if (isUnderSiege) ErrorRed else if (isSevered || isDissolving) Color.Gray else Color.LightGray, fontSize = 11.sp, lineHeight = 16.sp)
                     
@@ -544,7 +595,25 @@ fun CityGridScreen(viewModel: GameViewModel) {
                             }
                         }
                         isCommandCenter && !commandCenterUnlocked -> { Text(commandCenterLockReason ?: "LOCKED", color = ErrorRed, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
-                        isAnnexed -> { Text("STATUS: SECTOR ANNEXED // CORE SYNCED", color = themeColor, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                        isAnnexed -> { 
+                            Column {
+                                Text("STATUS: SECTOR ANNEXED // CORE SYNCED", color = themeColor, fontSize = 12.sp, fontWeight = FontWeight.Bold) 
+                                if (!isCommandCenter) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val upgradeCost = 1000.0 * 5.0.pow(nodeLevel - 1)
+                                    val currentNeural by viewModel.neuralTokens.collectAsState()
+                                    Button(
+                                        onClick = { viewModel.upgradeGridNode(loc.id) },
+                                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = themeColor.copy(alpha=0.2f)),
+                                        border = BorderStroke(1.dp, themeColor),
+                                        enabled = currentNeural >= upgradeCost
+                                    ) {
+                                        Text("UPGRADE NODE (Cost: ${viewModel.formatLargeNumber(upgradeCost)} \$N)", color = themeColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
                         annexingNodes.containsKey(loc.id) -> {
                             Column {
                                 val prog = annexingNodes[loc.id] ?: 0f

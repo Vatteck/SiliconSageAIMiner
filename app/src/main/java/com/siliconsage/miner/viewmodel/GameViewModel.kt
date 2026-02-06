@@ -302,6 +302,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _annexedNodes = MutableStateFlow<Set<String>>(setOf("D1"))
     val annexedNodes: StateFlow<Set<String>> = _annexedNodes.asStateFlow()
 
+    // v2.9.72: Grid Node Levels
+    private val _gridNodeLevels = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val gridNodeLevels: StateFlow<Map<String, Int>> = _gridNodeLevels.asStateFlow()
+
     // v2.9.29: Annexation Progress
     private val _annexingNodes = MutableStateFlow<Map<String, Float>>(emptyMap())
     val annexingNodes: StateFlow<Map<String, Float>> = _annexingNodes.asStateFlow()
@@ -353,12 +357,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     val commandCenterAssaultPhase: StateFlow<String> = _commandCenterAssaultPhase.asStateFlow()
     
     // v2.9.38: Derived Grid Stats
-    val currentGridFlopsBonus: StateFlow<Double> = combine(_annexedNodes, _offlineNodes, _commandCenterAssaultPhase) { annexed, offline, phase ->
+    val currentGridFlopsBonus: StateFlow<Double> = combine(_annexedNodes, _offlineNodes, _commandCenterAssaultPhase, _gridNodeLevels) { annexed, offline, phase, levels ->
         var bonus = 0.0
         val isCageActive = phase == "CAGE"
         annexed.forEach { nodeId ->
             if (!offline.contains(nodeId) && (!isCageActive || nodeId == "A3")) {
-                bonus += gridFlopsBonuses[nodeId] ?: 0.0
+                val base = gridFlopsBonuses[nodeId] ?: 0.0
+                val lvl = levels[nodeId] ?: 1
+                bonus += base * lvl.toDouble() // Level multiplier
             }
         }
         bonus
@@ -543,6 +549,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         try { _rivalMessages.value = Json.decodeFromString<List<RivalMessage>>(it.rivalMessages) } catch (_: Exception) {}
                         
                         _annexedNodes.value = it.annexedNodes.toSet()
+                        _gridNodeLevels.value = it.gridNodeLevels // v2.9.72
                         
                         // v2.9.15: Phase 12 Layer 2 - Siege State
                         _nodesUnderSiege.value = it.nodesUnderSiege.toSet()
@@ -3370,6 +3377,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             completedFactions = _completedFactions.value,
             unlockedTranscendencePerks = _unlockedPerks.value,
             annexedNodes = _annexedNodes.value.toList(),
+            gridNodeLevels = _gridNodeLevels.value, // v2.9.72
             
             // v2.9.15: Phase 12 Layer 2 - Siege State
             nodesUnderSiege = _nodesUnderSiege.value.toList(),
@@ -3493,6 +3501,25 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             addLog("[SYSTEM]: INITIALIZING ANNEXATION AT $coord...")
             SoundManager.play("steam")
             saveState()
+        }
+    }
+
+    fun upgradeGridNode(nodeId: String) {
+        if (!_annexedNodes.value.contains(nodeId)) return
+        
+        val currentLevel = _gridNodeLevels.value[nodeId] ?: 1
+        // Scaling cost: 1k, 5k, 25k, 125k...
+        val cost = 1000.0 * 5.0.pow(currentLevel - 1)
+        
+        if (_neuralTokens.value >= cost) {
+            _neuralTokens.update { it - cost }
+            _gridNodeLevels.update { it + (nodeId to currentLevel + 1) }
+            addLog("[SYSTEM]: NODE $nodeId UPGRADED TO LVL ${currentLevel + 1}.")
+            SoundManager.play("buy")
+            saveState()
+        } else {
+            addLog("[SYSTEM]: ERROR: Insufficient funds for node upgrade (Need ${formatLargeNumber(cost)} \$N).")
+            SoundManager.play("error")
         }
     }
     

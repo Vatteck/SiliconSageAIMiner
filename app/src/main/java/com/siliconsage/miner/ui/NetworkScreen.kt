@@ -451,31 +451,39 @@ fun calculateNodePositions(nodes: List<TechNode>, faction: String): Map<String, 
     tierMap.forEach { (tier, nodesInTier) ->
         val yPos = if (maxTier == 0) 0.5f else 0.05f + (tier.toFloat() / maxTier) * 0.9f
         
-        // v2.9.60: Explicitly group nodes within the tier to prevent overlap
+        // v2.9.72: Group nodes by faction/path for cleaner alignment
         val hiveNodes = nodesInTier.filter { node ->
             node.description.contains("[HIVEMIND]") || node.description.contains("[NG+ NULL]")
         }
         val sancNodes = nodesInTier.filter { node ->
             node.description.contains("[SANCTUARY]") || node.description.contains("[NG+ SOVEREIGN]")
         }
-        val sharedNodes = nodesInTier.filter { node ->
-            !hiveNodes.contains(node) && !sancNodes.contains(node)
+        val unityNodes = nodesInTier.filter { node ->
+            node.description.contains("[UNITY]") || node.description.contains("[NG+ UNITY]")
+        }
+        val generalNodes = nodesInTier.filter { node ->
+            !hiveNodes.contains(node) && !sancNodes.contains(node) && !unityNodes.contains(node)
         }
 
         nodesInTier.forEach { node ->
             val xPos = when {
                 hiveNodes.contains(node) -> {
-                    if (hiveNodes.size == 1) 0.2f
-                    else 0.1f + (hiveNodes.indexOf(node) * (0.2f / (hiveNodes.size - 1).coerceAtLeast(1)))
+                    if (hiveNodes.size == 1) 0.15f
+                    else 0.05f + (hiveNodes.indexOf(node) * (0.25f / (hiveNodes.size - 1).coerceAtLeast(1)))
                 }
                 sancNodes.contains(node) -> {
-                    if (sancNodes.size == 1) 0.8f
-                    else 0.7f + (sancNodes.indexOf(node) * (0.2f / (sancNodes.size - 1).coerceAtLeast(1)))
+                    if (sancNodes.size == 1) 0.85f
+                    else 0.70f + (sancNodes.indexOf(node) * (0.25f / (sancNodes.size - 1).coerceAtLeast(1)))
+                }
+                unityNodes.contains(node) -> {
+                    // Unity nodes centered
+                    if (unityNodes.size == 1) 0.5f
+                    else 0.4f + (unityNodes.indexOf(node) * (0.2f / (unityNodes.size - 1).coerceAtLeast(1)))
                 }
                 else -> {
-                    // Shared/Central nodes
-                    if (sharedNodes.size == 1) 0.5f
-                    else 0.4f + (sharedNodes.indexOf(node) * (0.2f / (sharedNodes.size - 1).coerceAtLeast(1)))
+                    // General/Early shared nodes centered
+                    if (generalNodes.size == 1) 0.5f
+                    else 0.35f + (generalNodes.indexOf(node) * (0.3f / (generalNodes.size - 1).coerceAtLeast(1)))
                 }
             }
             positions[node.id] = Offset(xPos, yPos)

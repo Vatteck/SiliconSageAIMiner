@@ -1,8 +1,8 @@
 {
-  "version": "2.9.74-dev",
-  "build": 223,
+  "version": "2.9.75-dev",
+  "build": 224,
   "date": "2026-02-05",
-  "changes": "Direct In-App Updates & UI Fixes",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.74-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.74-dev/Sage_2.9.74-dev.apk"
+  "changes": "Refined Tech Tree alignment for Unity path; Implemented Grid Node Upgrades with dynamic flavor text; Added dedicated Launch/Dissolution buttons to Grid schematic.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.75-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.75-dev/Sage_2.9.75-dev.apk"
 }

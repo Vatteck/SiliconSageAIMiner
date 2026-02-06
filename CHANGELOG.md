@@ -1,3 +1,13 @@
+## [2.9.75-dev] - 2026-02-05
+
+### Added
+- **Grid Upgrades**: Every annexed city node can now be upgraded to increase its FLOPS and Power CAP yield.
+- **Dynamic Flavor**: Grid node descriptions now evolve based on their upgrade level (Standard -> Optimized -> Redundant -> Sympathetic -> Ascendant).
+- **Dedicated Controls**: Added permanent "LAUNCH ARK" and "DISSOLVE REALITY" buttons to the Grid schematic once the Command Center is secured.
+
+### Fixed
+- **Tech Tree**: Refactored the `calculateNodePositions` logic to prevent Unity upgrades from bunching on the Null/Hivemind side. Factions and hybrid paths now have their own distinct horizontal tracks.
+
 ## [2.9.73-dev] - 2026-02-05
 
 ### Added

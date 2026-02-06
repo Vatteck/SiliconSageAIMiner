@@ -64,4 +64,19 @@ class Converters {
             emptySet()
         }
     }
+
+    // Map<String, Int> Converter (v2.9.72)
+    @TypeConverter
+    fun fromMapStringInt(value: Map<String, Int>): String {
+        return Json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toMapStringInt(value: String): Map<String, Int> {
+        return try {
+            Json.decodeFromString<Map<String, Int>>(value)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
 }
