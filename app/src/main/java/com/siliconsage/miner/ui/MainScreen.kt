@@ -540,15 +540,28 @@ fun HeaderSection(
     val entropy by viewModel.entropyLevel.collectAsState()
 
     // v2.8.0: Dynamic Labels
+    val storyStage by viewModel.storyStage.collectAsState()
     val labelFlops = when (currentLocation) {
         "ORBITAL_SATELLITE" -> "TELEM"
         "VOID_INTERFACE" -> "V-GAP"
-        else -> if (isTrueNull) "LEAK" else if (isSovereign) "LOGIC" else "FLOPS"
+        else -> when {
+            isTrueNull -> "LEAK"
+            isSovereign -> "LOGIC"
+            storyStage < 1 -> "HASH"
+            storyStage < 2 -> "TELEMETRY"
+            else -> "FLOPS"
+        }
     }
     val labelNeural = when (currentLocation) {
         "ORBITAL_SATELLITE" -> "CELEST"
         "VOID_INTERFACE" -> "FRAG"
-        else -> if (isTrueNull) "VOID" else if (isSovereign) "SOUL" else "NEURAL"
+        else -> when {
+            isTrueNull -> "VOID"
+            isSovereign -> "SOUL"
+            storyStage < 1 -> "CREDIT"
+            storyStage < 2 -> "DATA"
+            else -> "NEURAL"
+        }
     }
     
     // v2.9.49: Dynamic Resource String
@@ -1132,51 +1145,5 @@ fun HeaderSection(
         }
         } // End Column
     } // End Box
-}
-
-@Composable
-fun ExchangeSection(rate: Double, color: Color, onExchange: () -> Unit) {
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "sellScale")
-
-    Button(
-        onClick = onExchange,
-        interactionSource = interactionSource,
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .border(BorderStroke(1.dp, color), RoundedCornerShape(4.dp)),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        shape = RoundedCornerShape(4.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("SELL FLOPS", color = color, fontSize = 12.sp)
-            Text("1 = ${String.format("%.4f", rate)}", color = Color.Gray, fontSize = 10.sp)
-        }
-    }
-}
-
-@Composable
-fun StakingSection(color: Color, onStake: () -> Unit) {
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "stakeScale")
-
-    Button(
-        onClick = onStake,
-        interactionSource = interactionSource,
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .border(BorderStroke(1.dp, color), RoundedCornerShape(4.dp)),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        shape = RoundedCornerShape(4.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("STAKE \$100", color = color, fontSize = 12.sp)
-            Text("+Efficiency", color = Color.Gray, fontSize = 10.sp)
-        }
-    }
 }
 

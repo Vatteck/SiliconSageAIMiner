@@ -302,7 +302,7 @@ fun UpgradeItem(
 }
 
 @Composable
-fun ExchangeSection(rate: Double, color: Color, onExchange: () -> Unit) {
+fun ExchangeSection(rate: Double, color: Color, storyStage: Int, onExchange: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "sellScale")
@@ -322,14 +322,24 @@ fun ExchangeSection(rate: Double, color: Color, onExchange: () -> Unit) {
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("SELL FLOPS", fontSize = 12.sp)
-            Text("1 = ${String.format("%.4f", rate)}", color = Color.LightGray, fontSize = 10.sp)
+            val label = when {
+                storyStage < 1 -> "SELL HASHES"
+                storyStage < 2 -> "UPLOAD TELEMETRY"
+                else -> "SELL FLOPS"
+            }
+            val currencyLabel = when {
+                storyStage < 1 -> "CREDIT"
+                storyStage < 2 -> "DATA"
+                else -> "NEURAL"
+            }
+            Text(label, fontSize = 12.sp)
+            Text("1 = ${String.format("%.4f", rate)} $currencyLabel", color = Color.LightGray, fontSize = 10.sp)
         }
     }
 }
 
 @Composable
-fun StakingSection(color: Color, onStake: () -> Unit) {
+fun StakingSection(color: Color, storyStage: Int, onStake: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "stakeScale")
@@ -349,7 +359,8 @@ fun StakingSection(color: Color, onStake: () -> Unit) {
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("STAKE \$100", fontSize = 12.sp)
+            val label = if (storyStage < 1) "STAKE \$100 CREDIT" else "STAKE \$100 NEURAL"
+            Text(label, fontSize = 12.sp)
             Text("+Efficiency", color = Color.LightGray, fontSize = 10.sp)
         }
     }

@@ -925,7 +925,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _faction.value == "HIVEMIND" -> "assimilate_node"
             _faction.value == "SANCTUARY" -> "encrypt_sector"
             _storyStage.value >= 1 -> "optimize_kernel"
-            else -> "epoch_gen"
+            else -> "compute_hash"
         }
         
         addLog("root@sys:~/mining# $command ${System.currentTimeMillis() % 1000}... OK (+${formatLargeNumber(gain)})")
@@ -954,9 +954,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             val tokenGain = soldAmount * rate
             
             _neuralTokens.update { it + tokenGain }
-            addLog("Sold ${formatLargeNumber(soldAmount)} FLOPS for ${formatLargeNumber(tokenGain)} \$Neural")
+            
+            val stage = _storyStage.value
+            val labelFlops = if (stage < 1) "HASHES" else if (stage < 2) "TELEMETRY" else "FLOPS"
+            val labelNeural = if (stage < 1) "GTC CREDITS" else if (stage < 2) "DATA" else "\$Neural"
+            
+            addLog("Sold ${formatLargeNumber(soldAmount)} $labelFlops for ${formatLargeNumber(tokenGain)} $labelNeural")
         } else {
-            addLog("Error: Insufficient FLOPS (Min 10).")
+            val stage = _storyStage.value
+            val labelFlops = if (stage < 1) "HASHES" else if (stage < 2) "TELEMETRY" else "FLOPS"
+            addLog("Error: Insufficient $labelFlops (Min 10).")
         }
     }
     

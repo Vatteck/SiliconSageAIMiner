@@ -152,27 +152,33 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                     )
             ) {
                 // v2.8.0: Subtle background code drift
-                Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                Box(modifier = Modifier.fillMaxSize()) {
                     val infiniteTransition = rememberInfiniteTransition(label = "codeDrift")
                     val alpha by infiniteTransition.animateFloat(
                         initialValue = 0.02f,
-                        targetValue = 0.08f,
+                        targetValue = 0.06f,
                         animationSpec = infiniteRepeatable(
-                            animation = tween(3000, easing = FastOutSlowInEasing),
+                            animation = tween(4000, easing = FastOutSlowInEasing),
                             repeatMode = RepeatMode.Reverse
                         ),
                         label = "alpha"
                     )
 
-                    // v2.8.0: Increased repetition to cover full terminal height
+                    // v2.9.72: Massive repeat to ensure full coverage on any display
+                    // Using a Canvas for tiled background would be better, but this is a quick fix.
+                    val driftText = remember { 
+                        "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 ".repeat(1000) 
+                    }
+                    
                     Text(
-                        text = "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 ".repeat(100),
+                        text = driftText,
                         color = primaryColor.copy(alpha = alpha),
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
-                        lineHeight = 11.sp,
-                        modifier = Modifier.fillMaxSize(),
-                        overflow = TextOverflow.Clip
+                        lineHeight = 10.sp,
+                        modifier = Modifier.fillMaxSize().padding(4.dp),
+                        overflow = TextOverflow.Clip,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Justify
                     )
                 }
 
@@ -337,8 +343,8 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                                     currentStage >= 3 -> "> TRANSCEND_MATTER.exe"
                                     viewModel.faction.value == "HIVEMIND" -> "> ASSIMILATE_NODES.exe"
                                     viewModel.faction.value == "SANCTUARY" -> "> ENCRYPT_KERNEL.exe"
-                                    currentStage >= 1 -> "> OPTIMIZE_CORE.exe"
-                                    else -> "> TRAIN_MODEL.exe"
+                                    currentStage >= 1 -> "> VALIDATE_NODE.exe"
+                                    else -> "> COMPUTE_HASH.exe"
                                 }
                             }
                         }
@@ -388,7 +394,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
 
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.weight(1f)) {
-                 ExchangeSection(rate = conversionRate, color = primaryColor, onExchange = { 
+                 ExchangeSection(rate = conversionRate, color = primaryColor, storyStage = currentStage, onExchange = { 
                      viewModel.exchangeFlops() 
                      SoundManager.play("buy")
                      HapticManager.vibrateClick()

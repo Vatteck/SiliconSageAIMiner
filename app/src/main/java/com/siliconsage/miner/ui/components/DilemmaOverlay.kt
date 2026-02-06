@@ -6,7 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,15 +62,18 @@ fun DilemmaOverlay(
                 // Filter choices by condition
                 val validChoices = dilemma.choices.filter { it.condition(viewModel) }
                 
-                Row(
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = if (validChoices.size > 2) 2 else 3
                 ) {
                     validChoices.forEach { choice ->
                         NarrativeOption(
                             choice = choice,
                             onSelect = { onChoice(choice) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f, fill = false).minWidth(120.dp)
                         )
                     }
                 }
@@ -84,14 +91,32 @@ fun NarrativeOption(
     Box(
         modifier = modifier
             .border(1.dp, choice.color, RoundedCornerShape(4.dp))
+            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
             .clickable { onSelect() }
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(choice.text, color = choice.color, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(choice.description, color = Color.Gray, fontSize = 10.sp, lineHeight = 12.sp)
+            Text(
+                choice.text, 
+                color = choice.color, 
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            if (choice.description.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    choice.description, 
+                    color = Color.Gray, 
+                    fontSize = 10.sp, 
+                    lineHeight = 12.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
         }
     }
 }
+
+// Helper for FlowRow weight
+private fun Modifier.minWidth(minWidth: androidx.compose.ui.unit.Dp) = this.defaultMinSize(minWidth = minWidth)
