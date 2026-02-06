@@ -1,8 +1,8 @@
 {
-  "version": "2.9.77-dev",
-  "build": 228,
+  "version": "2.9.78-dev",
+  "build": 229,
   "date": "2026-02-06",
-  "changes": "Aggressive UI performance optimizations: Canvas background, stable log keys, and fixed-length glitch text.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.77-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.77-dev/Sage_2.9.77-dev.apk"
+  "changes": "Terminal scroll stabilization: fixed 'size-lock' and replaced animate with instant scroll.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.78-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.78-dev/Sage_2.9.78-dev.apk"
 }

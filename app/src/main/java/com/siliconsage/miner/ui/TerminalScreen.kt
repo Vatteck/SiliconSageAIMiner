@@ -86,9 +86,11 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(logs.size) {
+    // v2.9.78: Fix scroll lock when log is full (trigger on list change, not just size)
+    // Use instant scrollToItem to prevent animation overlap glitches during rapid clicking
+    LaunchedEffect(logs) {
         if (logs.isNotEmpty()) {
-            listState.animateScrollToItem(logs.size - 1)
+            listState.scrollToItem(logs.size - 1)
         }
     }
 
