@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.siliconsage.miner.data.GameRepository
 import com.siliconsage.miner.data.GameState
+import com.siliconsage.miner.data.LogEntry
 import com.siliconsage.miner.data.TechNode
 import com.siliconsage.miner.data.TechTreeRoot
 import com.siliconsage.miner.data.Upgrade
@@ -85,8 +86,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _conversionRate = MutableStateFlow(0.1)
     val conversionRate: StateFlow<Double> = _conversionRate.asStateFlow()
     
-    private val _logs = MutableStateFlow<List<String>>(emptyList())
-    val logs: StateFlow<List<String>> = _logs.asStateFlow()
+    private val _logs = MutableStateFlow<List<LogEntry>>(emptyList())
+    val logs: StateFlow<List<LogEntry>> = _logs.asStateFlow()
+    private var logCounter = 0L
     
     private val _upgrades = MutableStateFlow<Map<UpgradeType, Int>>(emptyMap())
     val upgrades: StateFlow<Map<UpgradeType, Int>> = _upgrades.asStateFlow()
@@ -4399,7 +4401,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
     
     fun addLog(message: String) {
-        _logs.value = (_logs.value + message).takeLast(100) // Keep last 100 logs
+        logCounter++
+        val entry = LogEntry(logCounter, message)
+        _logs.value = (_logs.value + entry).takeLast(100) // Keep last 100 logs
     }
     
     // --- NARRATIVE EXPANSION FUNCTIONS (v2.5.0) ---

@@ -435,15 +435,15 @@ fun SystemGlitchText(
     LaunchedEffect(text, glitchFrequency) {
         while (true) {
             if (Math.random() < glitchFrequency) {
-                // Generate glitched version
-                val glitched = StringBuilder()
-                text.forEach { char ->
-                    glitched.append(char)
-                    if (Math.random() > 0.7) {
-                        glitched.append(glitchChars.random())
+                // Generate glitched version - replace chars instead of appending (v2.9.77)
+                val glitched = text.toCharArray()
+                for (i in glitched.indices) {
+                    if (Math.random() > 0.85) {
+                        // Replace with a random glitch char or just some noise
+                        glitched[i] = listOf('!', '@', '#', '$', '%', '^', '&', '*', '?', 'X', '0', '1').random()
                     }
                 }
-                displayedText = glitched.toString()
+                displayedText = String(glitched)
                 
                 delay(glitchDurationMs)
                 

@@ -1,12 +1,13 @@
-## [2.9.76-dev] - 2026-02-06
+## [2.9.77-dev] - 2026-02-06
 
 ### Fixed
-- **UI Performance**: Significant optimizations for News Ticker and Terminal scrolling.
-  - Moved scrolling and alpha animations to `graphicsLayer` to leverage GPU rendering and avoid frame-by-frame recomposition.
-  - Optimized Terminal log rendering by caching `AnnotatedString` calculations and isolating cursor-blink states.
-  - Reduced memory footprint of the terminal's background "code drift" effect.
+- **UI Performance (Stage 2)**:
+  - **Terminal Background**: Switched from heavy `Text` repetition to a high-performance `Canvas` drawing loop for the code-drift effect.
+  - **Terminal Scrolling**: Refactored logs to use `LogEntry` objects with unique IDs, enabling truly stable keys for `LazyColumn`. This prevents redundant recompositions of the entire terminal history when new logs arrive.
+  - **Cursor Logic**: Isolated blinking cursor state to the line level to prevent whole-screen updates.
+  - **Glitch Text**: Optimized string generation to maintain constant string length, preventing layout thrashing during scrolling.
 
-## [2.9.75-dev] - 2026-02-06
+## [2.9.76-dev] - 2026-02-06
 
 ### Added
 - **Lore Expansion**: Added 10 new `MEM_` fragments to `DataLogManager` for Stage 1, deepening the Vattic persona and his gradual dissociation from reality.

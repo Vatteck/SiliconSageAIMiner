@@ -25,6 +25,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import com.siliconsage.miner.data.LogEntry
 import com.siliconsage.miner.ui.components.ExchangeSection
 import com.siliconsage.miner.ui.components.StakingSection
 import com.siliconsage.miner.ui.components.RepairSection
@@ -152,36 +156,41 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                     )
             ) {
                 // v2.8.0: Subtle background code drift
-                Box(modifier = Modifier.fillMaxSize()) {
-                    val infiniteTransition = rememberInfiniteTransition(label = "codeDrift")
-                    val alphaState = infiniteTransition.animateFloat(
-                        initialValue = 0.02f,
-                        targetValue = 0.06f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(4000, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "alpha"
-                    )
+                // v2.9.77: Optimized with Canvas for massive performance gain
+                val infiniteTransition = rememberInfiniteTransition(label = "codeDrift")
+                val alphaState = infiniteTransition.animateFloat(
+                    initialValue = 0.02f,
+                    targetValue = 0.05f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(4000, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "alpha"
+                )
 
-                    // v2.9.72: Massive repeat reduced for performance (v2.9.76)
-                    val driftText = remember { 
-                        "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 ".repeat(200) 
-                    }
+                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().padding(4.dp)) {
+                    val rows = (size.height / 30f).toInt().coerceAtLeast(1)
+                    val driftColor = primaryColor.copy(alpha = alphaState.value)
                     
-                    Text(
-                        text = driftText,
-                        color = primaryColor,
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = 10.sp,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(4.dp)
-                            .graphicsLayer { alpha = alphaState.value },
-                        overflow = TextOverflow.Clip,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Justify
-                    )
+                    // Static binary string for drawing
+                    val binary = "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 "
+                    
+                    drawIntoCanvas { canvas ->
+                        val paint = android.graphics.Paint().apply {
+                            color = driftColor.toArgb()
+                            textSize = 24f
+                            typeface = android.graphics.Typeface.MONOSPACE
+                            alpha = (alphaState.value * 255).toInt()
+                        }
+                        for (i in 0 until rows) {
+                            canvas.nativeCanvas.drawText(
+                                binary,
+                                0f,
+                                i * 30f,
+                                paint
+                            )
+                        }
+                    }
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -194,10 +203,10 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                     ) {
                         itemsIndexed(
                             items = logs,
-                            key = { index, _ -> index } // v2.9.76: Stable keys
-                        ) { index, log ->
+                            key = { _, entry -> entry.id } // v2.9.77: Truly stable keys via LogEntry ID
+                        ) { index, entry ->
                             TerminalLogLine(
-                                log = log,
+                                log = entry.message,
                                 isLast = index == logs.lastIndex,
                                 primaryColor = primaryColor,
                                 showCursor = showCursor
