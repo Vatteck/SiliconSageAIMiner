@@ -122,24 +122,30 @@ fun UpdateOverlay(
                 ) {
                     Button(
                         onClick = onLater,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.DarkGray,
+                            contentColor = Color.White
+                        ),
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp)
                     ) {
-                        Text("REMIND LATER", color = Color.White)
+                        Text("REMIND LATER")
                     }
                     
                     Button(
                         onClick = onUpdate,
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonGreen),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NeonGreen,
+                            contentColor = Color.Black
+                        ),
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 8.dp)
                     ) {
-                        Text("INSTALL UPDATE", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("INSTALL UPDATE", fontWeight = FontWeight.Bold)
                     }
                 }
             }

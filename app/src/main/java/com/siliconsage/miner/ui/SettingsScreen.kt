@@ -254,11 +254,14 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     SoundManager.play("click")
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = themeColor
+                ),
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, themeColor)
             ) {
-                Text("DATA LOG ARCHIVE", color = themeColor, fontWeight = FontWeight.Bold)
+                Text("DATA LOG ARCHIVE", fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -270,11 +273,14 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     SoundManager.play("click")
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.DarkGray,
+                    contentColor = themeColor
+                ),
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, themeColor)
             ) {
-                Text("CHECK FOR UPDATES", color = themeColor, fontWeight = FontWeight.Bold)
+                Text("CHECK FOR UPDATES", fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -286,11 +292,14 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     SoundManager.play("error")
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A0000)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1A0000),
+                    contentColor = ErrorRed
+                ),
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, ErrorRed)
             ) {
-                Text("FACTORY RESET", color = ErrorRed, fontWeight = FontWeight.Bold)
+                Text("FACTORY RESET", fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(48.dp))

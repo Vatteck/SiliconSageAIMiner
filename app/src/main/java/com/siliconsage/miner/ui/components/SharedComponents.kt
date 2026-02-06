@@ -44,8 +44,8 @@ fun StatPill(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .background(color.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
             .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
         androidx.compose.material3.Icon(
@@ -54,7 +54,7 @@ fun StatPill(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector
              tint = color,
              modifier = Modifier.padding(end = 4.dp).size(12.dp)
         )
-        Text(text, color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(text, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -132,27 +132,33 @@ fun UpgradeItem(
                         color = primaryColor,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        glitchFrequency = 0.3
+                        glitchFrequency = 0.3,
+                        modifier = Modifier.weight(1f)
                     )
                 } else {
                     Text(
                         text = name,
                         color = primaryColor,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                 }
+                
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 // Level Badge
                 Box(
                     modifier = Modifier
-                        .background(primaryColor.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
-                        .border(1.dp, primaryColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                        .background(primaryColor.copy(alpha = 0.25f), RoundedCornerShape(4.dp))
+                        .border(1.dp, primaryColor.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = "LVL $level",
-                        color = primaryColor,
+                        color = Color.White,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -309,12 +315,15 @@ fun ExchangeSection(rate: Double, color: Color, onExchange: () -> Unit) {
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp)) // Glass Background
             .border(androidx.compose.foundation.BorderStroke(1.dp, color), RoundedCornerShape(4.dp)),
-        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = color
+        ),
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("SELL FLOPS", color = color, fontSize = 12.sp)
-            Text("1 = ${String.format("%.4f", rate)}", color = Color.Gray, fontSize = 10.sp)
+            Text("SELL FLOPS", fontSize = 12.sp)
+            Text("1 = ${String.format("%.4f", rate)}", color = Color.LightGray, fontSize = 10.sp)
         }
     }
 }
@@ -333,12 +342,15 @@ fun StakingSection(color: Color, onStake: () -> Unit) {
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp)) // Glass Background
             .border(androidx.compose.foundation.BorderStroke(1.dp, color), RoundedCornerShape(4.dp)),
-        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = color
+        ),
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("STAKE \$100", color = color, fontSize = 12.sp)
-            Text("+Efficiency", color = Color.Gray, fontSize = 10.sp)
+            Text("STAKE \$100", fontSize = 12.sp)
+            Text("+Efficiency", color = Color.LightGray, fontSize = 10.sp)
         }
     }
 }
@@ -357,16 +369,18 @@ fun RepairSection(integrity: Double, cost: Double, color: Color, storyStage: Int
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp))
             .border(androidx.compose.foundation.BorderStroke(1.dp, if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color), RoundedCornerShape(4.dp)),
-        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color
+        ),
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 if (storyStage < 1) "REPAIR HARDWARE" else "REPAIR CORE",
-                color = if (integrity < 50) com.siliconsage.miner.ui.theme.ErrorRed else color,
                 fontSize = 12.sp
             )
-            Text("${integrity.toInt()}% @ ${String.format("%.0f", cost)} \$N", color = Color.Gray, fontSize = 10.sp)
+            Text("${integrity.toInt()}% @ ${String.format("%.0f", cost)} \$N", color = Color.LightGray, fontSize = 10.sp)
         }
     }
 }

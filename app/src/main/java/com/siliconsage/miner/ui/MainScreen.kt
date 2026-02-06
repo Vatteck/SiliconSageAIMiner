@@ -329,9 +329,12 @@ fun MainScreen(viewModel: GameViewModel) {
                              Spacer(modifier = Modifier.height(12.dp))
                              Button(
                                 onClick = { viewModel.resetBreaker() },
-                                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = ErrorRed,
+                                    contentColor = Color.White
+                                )
                              ) {
-                                Text("TRY RESET", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("TRY RESET", fontWeight = FontWeight.Bold)
                              }
                          }
                     }
@@ -353,19 +356,20 @@ fun MainScreen(viewModel: GameViewModel) {
                 }
 
                 // --- GLOBAL OVERLAYS (Popups) ---
+                // v2.9.71: Update Overlay is now truly global (visible in Settings)
+                updateInfo?.let { info ->
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    UpdateOverlay(
+                       updateInfo = info,
+                       isDownloading = isUpdateDownloading,
+                       progress = updateProgress,
+                       onUpdate = { viewModel.startUpdateDownload(context) },
+                       onLater = { viewModel.dismissUpdate() }
+                    )
+                }
+
                 // Only show gameplay events if NOT in Settings
                 if (currentScreen != Screen.SETTINGS) {
-                    updateInfo?.let { info ->
-                        val context = androidx.compose.ui.platform.LocalContext.current
-                        UpdateOverlay(
-                           updateInfo = info,
-                           isDownloading = isUpdateDownloading,
-                           progress = updateProgress,
-                           onUpdate = { viewModel.startUpdateDownload(context) },
-                           onLater = { viewModel.dismissUpdate() }
-                        )
-                    }
-
                     // Data Log Dialog (v2.5.2) - Moved up so it's behind Story Overlays
                     val pendingDataLog by viewModel.pendingDataLog.collectAsState()
                     com.siliconsage.miner.ui.components.DataLogDialog(
