@@ -24,6 +24,7 @@ import com.siliconsage.miner.ui.theme.NeonGreen
 import com.siliconsage.miner.util.HapticManager
 import com.siliconsage.miner.util.SoundManager
 import com.siliconsage.miner.viewmodel.GameViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun SettingsScreen(viewModel: GameViewModel) {
@@ -42,6 +43,10 @@ fun SettingsScreen(viewModel: GameViewModel) {
     
     // Data Log Archive
     var showArchive by remember { mutableStateOf(false) }
+
+    // v2.9.82: Update Check State
+    var isCheckingUpdates by remember { mutableStateOf(false) }
+    var updateStatusMessage by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -269,10 +274,22 @@ fun SettingsScreen(viewModel: GameViewModel) {
             // --- CHECK FOR UPDATES ---
             Button(
                 onClick = { 
-                    viewModel.checkForUpdates(showNotification = true)
+                    isCheckingUpdates = true
+                    updateStatusMessage = null
+                    viewModel.checkForUpdates(
+                        context = context, 
+                        showNotification = true,
+                        onResult = { found ->
+                            isCheckingUpdates = false
+                            if (!found) {
+                                updateStatusMessage = "SYSTEM IS UP TO DATE"
+                            }
+                        }
+                    )
                     SoundManager.play("click")
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isCheckingUpdates,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.DarkGray,
                     contentColor = themeColor
@@ -280,7 +297,27 @@ fun SettingsScreen(viewModel: GameViewModel) {
                 shape = RoundedCornerShape(8.dp),
                 border = BorderStroke(1.dp, themeColor)
             ) {
-                Text("CHECK FOR UPDATES", fontWeight = FontWeight.Bold)
+                Text(
+                    if (isCheckingUpdates) "CHECKING..." else "CHECK FOR UPDATES", 
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            updateStatusMessage?.let { msg ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = msg,
+                    color = NeonGreen,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                
+                // Auto-clear message
+                LaunchedEffect(msg) {
+                    delay(3000)
+                    updateStatusMessage = null
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

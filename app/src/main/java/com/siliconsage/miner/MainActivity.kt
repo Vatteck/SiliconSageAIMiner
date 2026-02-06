@@ -45,21 +45,11 @@ class MainActivity : ComponentActivity() {
         
         // Check for updates on startup and show notification if found
         viewModel.checkForUpdates(
+            context = this,
             onResult = { found ->
-                if (found) {
-                    val updateInfo = viewModel.updateInfo.value
-                    if (updateInfo != null && 
-                        com.siliconsage.miner.util.UpdateNotificationManager.shouldShowNotification(this)) {
-                        com.siliconsage.miner.util.UpdateNotificationManager.showUpdateNotification(
-                            this,
-                            updateInfo.version,
-                            updateInfo.url
-                        )
-                        com.siliconsage.miner.util.UpdateNotificationManager.markNotificationShown(this)
-                    }
-                }
+                // Custom handling if needed, but GameViewModel now handles the notification
             },
-            showNotification = false // We handle notification manually above
+            showNotification = true
         )
         
         // Init Engines

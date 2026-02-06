@@ -31,19 +31,19 @@ object UpdateManager {
     private val client = OkHttpClient()
     private val jsonConfig = Json { ignoreUnknownKeys = true }
 
-    fun checkUpdate(currentVersion: String, currentBuild: Int, onResult: (UpdateInfo?) -> Unit) {
+    fun checkUpdate(currentVersion: String, currentBuild: Int, onResult: (UpdateInfo?, Boolean) -> Unit) {
         val request = Request.Builder().url(UPDATE_URL).build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("UpdateManager", "Failed to check update", e)
-                onResult(null)
+                onResult(null, false)
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!response.isSuccessful) {
-                        onResult(null)
+                        onResult(null, false)
                         return
                     }
                     try {
@@ -51,16 +51,16 @@ object UpdateManager {
                         if (jsonString != null) {
                             val info = jsonConfig.decodeFromString<UpdateInfo>(jsonString)
                             if (isNewer(currentVersion, currentBuild, info.version, info.build)) {
-                                onResult(info)
+                                onResult(info, true)
                             } else {
-                                onResult(null)
+                                onResult(null, true)
                             }
                         } else {
-                            onResult(null)
+                            onResult(null, false)
                         }
                     } catch (e: Exception) {
                         Log.e("UpdateManager", "Error parsing update info", e)
-                        onResult(null)
+                        onResult(null, false)
                     }
                 }
             }

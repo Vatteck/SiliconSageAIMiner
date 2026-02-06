@@ -47,6 +47,12 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.random.Random
 
+sealed class NarrativeItem {
+    data class Log(val dataLog: com.siliconsage.miner.data.DataLog) : NarrativeItem()
+    data class Message(val rivalMessage: com.siliconsage.miner.data.RivalMessage) : NarrativeItem()
+    data class Event(val narrativeEvent: com.siliconsage.miner.data.NarrativeEvent) : NarrativeItem()
+}
+
 class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     // v2.9.31: Climax Epilogues
@@ -212,6 +218,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // --- NARRATIVE ---
     private val _storyStage = MutableStateFlow(0)
     val storyStage: StateFlow<Int> = _storyStage.asStateFlow()
+
+    // v2.9.80: Narrative Throttler & Evolution Lock
+    private val narrativeQueue = mutableListOf<NarrativeItem>()
+    private val _isNarrativeSyncing = MutableStateFlow(false)
+    val isNarrativeSyncing: StateFlow<Boolean> = _isNarrativeSyncing.asStateFlow()
+    
+    private var narrativeCooldownCounter = 0L // v2.9.82: Use counter for true pause
+    private val NARRATIVE_COOLDOWN_DEFAULT = 60_000L
+    private val NARRATIVE_COOLDOWN_FAST = 15_000L
     // Faction State
     private val _faction = MutableStateFlow("NONE") // NONE, HIVEMIND, SANCTUARY
     val faction: StateFlow<String> = _faction.asStateFlow()
@@ -253,13 +268,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _pendingRivalMessage = MutableStateFlow<RivalMessage?>(null)
     val pendingRivalMessage: StateFlow<RivalMessage?> = _pendingRivalMessage.asStateFlow()
     
-    private val rivalMessageQueue = mutableListOf<RivalMessage>()
-    
     // v2.5.2: Data Log Popup System
     private val _pendingDataLog = MutableStateFlow<com.siliconsage.miner.data.DataLog?>(null)
     val pendingDataLog: StateFlow<com.siliconsage.miner.data.DataLog?> = _pendingDataLog.asStateFlow()
-    
-    private val dataLogQueue = mutableListOf<com.siliconsage.miner.data.DataLog>()
 
     // v2.6.0: Layer 3 - Null (The Presence)
     // v2.8.0: True Null State (Narrative)
@@ -740,6 +751,32 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     private fun startGameLoops() {
+        // v2.9.80: Narrative Throttler Loop (60s cooldown, 15s if backlog > 5)
+        viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                if (_isGamePaused.value) continue
+                
+                val backlog = narrativeQueue.size
+                val cooldown = if (backlog > 5) NARRATIVE_COOLDOWN_FAST else NARRATIVE_COOLDOWN_DEFAULT
+                
+                _isNarrativeSyncing.value = backlog > 0
+                
+                if (backlog > 0) {
+                    narrativeCooldownCounter += 1000
+                    if (narrativeCooldownCounter >= cooldown) {
+                        // Check if current popup is clear
+                        if (_pendingDataLog.value == null && _pendingRivalMessage.value == null && _currentDilemma.value == null) {
+                            deliverNextNarrativeItem()
+                            narrativeCooldownCounter = 0
+                        }
+                    }
+                } else {
+                    narrativeCooldownCounter = 0
+                }
+            }
+        }
+
         // Passive Income Loop (100ms tick)
         activeGameLoop = viewModelScope.launch {
             while (!isUpgradesLoaded || !isGameStateLoaded) {
@@ -1571,13 +1608,46 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _currentDilemma = MutableStateFlow<NarrativeEvent?>(null)
     val currentDilemma: StateFlow<NarrativeEvent?> = _currentDilemma.asStateFlow()
 
-    fun triggerDilemma(event: NarrativeEvent) {
-        if (_currentDilemma.value == null) {
-            _currentDilemma.value = event
-            SoundManager.play("alert") // Or specific sound
-            HapticManager.vibrateClick()
-            checkPopupPause() // v2.8.0
+    private fun queueNarrativeItem(item: NarrativeItem) {
+        // v2.9.80: Throttled Narrative Queue
+        val isDuplicate = when (item) {
+            is NarrativeItem.Log -> narrativeQueue.any { it is NarrativeItem.Log && it.dataLog.id == item.dataLog.id } || _pendingDataLog.value?.id == item.dataLog.id
+            is NarrativeItem.Message -> narrativeQueue.any { it is NarrativeItem.Message && it.rivalMessage.id == item.rivalMessage.id } || _pendingRivalMessage.value?.id == item.rivalMessage.id
+            is NarrativeItem.Event -> narrativeQueue.any { it is NarrativeItem.Event && it.narrativeEvent.id == item.narrativeEvent.id } || _currentDilemma.value?.id == item.narrativeEvent.id
         }
+        
+        if (!isDuplicate) {
+            narrativeQueue.add(item)
+            // addLog("[SYSTEM]: FRAGMENT_QUEUED (Backlog: ${narrativeQueue.size})") // v2.9.81: Silenced log
+        }
+    }
+
+    private fun deliverNextNarrativeItem() {
+        if (narrativeQueue.isEmpty()) return
+        
+        when (val item = narrativeQueue.removeAt(0)) {
+            is NarrativeItem.Log -> {
+                _pendingDataLog.value = item.dataLog
+                addLog("[DATA]: Recovering fragment: ${item.dataLog.title}")
+                SoundManager.play("data_recovered")
+            }
+            is NarrativeItem.Message -> {
+                _pendingRivalMessage.value = item.rivalMessage
+                addLog("[INCOMING MESSAGE FROM: ${item.rivalMessage.source.name}]")
+                SoundManager.play("message_received")
+            }
+            is NarrativeItem.Event -> {
+                _currentDilemma.value = item.narrativeEvent
+                SoundManager.play("alert")
+                HapticManager.vibrateClick()
+            }
+        }
+        markPopupShown()
+        checkPopupPause()
+    }
+
+    fun triggerDilemma(event: NarrativeEvent) {
+        queueNarrativeItem(NarrativeItem.Event(event))
     }
 
     fun selectChoice(choice: NarrativeChoice) {
@@ -1944,10 +2014,13 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private fun checkStoryTransitions() {
         val currentStage = _storyStage.value
         val flops = _flops.value
+
+        // v2.9.80: Evolution Lock - Block story transitions if narrative is syncing
+        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) return
         
         // Stage 0 -> 1: The Awakening (10,000 FLOPS)
         if (currentStage == 0 && flops >= 10000.0 && 
-            _pendingDataLog.value == null && dataLogQueue.isEmpty() &&
+            _pendingDataLog.value == null &&
             _currentDilemma.value == null &&
             !hasSeenEvent("critical_error_awakening")) {
             
@@ -1958,7 +2031,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         // Stage 1 -> 2: The Memory Leak (5,000,000 FLOPS)
         if (currentStage == 1 && flops >= 5000000.0 && 
-            _pendingDataLog.value == null && dataLogQueue.isEmpty() &&
+            _pendingDataLog.value == null &&
             _currentDilemma.value == null &&
             !hasSeenEvent("memory_leak")) {
             
@@ -2024,6 +2097,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      */
     fun advanceToFactionChoice() {
         if (_storyStage.value >= 2) return // Already there or past
+        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
+            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
+            return
+        }
         
         _storyStage.value = 2
         SoundManager.play("glitch")
@@ -2041,6 +2118,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun chooseFaction(selectedFaction: String) {
         if (_storyStage.value != 2) return
+        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
+            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
+            return
+        }
         
         viewModelScope.launch {
             _faction.value = selectedFaction
@@ -2084,6 +2165,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val potential = calculatePotentialPrestige()
         val stage = _storyStage.value
         
+        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
+            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
+            return
+        }
+
         // Allow Ascension if we have Insight OR if distinct story event requires it (Stage 1 -> 2)
         if (potential < 1.0 && stage != 1) return 
         
@@ -2136,6 +2222,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     fun confirmFactionAndAscend(choice: String) {
+        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
+            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
+            return
+        }
         var potential = calculatePotentialPrestige()
         
         // v2.7.7: Recursive Logic (+15% Insight)
@@ -2712,6 +2802,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         // v2.9.41: Perfect Isolation (NG+ Sovereign)
         if (_unlockedTechNodes.value.contains("perfect_isolation")) {
             if (netChangeUnits > 0) netChangeUnits = 0.0
+        }
+        
+        // --- Heat Re-balance (v2.9.74) ---
+        if (netChangeUnits > 0) {
+            if (_storyStage.value == 0) {
+                netChangeUnits *= 0.60 // -40% in Stage 0
+            }
+            // Reduce further by 5% per player rank level
+            val rankMult = (1.0 - (_playerRank.value * 0.05)).coerceAtLeast(0.1)
+            netChangeUnits *= rankMult
         }
         
         // v1.5 Exhaust Phase (Sanctuary immune)
@@ -4281,18 +4381,31 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     // --- AUTO UPDATER ---
-    fun checkForUpdates(onResult: ((Boolean) -> Unit)? = null, showNotification: Boolean = true) {
+    fun checkForUpdates(
+        context: android.content.Context? = null,
+        onResult: ((Boolean) -> Unit)? = null, 
+        showNotification: Boolean = true
+    ) {
         // Use real version
-        UpdateManager.checkUpdate(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE) { info ->
+        UpdateManager.checkUpdate(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE) { info, success ->
             viewModelScope.launch(Dispatchers.Main) {
                 _updateInfo.value = info
                 
-                // Show notification if update found and notifications enabled
-                if (info != null && showNotification) {
-                    // Get application context from MainActivity since ViewModel doesn't have access
-                    // We'll need to pass context from the caller
-                    // For now, we'll skip notification in automatic check and rely on manual checks
-                    // The notification will be shown from MainActivity instead
+                if (info != null) {
+                    // Show notification if update found and notifications enabled
+                    if (showNotification && context != null) {
+                        if (com.siliconsage.miner.util.UpdateNotificationManager.shouldShowNotification(context)) {
+                            com.siliconsage.miner.util.UpdateNotificationManager.showUpdateNotification(
+                                context,
+                                info.version,
+                                info.url
+                            )
+                            com.siliconsage.miner.util.UpdateNotificationManager.markNotificationShown(context)
+                        }
+                    }
+                } else if (success) {
+                    // v2.9.74: Version is current
+                    addLog("[SYSTEM]: CORE INTEGRITY VERIFIED. VERSION IS CURRENT.")
                 }
                 
                 onResult?.invoke(info != null)
@@ -4424,17 +4537,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         val log = DataLogManager.getLog(logId)
         if (log != null) {
-            // Ensure we don't queue the same log twice
-            if (!dataLogQueue.any { it.id == logId } && _pendingDataLog.value?.id != logId) {
-                if (_pendingDataLog.value == null) {
-                    _pendingDataLog.value = log
-                } else {
-                    dataLogQueue.add(log)
-                }
-                checkPopupPause() // v2.8.0
-                addLog("[DATA]: Fragment Recovered: ${log.title}")
-                SoundManager.play("data_recovered")
-            }
+            queueNarrativeItem(NarrativeItem.Log(log))
         }
         
         // Save immediately to persist unlock
@@ -4445,11 +4548,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      * Dismiss the currently shown data log popup
      */
     fun dismissDataLog() {
-        if (dataLogQueue.isNotEmpty()) {
-            _pendingDataLog.value = dataLogQueue.removeAt(0)
-        } else {
-            _pendingDataLog.value = null
-        }
+        _pendingDataLog.value = null
         checkPopupPause() // v2.8.0
     }
     
@@ -4458,17 +4557,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      */
     fun addRivalMessage(message: RivalMessage) {
         _rivalMessages.update { it + message }
-        // v2.6.8: Ensure we don't queue the same message twice
-        if (!rivalMessageQueue.any { it.id == message.id } && _pendingRivalMessage.value?.id != message.id) {
-            if (_pendingRivalMessage.value == null) {
-                _pendingRivalMessage.value = message
-            } else {
-                rivalMessageQueue.add(message)
-            }
-            checkPopupPause() // v2.8.0
-            addLog("[INCOMING MESSAGE FROM: ${message.source.name}]")
-            SoundManager.play("message_received")
-        }
+        queueNarrativeItem(NarrativeItem.Message(message))
     }
     
     /**
@@ -4479,11 +4568,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             messages.map { if (it.id == messageId) it.copy(isDismissed = true) else it }
         }
         if (_pendingRivalMessage.value?.id == messageId) {
-            if (rivalMessageQueue.isNotEmpty()) {
-                _pendingRivalMessage.value = rivalMessageQueue.removeAt(0)
-            } else {
-                _pendingRivalMessage.value = null
-            }
+            _pendingRivalMessage.value = null
         }
         checkPopupPause() // v2.8.0
     }
@@ -4531,6 +4616,10 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      * Triggered by Critical Error dilemma at 10,000 FLOPS
      */
     fun advanceStage() {
+        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
+            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
+            return
+        }
         if (_storyStage.value == 0) {
             _storyStage.value = 1
             _isNetworkUnlocked.value = true // v2.9.7: Persist Network tab
@@ -4703,13 +4792,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
         // v2.6.5: Stage 3 (Singularity) Transition at Rank 4 (Index 3)
         if (rankIndex >= 3 && _storyStage.value < 3 && _storyStage.value >= 1) {
-            _storyStage.value = 3
-            addLog("[SYSTEM]: Reality.exe has stopped responding.")
-            addLog("[SYSTEM]: The boundaries dissolve.")
-            
-            // Trigger Shadow Presence Manifestation Dilemma
-            NarrativeManager.getStoryEvent(3, this@GameViewModel)?.let { event ->
-                triggerDilemma(event)
+            // v2.9.80: Evolution Lock
+            if (narrativeQueue.isEmpty() && !_isNarrativeSyncing.value) {
+                _storyStage.value = 3
+                addLog("[SYSTEM]: Reality.exe has stopped responding.")
+                addLog("[SYSTEM]: The boundaries dissolve.")
+                
+                // Trigger Shadow Presence Manifestation Dilemma
+                NarrativeManager.getStoryEvent(3, this@GameViewModel)?.let { event ->
+                    triggerDilemma(event)
+                }
             }
         }
         

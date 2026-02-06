@@ -1,13 +1,20 @@
-## [2.9.77-dev] - 2026-02-06
+## [2.9.82-dev] - 2026-02-06
+
+### Added
+- **Narrative Throttler**: Implemented a FIFO queue for story events and memory logs with a mandatory cooldown (60s default, 15s catch-up) to prevent UI flooding after offline periods.
+- **Evolution Lock**: Advancement to new story stages is now gated until the narrative queue is synchronized. Added a `[STATUS]: SYNCING...` indicator to the UI.
+- **Interactive 51% Attack**: Replaced the terminal-only warning with a high-tension interactive overlay requiring manual firewall reinforcement.
+- **Rank-Based Heat Sinks**: Player rank now provides a passive reduction to heat generation per click (-5% per rank).
+
+### Changed
+- **Thermal Re-balance**: Reduced base Stage 0 heat generation by 40% for a smoother early-game experience.
+- **Update Workflow**: "Check for Updates" now provides in-app feedback on the settings page and suppresses redundant system notifications when the version is current.
 
 ### Fixed
-- **UI Performance (Stage 2)**:
-  - **Terminal Background**: Switched from heavy `Text` repetition to a high-performance `Canvas` drawing loop for the code-drift effect.
-  - **Terminal Scrolling**: Refactored logs to use `LogEntry` objects with unique IDs, enabling truly stable keys for `LazyColumn`. This prevents redundant recompositions of the entire terminal history when new logs arrive.
-  - **Cursor Logic**: Isolated blinking cursor state to the line level to prevent whole-screen updates.
-  - **Glitch Text**: Optimized string generation to maintain constant string length, preventing layout thrashing during scrolling.
+- **UI Performance**: Finalized state-collection optimizations to ensure smooth 60fps performance during rapid clicking.
+- **Narrative Pause**: Throttler cooldown now correctly pauses when the game is suspended.
 
-## [2.9.76-dev] - 2026-02-06
+## [2.9.81-dev] - 2026-02-06
 
 ### Added
 - **Lore Expansion**: Added 10 new `MEM_` fragments to `DataLogManager` for Stage 1, deepening the Vattic persona and his gradual dissociation from reality.

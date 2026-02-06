@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -173,6 +174,84 @@ fun SecurityBreachOverlay(
                     fontWeight = FontWeight.ExtraBold
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun FiftyOneAttackOverlay(
+    isVisible: Boolean,
+    tapsRemaining: Int,
+    onTap: () -> Unit
+) {
+    if (!isVisible) return
+
+    val infiniteTransition = rememberInfiniteTransition(label = "51attack")
+    val backgroundAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(100, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bgAlpha"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ErrorRed.copy(alpha = backgroundAlpha))
+            .clickable(enabled = false) {},
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(32.dp)
+                .background(Color.Black)
+                .border(2.dp, ErrorRed)
+                .padding(24.dp)
+        ) {
+            SystemGlitchText(
+                text = "51% ATTACK IN PROGRESS",
+                color = ErrorRed,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                glitchFrequency = 0.5
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "NETWORK INTEGRITY COMPROMISED",
+                color = Color.White,
+                fontSize = 14.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Button(
+                onClick = onTap,
+                colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
+                shape = RectangleShape,
+                modifier = Modifier.fillMaxWidth().height(64.dp)
+            ) {
+                Text(
+                    text = "REINFORCE FIREWALL ($tapsRemaining)",
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "SPAM TO REPEL ATTACK",
+                color = Color.Gray,
+                fontSize = 11.sp
+            )
         }
     }
 }

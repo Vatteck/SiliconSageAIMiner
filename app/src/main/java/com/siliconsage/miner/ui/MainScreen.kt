@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siliconsage.miner.data.UpgradeType
 import com.siliconsage.miner.ui.components.AuditChallengeOverlay
+import com.siliconsage.miner.ui.components.FiftyOneAttackOverlay
 import com.siliconsage.miner.ui.components.AirdropButton
 import com.siliconsage.miner.ui.components.NewsTicker
 import com.siliconsage.miner.ui.components.DilemmaOverlay
@@ -182,6 +183,8 @@ fun MainScreen(viewModel: GameViewModel) {
     val isBreach by viewModel.isBreachActive.collectAsState()
     val isAirdrop by viewModel.isAirdropActive.collectAsState()
     val isAuditActive by viewModel.isAuditChallengeActive.collectAsState()
+    val is51AttackActive by viewModel.is51AttackActive.collectAsState()
+    val attackTaps by viewModel.attackTaps.collectAsState()
     val auditTimer by viewModel.auditTimer.collectAsState()
     val auditTargetHeat by viewModel.auditTargetHeat.collectAsState()
     val auditTargetPower by viewModel.auditTargetPower.collectAsState()
@@ -425,6 +428,12 @@ fun MainScreen(viewModel: GameViewModel) {
                         currentHeat = currentHeatForAudit,
                         targetPower = auditTargetPower,
                         currentPower = currentPowerForAudit
+                    )
+
+                    FiftyOneAttackOverlay(
+                        isVisible = is51AttackActive,
+                        tapsRemaining = attackTaps,
+                        onTap = { viewModel.onDefend51Attack() }
                     )
                     
                     
@@ -779,6 +788,25 @@ fun HeaderSection(
                 } else {
                     Text(text = secValueStr, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+
+        // v2.9.80: Narrative Sync Indicator
+        val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
+        if (isSyncing) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "[STATUS]: SYNCING MEMORY FRAGMENTS...",
+                    color = color.copy(alpha = 0.6f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 1.sp
+                )
             }
         }
 

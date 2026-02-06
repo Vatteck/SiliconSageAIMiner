@@ -50,6 +50,13 @@ object UpdateNotificationManager {
      * @param releaseUrl URL to the GitHub release page
      */
     fun showUpdateNotification(context: Context, newVersion: String, releaseUrl: String) {
+        // ... (existing code)
+    }
+
+    /**
+     * Shows a notification indicating the version is current
+     */
+    fun showVersionCurrentNotification(context: Context) {
         // Check permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ActivityCompat.checkSelfPermission(
@@ -57,41 +64,20 @@ object UpdateNotificationManager {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // Permission not granted, fall back to silent behavior
                 return
             }
         }
-        
-        // Create intent to open GitHub release page
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        // Build notification
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher) // Use app icon
-            .setContentTitle("Silicon Sage Update Available")
-            .setContentText("Version $newVersion is ready to download")
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText("Version $newVersion is now available on GitHub. Tap to view release notes and download.")
-            )
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("CORE INTEGRITY VERIFIED")
+            .setContentText("Your version is currently up to date.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true) // Dismiss on tap
-            .setVibrate(longArrayOf(0, 250, 250, 250))
+            .setAutoCancel(true)
             .build()
-        
-        // Show notification
+
         with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID, notification)
+            notify(NOTIFICATION_ID + 1, notification)
         }
     }
     
