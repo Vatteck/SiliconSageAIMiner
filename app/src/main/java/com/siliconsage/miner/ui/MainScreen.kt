@@ -689,25 +689,25 @@ fun HeaderSection(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = systemTitle.uppercase(),
-                        color = color.copy(alpha = 0.8f),
-                        fontSize = 7.sp,
+                        color = color.copy(alpha = 0.9f),
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.5.sp
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "${playerRank} // ${playerTitle}".uppercase(),
-                        color = color.copy(alpha = 0.5f),
-                        fontSize = 7.sp,
+                        color = color.copy(alpha = 0.7f),
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 0.5.sp
                     )
                 }
                 
                 Text(
                     text = "${labelSec}: $secValueStr • ${currentLocation.replace("_", " ")}",
-                    color = color.copy(alpha = 0.5f),
-                    fontSize = 7.sp,
+                    color = color.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -719,8 +719,8 @@ fun HeaderSection(
                 // LEFT: FLOPS
                 Column(modifier = Modifier.width(120.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Computer, null, tint = color.copy(alpha = 0.5f), modifier = Modifier.size(10.dp).padding(end = 2.dp))
-                        Text(labelFlops, color = color.copy(alpha = 0.5f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                        Icon(Icons.Default.Computer, null, tint = Color.White, modifier = Modifier.size(11.dp).padding(end = 2.dp))
+                        Text(labelFlops, color = color.copy(alpha = 0.7f), fontSize = 11.sp, fontWeight = FontWeight.Black)
                     }
                     if (heat > 90.0 || isTrueNull) {
                         SystemGlitchText(
@@ -755,14 +755,14 @@ fun HeaderSection(
                 // RIGHT: NEURAL & POWER
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(120.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(labelNeural, color = color.copy(alpha = 0.5f), fontSize = 9.sp, fontWeight = FontWeight.Black)
-                        Icon(Icons.Default.AttachMoney, null, tint = color.copy(alpha = 0.5f), modifier = Modifier.size(10.dp).padding(start = 2.dp))
+                        Text(labelNeural, color = color.copy(alpha = 0.7f), fontSize = 11.sp, fontWeight = FontWeight.Black)
+                        Icon(Icons.Default.AttachMoney, null, tint = Color.White, modifier = Modifier.size(11.dp).padding(start = 2.dp))
                     }
                     Text(text = neuralStr, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, softWrap = false, maxLines = 1)
                     Text(
                         text = "$powerKw / $maxPowerKw", 
                         color = pwrColor, 
-                        fontSize = 8.sp, 
+                        fontSize = 10.sp, 
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -777,30 +777,31 @@ fun HeaderSection(
             ) {
                 Button(
                     onClick = onToggleOverclock,
-                    modifier = Modifier.weight(1f).height(28.dp),
+                    modifier = Modifier.weight(1f).height(32.dp),
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isOverclocked) ErrorRed.copy(alpha = 0.2f) else Color.DarkGray.copy(alpha = 0.3f),
-                        contentColor = if (isOverclocked) ErrorRed else Color.LightGray
+                        contentColor = if (isOverclocked) ErrorRed else Color.White
                     ),
                     shape = RoundedCornerShape(4.dp),
-                    border = BorderStroke(1.dp, if (isOverclocked) ErrorRed else Color.Transparent)
+                    border = BorderStroke(1.dp, if (isOverclocked) ErrorRed else Color.DarkGray)
                 ) {
-                    Text("OVERCLOCK", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                    Icon(Icons.Default.DeviceThermostat, null, modifier = Modifier.size(12.dp).padding(end = 4.dp))
+                    Text("OVERCLOCK", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                 }
                 
                 Button(
                     onClick = onPurge,
-                    modifier = Modifier.weight(1f).height(28.dp),
+                    modifier = Modifier.weight(1f).height(32.dp),
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isPurging) ElectricBlue.copy(alpha = 0.2f) else Color.DarkGray.copy(alpha = 0.3f),
-                        contentColor = if (isPurging) ElectricBlue else Color.LightGray
+                        contentColor = if (isPurging) ElectricBlue else Color.White
                     ),
                     shape = RoundedCornerShape(4.dp),
-                    border = BorderStroke(1.dp, if (isPurging) ElectricBlue else Color.Transparent)
+                    border = BorderStroke(1.dp, if (isPurging) ElectricBlue else Color.DarkGray)
                 ) {
-                    Text("PURGE HEAT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("PURGE HEAT", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
 
@@ -813,25 +814,25 @@ fun HeaderSection(
             }
             
             // v2.9.88: Unified Gauge row with centered Sync status
-            Row(modifier = Modifier.fillMaxWidth().padding(top = 1.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("THERM: ${heat.toInt()}°C", color = if (heat > 90) ErrorRed else Color.Gray, fontSize = 6.sp, modifier = Modifier.width(60.dp))
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("THERM: ${heat.toInt()}°C", color = if (heat > 90) ErrorRed else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(70.dp))
                 
                 val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
                 if (isSyncing) {
                     Text(
                         text = "[ SYNCING FRAGMENTS ]",
-                        color = color.copy(alpha = 0.7f),
-                        fontSize = 6.sp,
+                        color = color.copy(alpha = 0.9f),
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.graphicsLayer {
                             alpha = (Math.sin(waveAnim.toDouble() * 5).toFloat() * 0.4f + 0.6f)
                         }
                     )
                 } else {
-                    Spacer(modifier = Modifier.width(60.dp))
+                    Spacer(modifier = Modifier.width(70.dp))
                 }
                 
-                Text("INTEG: ${integrity.toInt()}%", color = if (integrity < 30) ErrorRed else Color.Gray, fontSize = 6.sp, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.width(60.dp).clickable { onRepair() })
+                Text("INTEG: ${integrity.toInt()}%", color = if (integrity < 30) ErrorRed else Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.width(70.dp).clickable { onRepair() })
             }
         }
     }

@@ -1,8 +1,8 @@
 {
-  "version": "2.9.88-dev",
-  "build": 233,
+  "version": "2.9.89-dev",
+  "build": 234,
   "date": "2026-02-06",
-  "changes": "HUD refinements: Metadata ribbon with systemTitle, fixed wrapping, and reactive waveforms.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.88-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.88-dev/Sage_2.9.88-dev.apk"
+  "changes": "HUD polish: Improved legibility, white iconography, and load-aware waveforms.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.89-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.89-dev/Sage_2.9.89-dev.apk"
 }

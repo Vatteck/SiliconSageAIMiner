@@ -1,3 +1,26 @@
+## [2.9.89-dev] - 2026-02-06
+
+### Added
+- **HUD Polish**: 
+  - Increased font sizes across the header for better legibility on high-DPI displays.
+  - High-contrast white iconography for FLOPS and Credits.
+  - More dramatic waveform scaling—the HUD now visually "jitters" more intensely during high-load and overclocking.
+  - Added a dedicated "Used / Total" power indication.
+
+### Fixed
+- **UI Stability**: Resolved overlapping issues with the "Syncing" status indicator.
+- **Click Responsiveness**: Fine-tuned the click-scramble intensity for better readability during rapid input.
+
+## [2.9.88-dev] - 2026-02-06
+
+### Added
+- **HUD Polish & Stability**:
+  - Restored Terminal OS branding (systemTitle) in the metadata ribbon.
+  - Fixed value wrapping by increasing column widths to 120dp.
+  - Low-profile "Syncing" indicator integrated into the bottom gauge row to prevent vertical header expansion.
+  - Deeper load-aware kinetic waveforms with frequency doubling during Overclocking.
+  - Restored interactive 51% Attack overlay.
+
 ## [2.9.83-dev] - 2026-02-06
 
 ### Added
