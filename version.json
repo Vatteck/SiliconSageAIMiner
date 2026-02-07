@@ -1,8 +1,8 @@
 {
-  "version": "2.9.99-dev",
-  "build": 236,
-  "date": "2026-02-06",
-  "changes": "Industrial HUD Overhaul & 120Hz Performance Pass",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v2.9.99-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v2.9.99-dev/Sage_2.9.99-dev.apk"
+  "version": "3.0.0-dev",
+  "build": 237,
+  "date": "2026-02-07",
+  "changes": "Phase 13 Part 3: The Convergence. Global Grid & Resonance.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v3.0.0-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v3.0.0-dev/Sage_3.0.0-dev.apk"
 }

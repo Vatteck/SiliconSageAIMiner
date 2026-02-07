@@ -48,7 +48,7 @@
 
 ## 🧪 Testing Recommendations
 
-1. **Device:** Test on actual Pixel Fold (unfolded)
+1. **Device:** Test on actual high-DPI foldable devices (unfolded)
 2. **Scenario:** Max FLOPS production (10M+/s)
 3. **Metrics:** 
    - Frame rate should stay 55-60fps
@@ -67,7 +67,7 @@
 
 ## 🎯 Mission Complete
 
-**Goal:** 60fps sustained during high FLOPS on Pixel Fold  
+**Goal:** 60fps sustained during high FLOPS on high-DPI foldable devices  
 **Status:** ✅ **ACHIEVED**  
 **Version:** v2.9.95  
 **Ready for:** QA testing on device

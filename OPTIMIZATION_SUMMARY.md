@@ -44,7 +44,7 @@
 - ✅ Increased alpha compensation: `0.5f` → `0.6f` (visual consistency)
 
 **Impact:**
-- **Before:** ~32px effective blur radius on Pixel Fold
+- **Before:** ~32px effective blur radius on high-DPI foldable devices
 - **After:** ~16px effective blur radius
 - **Savings:** ~50% GPU cost for text shadows (4-6ms → 2-3ms per frame)
 
@@ -144,7 +144,7 @@
 
 ## 🎯 TARGET ACHIEVEMENT
 
-### Goal: 60fps sustained during high FLOPS production on Pixel Fold
+### Goal: 60fps sustained during high FLOPS production on high-DPI foldable devices
 **Status:** ✅ **ACHIEVED**
 
 **Evidence:**
@@ -180,7 +180,7 @@
 - Profile and optimize `formatLargeNumber()` (frequent calls)
 
 ### Monitoring Recommendations:
-1. Test on actual Pixel Fold device
+1. Test on actual high-DPI foldable devices device
 2. Use Android Studio GPU Profiler to verify frame times
 3. Check battery consumption over 30-minute session
 4. Monitor thermal throttling on folded vs unfolded states

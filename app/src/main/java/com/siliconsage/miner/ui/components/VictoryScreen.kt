@@ -29,6 +29,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun VictoryScreen(
     faction: String,
+    unitName: String, // v3.0.0
+    currencyName: String, // v3.0.0
     onContinue: () -> Unit,
     onTranscend: () -> Unit
 ) {
@@ -266,6 +268,8 @@ fun VictoryScreen(
             // Transcendence Popup (Now inside the Dialog's Box)
             TranscendencePopup(
                 isVisible = showTranscendencePopup,
+                unitName = unitName,
+                currencyName = currencyName,
                 onTranscend = {
                     showTranscendencePopup = false
                     onContinue() // Dismiss victory screen first

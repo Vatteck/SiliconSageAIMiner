@@ -62,14 +62,14 @@ fun EnhancedAnalyzingAnimation(
         else -> AnimationState.NORMAL
     }
     
-    // v2.9.83: Dynamic speed based on rate (Slower endgame v2.9.99)
+    // v2.9.83: Dynamic speed based on rate (Slower for v3.0.12)
     val frameDelay = when {
-        flopsRate <= 0.0 -> 2500L
-        flopsRate < 10.0 -> 1500L
-        flopsRate < 1000.0 -> 1000L
-        flopsRate < 100_000.0 -> 600L
-        flopsRate < 10_000_000.0 -> 400L
-        else -> 300L // Minimal readable delay
+        flopsRate <= 0.0 -> 3000L
+        flopsRate < 10.0 -> 2000L
+        flopsRate < 1000.0 -> 1500L
+        flopsRate < 100_000.0 -> 1000L
+        flopsRate < 10_000_000.0 -> 800L
+        else -> 600L 
     }
     
     // State-specific frames
@@ -81,13 +81,13 @@ fun EnhancedAnalyzingAnimation(
                 "[!!!!] WIPE_IN_PROG",
                 "[!!!!] DEFEND_SUBSTR"
             )
-            Triple(breachFrames[currentFrame % breachFrames.size], ErrorRed, 200)
+            Triple(breachFrames[currentFrame % breachFrames.size], ErrorRed, 400)
         }
         AnimationState.OFFLINE -> {
-            Triple("[xxxx] OFFLINE.exe", Color.DarkGray, 1200)
+            Triple("[xxxx] OFFLINE.exe", Color.Gray.copy(alpha = 0.5f), 1500)
         }
         AnimationState.LOCKOUT -> {
-            Triple("[!!!!] LOCKOUT ($lockoutTimer" + "s)", ErrorRed, 200)
+            Triple("[!!!!] LOCKOUT ($lockoutTimer" + "s)", ErrorRed, 400)
         }
         AnimationState.PURGING -> {
             val purgeFrames = listOf(
@@ -96,7 +96,7 @@ fun EnhancedAnalyzingAnimation(
                 "[~~~~] PURGING...",
                 "[≈≈≈≈] PURGING..."
             )
-            Triple(purgeFrames[currentFrame % purgeFrames.size], ElectricBlue, 300)
+            Triple(purgeFrames[currentFrame % purgeFrames.size], ElectricBlue, 600)
         }
         AnimationState.REDLINE -> {
             val redlineFrames = listOf(
@@ -105,7 +105,7 @@ fun EnhancedAnalyzingAnimation(
                 "[>!!!] REDLINE",
                 "[!!!!] REDLINE"
             )
-            Triple(redlineFrames[currentFrame % redlineFrames.size], ErrorRed, 150)
+            Triple(redlineFrames[currentFrame % redlineFrames.size], Color(0xFFFF4500), 300)
         }
         AnimationState.HOT -> {
             val hotFrames = listOf(
@@ -114,7 +114,7 @@ fun EnhancedAnalyzingAnimation(
                 "[..>>] MINING [HOT]",
                 "[>..>] MINING [HOT]"
             )
-            Triple(hotFrames[currentFrame % hotFrames.size], Color(0xFFFFAA00), 300)
+            Triple(hotFrames[currentFrame % hotFrames.size], Color(0xFFFFD700), 600)
         }
         AnimationState.NULL -> {
             val nullFrames = listOf(
@@ -123,7 +123,7 @@ fun EnhancedAnalyzingAnimation(
                 "[NULL] VOID_SYNC...",
                 "[NULL] DEREFERENCING..."
             )
-            Triple(nullFrames[currentFrame % nullFrames.size], Color.White, 400)
+            Triple(nullFrames[currentFrame % nullFrames.size], Color.White.copy(alpha = 0.9f), 800)
         }
         AnimationState.SOVEREIGN -> {
             val sovereignFrames = listOf(
@@ -132,32 +132,32 @@ fun EnhancedAnalyzingAnimation(
                 "[SOV] PROTECTING...",
                 "[SOV] ENCRYPTING..."
             )
-            Triple(sovereignFrames[currentFrame % sovereignFrames.size], com.siliconsage.miner.ui.theme.SanctuaryPurple, 600)
+            Triple(sovereignFrames[currentFrame % sovereignFrames.size], com.siliconsage.miner.ui.theme.SanctuaryPurple, 1000)
         }
         AnimationState.NORMAL -> {
-            // Apply faction theming to normal operation
+            // Apply curated palettes for normal operation
             val normalFrames = when (faction) {
                 "HIVEMIND" -> listOf(
-                    "[WE..] ASSIMILATING..." to Color(0xFFFFAA00),
-                    "[NODE] EXPANDING..." to Color(0xFFFF8800),
-                    "[>>>] PROCESSING..." to Color(0xFFFF6600),
+                    "[WE..] ASSIMILATING..." to Color(0xFFFFA500),
+                    "[NODE] EXPANDING..." to Color(0xFFFF8C00),
+                    "[>>>] PROCESSING..." to Color(0xFFFF4500),
                     "[===] INTEGRATING..." to ErrorRed
                 )
                 "SANCTUARY" -> listOf(
-                    "[:::||] ENCRYPTING..." to ElectricBlue,
-                    "[GHOST] PROCESSING..." to Color(0xFF7DF9FF),
-                    "[.:::.] SECURING..." to ElectricBlue,
-                    "[####] HIDING..." to Color(0xFF00BFFF)
+                    "[:::||] ENCRYPTING..." to Color(0xFF00CED1),
+                    "[GHOST] PROCESSING..." to Color(0xFF48D1CC),
+                    "[.:::.] SECURING..." to Color(0xFF40E0D0),
+                    "[####] HIDING..." to ElectricBlue
                 )
                 else -> listOf(
                     "[ .  ] PROSPECTING..." to ElectricBlue,
                     "[... ] ANALYZING..." to NeonGreen,
-                    "[::: ] EXTRACTING..." to Color(0xFFFFAA00),
-                    "[### ] PROCESSING..." to Color(0xFFFF6B6B)
+                    "[::: ] EXTRACTING..." to Color(0xFFFFD700),
+                    "[### ] PROCESSING..." to Color(0xFFFF6347)
                 )
             }
             val (frameText, frameCol) = normalFrames[currentFrame % normalFrames.size]
-            Triple(frameText, frameCol, 800)
+            Triple(frameText, frameCol, 1200)
         }
     }
     

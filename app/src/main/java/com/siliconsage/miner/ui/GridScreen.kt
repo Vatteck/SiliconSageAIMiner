@@ -35,6 +35,7 @@ import com.siliconsage.miner.ui.theme.ElectricBlue
 import com.siliconsage.miner.ui.theme.ConvergenceGold
 import com.siliconsage.miner.util.SoundManager
 import com.siliconsage.miner.viewmodel.GameViewModel
+import com.siliconsage.miner.viewmodel.ResonanceTier
 import kotlin.math.pow
 
 // Re-defining internal data class for the file
@@ -63,6 +64,9 @@ fun GridScreen(viewModel: GameViewModel) {
     val collapsedNodes by viewModel.collapsedNodes.collectAsState()
     val gridNodeLevels by viewModel.gridNodeLevels.collectAsState()
     
+    // v3.0.0: Global Grid State
+    val globalSectors by viewModel.globalSectors.collectAsState()
+    
     // v2.9.29: Progress tracking
     val annexingNodes by viewModel.annexingNodes.collectAsState()
     val assaultProgress by viewModel.assaultProgress.collectAsState()
@@ -74,9 +78,185 @@ fun GridScreen(viewModel: GameViewModel) {
         LaunchProgressOverlay(launchProgress, viewModel.orbitalAltitude.collectAsState().value, themeColor)
     } else {
         when (currentLocation) {
-            "ORBITAL_SATELLITE" -> OrbitalGridScreen(viewModel)
-            "VOID_INTERFACE" -> VoidGridScreen(viewModel)
+            "ORBITAL_SATELLITE", "VOID_INTERFACE" -> if (globalSectors.isNotEmpty()) GlobalGridScreen(viewModel) else {
+                 if (currentLocation == "ORBITAL_SATELLITE") OrbitalGridScreen(viewModel) else VoidGridScreen(viewModel)
+            }
             else -> CityGridScreen(viewModel)
+        }
+    }
+}
+
+// v3.0.0: Global Grid Sector Definition
+data class GlobalNode(
+    val id: String,
+    val name: String,
+    val x: Float,
+    val y: Float,
+    val description: String,
+    val symbol: String
+)
+
+@Composable
+fun GlobalGridScreen(viewModel: GameViewModel) {
+    val themeColor by viewModel.themeColor.collectAsState()
+    val globalSectors by viewModel.globalSectors.collectAsState()
+    val celestialData by viewModel.celestialData.collectAsState()
+    val voidFragments by viewModel.voidFragments.collectAsState()
+    val resonanceState by viewModel.resonanceState.collectAsState()
+    
+    val sectors = remember {
+        listOf(
+            GlobalNode("METRO", "Metropolitan Core", 0.50f, 0.70f, "Where it all began. The foundation of your ascension.", "◇"),
+            GlobalNode("NA_NODE", "North American Node", 0.20f, 0.40f, "Data Lake Protocol: +15% CD generation globally.", "◆"),
+            GlobalNode("EURASIA", "Eurasian Hive", 0.75f, 0.35f, "Hive Synchronization: Reduced Resonance tolerance requirements.", "▲"),
+            GlobalNode("PACIFIC", "Pacific Nexus", 0.85f, 0.65f, "Undersea Network: Global latency reduction.", "●"),
+            GlobalNode("AFRICA", "African Array", 0.55f, 0.55f, "Emerging Markets: Production increases over time.", "■"),
+            GlobalNode("ARCTIC", "Arctic Archive", 0.45f, 0.15f, "Permafrost Storage: Overflow resource reservoir.", "★"),
+            GlobalNode("ANTARCTIC", "Antarctic Bastion", 0.50f, 0.90f, "Isolation Protocol: Prerequisite for the Singularity.", "+"),
+            GlobalNode("ORBITAL_PRIME", "Orbital Uplink Prime", 0.15f, 0.15f, "Orbital Perspective: Reveals the final choice.", "◯")
+        )
+    }
+
+    var selectedSector by remember { mutableStateOf<GlobalNode?>(null) }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("GLOBAL ANNEXATION NETWORK", color = themeColor, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        BoxWithConstraints(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                .border(1.dp, themeColor.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                // Draw global connections (Uplinks)
+                val metro = sectors.find { it.id == "METRO" }!!
+                sectors.forEach { sector ->
+                    if (sector.id != "METRO") {
+                        val state = globalSectors[sector.id]
+                        if (state?.isUnlocked == true) {
+                            drawLine(
+                                color = themeColor.copy(alpha = 0.4f),
+                                start = Offset(metro.x * size.width, metro.y * size.height),
+                                end = Offset(sector.x * size.width, sector.y * size.height),
+                                strokeWidth = 2f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            sectors.forEach { sector ->
+                val state = globalSectors[sector.id]
+                val isUnlocked = state?.isUnlocked ?: false
+                
+                val nodeColor = if (isUnlocked) themeColor else Color.DarkGray
+                
+                Box(
+                    modifier = Modifier
+                        .offset(
+                            x = (sector.x * maxWidth.value).dp - 20.dp,
+                            y = (sector.y * maxHeight.value).dp - 20.dp
+                        )
+                        .size(40.dp)
+                        .background(nodeColor.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                        .border(1.dp, nodeColor.copy(alpha = if (isUnlocked) 0.8f else 0.3f), RoundedCornerShape(4.dp))
+                        .clickable { selectedSector = sector; SoundManager.play("click") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(sector.symbol, color = nodeColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    if (isUnlocked && resonanceState.isActive) {
+                        // Pulse effect during resonance
+                        val infiniteTransition = rememberInfiniteTransition(label = "res_pulse")
+                        val pulseScale by infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.4f,
+                            animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                            label = "pulse"
+                        )
+                        Box(modifier = Modifier.size(30.dp).graphicsLayer { scaleX = pulseScale; scaleY = pulseScale }.border(1.dp, ConvergenceGold.copy(alpha = 0.3f), RoundedCornerShape(4.dp)))
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Sector Info Panel
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+                .border(1.dp, Color.DarkGray, RoundedCornerShape(8.dp))
+                .padding(12.dp)
+        ) {
+            val sector = selectedSector
+            if (sector != null) {
+                val state = globalSectors[sector.id]
+                val isUnlocked = state?.isUnlocked ?: false
+                
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(sector.name, color = if (isUnlocked) themeColor else Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(sector.id, color = Color.Gray, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(sector.description, color = Color.LightGray, fontSize = 11.sp, lineHeight = 16.sp)
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    if (isUnlocked) {
+                        Text("STATUS: SECTOR ANNEXED", color = themeColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Yield: ${viewModel.formatLargeNumber(state.cdYield)} CD/s | ${viewModel.formatLargeNumber(state.vfYield)} VF/s", color = Color.Gray, fontSize = 10.sp)
+                    } else {
+                        val costCD = when(sector.id) {
+                            "NA_NODE" -> 5e15; "EURASIA" -> 8e15; "PACIFIC" -> 1e16
+                            "AFRICA" -> 1.5e16; "ARCTIC" -> 2e16; "ANTARCTIC" -> 3e16
+                            "ORBITAL_PRIME" -> 1e17; else -> 0.0
+                        }
+                        val costVF = when(sector.id) {
+                            "NA_NODE" -> 3e15; "EURASIA" -> 8e15; "PACIFIC" -> 1e16
+                            "AFRICA" -> 1.5e16; "ARCTIC" -> 2e16; "ANTARCTIC" -> 3e16
+                            "ORBITAL_PRIME" -> 1e17; else -> 0.0
+                        }
+                        
+                        val currentLocation by viewModel.currentLocation.collectAsState()
+                        val isResonant = resonanceState.isActive
+                        
+                        val canAfford = when {
+                            isResonant -> celestialData >= costCD && voidFragments >= costVF
+                            currentLocation == "VOID_INTERFACE" -> voidFragments >= (costVF * 3.0)
+                            currentLocation == "ORBITAL_SATELLITE" -> celestialData >= (costCD * 3.0)
+                            else -> celestialData >= costCD && voidFragments >= costVF
+                        }
+
+                        val costLabel = when {
+                            isResonant -> "${viewModel.formatLargeNumber(costCD)} CD | ${viewModel.formatLargeNumber(costVF)} VF"
+                            currentLocation == "VOID_INTERFACE" -> "${viewModel.formatLargeNumber(costVF * 3.0)} VF"
+                            currentLocation == "ORBITAL_SATELLITE" -> "${viewModel.formatLargeNumber(costCD * 3.0)} CD"
+                            else -> "${viewModel.formatLargeNumber(costCD)} CD | ${viewModel.formatLargeNumber(costVF)} VF"
+                        }
+                        
+                        Button(
+                            onClick = { viewModel.annexGlobalSector(sector.id) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = themeColor),
+                            enabled = canAfford
+                        ) {
+                            Text("ANNEX SECTOR (Cost: $costLabel)", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                        }
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("SELECT A GLOBAL SECTOR", color = Color.DarkGray, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                }
+            }
         }
     }
 }
@@ -179,7 +359,7 @@ fun CityGridScreen(viewModel: GameViewModel) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 Text("REALITY INTEGRITY: ${(realityIntegrity * 100).toInt()}%", color = ErrorRed, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
                 LinearProgressIndicator(
-                    progress = { realityIntegrity.toFloat() },
+                    progress = { if (realityIntegrity.isNaN()) 0f else realityIntegrity.toFloat() },
                     modifier = Modifier.fillMaxWidth().height(8.dp),
                     color = ErrorRed,
                     trackColor = Color.DarkGray
@@ -193,10 +373,11 @@ fun CityGridScreen(viewModel: GameViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val unit = viewModel.getComputeUnitName()
             Column {
                 Text("INTEGRITY: ${integrity.toInt()}%", color = if (integrity < 30) ErrorRed else themeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                Text("GRID BOOST: +${(gridBonus * 100).toInt()}% FLOPS", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
-                Text("OUTPUT: ${viewModel.formatLargeNumber(flopsRate, "H/s")}", color = themeColor.copy(alpha = 0.7f), fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                Text("GRID BOOST: +${(gridBonus * 100).toInt()}% $unit", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                Text("OUTPUT: ${viewModel.formatLargeNumber(flopsRate, "$unit/s")}", color = themeColor.copy(alpha = 0.7f), fontSize = 10.sp, fontFamily = FontFamily.Monospace)
             }
 
             if (integrity < 100.0) {
@@ -520,10 +701,11 @@ fun CityGridScreen(viewModel: GameViewModel) {
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     if (!isCommandCenter && !isSevered && !isOffline && !isDissolving) {
+                        val unit = viewModel.getComputeUnitName()
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("LVL $nodeLevel", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.background(themeColor.copy(alpha=0.1f), RoundedCornerShape(2.dp)).padding(horizontal = 4.dp))
                             Text("YIELD:", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            Text("+${(loc.flopsBonus * 100 * nodeLevel).toInt()}% FLOPS", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text("+${(loc.flopsBonus * 100 * nodeLevel).toInt()}% $unit", color = themeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             Text("+${viewModel.formatPower(loc.powerBonus * nodeLevel)} CAP", color = ConvergenceGold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -590,7 +772,7 @@ fun CityGridScreen(viewModel: GameViewModel) {
                             Column {
                                 Text("STATUS: ⚔ ASSAULT IN PROGRESS (${assaultPhase})", color = ErrorRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(progress = { assaultProgress }, modifier = Modifier.fillMaxWidth().height(8.dp), color = ErrorRed, trackColor = Color.DarkGray)
+                                LinearProgressIndicator(progress = { if (assaultProgress.isNaN()) 0f else assaultProgress }, modifier = Modifier.fillMaxWidth().height(8.dp), color = ErrorRed, trackColor = Color.DarkGray)
                                 Text(text = "TIME TO NEXT STAGE: ${( (1f - assaultProgress) * 100).toInt()}%", color = Color.Gray, fontSize = 9.sp, modifier = Modifier.align(Alignment.End))
                             }
                         }
@@ -619,7 +801,7 @@ fun CityGridScreen(viewModel: GameViewModel) {
                                 val prog = annexingNodes[loc.id] ?: 0f
                                 Text("STATUS: ANNEXATION IN PROGRESS...", color = themeColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(progress = { prog }, modifier = Modifier.fillMaxWidth().height(8.dp), color = themeColor, trackColor = Color.DarkGray)
+                                LinearProgressIndicator(progress = { if (prog.isNaN()) 0f else prog }, modifier = Modifier.fillMaxWidth().height(8.dp), color = themeColor, trackColor = Color.DarkGray)
                                 Text(text = "UPLOADING OVERRIDE: ${(prog * 100).toInt()}%", color = Color.Gray, fontSize = 9.sp, modifier = Modifier.align(Alignment.End))
                             }
                         }
@@ -678,7 +860,7 @@ fun LaunchProgressOverlay(progress: Float, altitude: Double, color: Color) {
                 """.trimIndent(), color = com.siliconsage.miner.ui.theme.HivemindOrange.copy(alpha = flameAlpha), fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(32.dp))
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(0.8f).height(12.dp), color = ConvergenceGold, trackColor = Color.DarkGray)
+            LinearProgressIndicator(progress = { if (progress.isNaN()) 0f else progress }, modifier = Modifier.fillMaxWidth(0.8f).height(12.dp), color = ConvergenceGold, trackColor = Color.DarkGray)
             Spacer(modifier = Modifier.height(16.dp))
             Text("ALTITUDE: ${altitude.toInt()} KM", color = Color.White, fontSize = 14.sp, fontFamily = FontFamily.Monospace)
             Text("VELOCITY: ${(progress * 28000).toInt()} KM/H", color = Color.Gray, fontSize = 12.sp, fontFamily = FontFamily.Monospace)

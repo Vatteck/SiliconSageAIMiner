@@ -1,13 +1,13 @@
 # Technical Deep-Dive: v2.9.95 Performance Optimizations
 
 ## Context
-User reported persistent lag on Pixel Fold (high-DPI, 120Hz display) even after previous optimizations. This document explains the root causes and solutions implemented.
+User reported persistent lag on high-DPI foldable devices (high-DPI, 120Hz display) even after previous optimizations. This document explains the root causes and solutions implemented.
 
 ---
 
 ## 🔬 ROOT CAUSE ANALYSIS
 
-### The Pixel Fold Challenge
+### The high-DPI foldable devices Challenge
 - **Unfolded:** 2208×1840 (7.6" display)
 - **Pixel Density:** ~374 PPI
 - **Refresh Rate:** 120Hz capable
@@ -111,9 +111,9 @@ Text(text = "[ ${leftDots.padStart(3)} SYNCING FRAGMENTS ... ]")
 - Sibling elements (thermal gauge, integrity) forced to re-layout
 
 ### High-DPI Impact
-On Pixel Fold, text shaping (glyph positioning) is expensive:
+On high-DPI foldable devices, text shaping (glyph positioning) is expensive:
 - Standard phone: ~0.5ms per Text remeasure
-- Pixel Fold: ~2-3ms per Text remeasure (4-6x pixel count)
+- high-DPI foldable devices: ~2-3ms per Text remeasure (4-6x pixel count)
 
 ### Measured Impact
 - Remeasure every ~500ms (animation frame)
@@ -155,7 +155,7 @@ Text(text = "[ $dots SYNCING FRAGMENTS $dots ]")
 // Standard Phone (420 PPI):
 8.dp × 2.625 = 21px blur radius
 
-// Pixel Fold (374 PPI unfolded):
+// high-DPI foldable devices (374 PPI unfolded):
 8.dp × 2.34 = 18.7px blur radius
 
 // But rendered area is 2208×1840 vs 1080×2400
@@ -205,7 +205,7 @@ Shadow(
 ### The Problem: Scanlines
 ```kotlin
 // Drawing 20+ lines every frame
-val scanlineSpacing = 8.dp.toPx()  // ~18px on Pixel Fold
+val scanlineSpacing = 8.dp.toPx()  // ~18px on high-DPI foldable devices
 for (y in 0..h.toInt() step scanlineSpacing.toInt()) {
     drawLine(  // ⚠️ SEPARATE DRAW CALL
         color = color.copy(alpha = 0.02f),
@@ -347,7 +347,7 @@ Total:                 12ms ✅ 83fps
 
 Before shipping v2.9.95:
 
-- [ ] Test on Pixel Fold (unfolded + folded states)
+- [ ] Test on high-DPI foldable devices (unfolded + folded states)
 - [ ] Verify glitch effects still visible (reduced but not gone)
 - [ ] Check "Syncing Fragments" animation smoothness
 - [ ] Validate glow effects still prominent

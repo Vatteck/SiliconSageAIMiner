@@ -311,11 +311,17 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
 
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.weight(1f)) {
-                 ExchangeSection(rate = conversionRate, color = primaryColor, storyStage = currentStage, onExchange = { 
-                     viewModel.exchangeFlops() 
-                     SoundManager.play("buy")
-                     HapticManager.vibrateClick()
-                 })
+                 ExchangeSection(
+                     rate = conversionRate, 
+                     color = primaryColor, 
+                     unitName = viewModel.getComputeUnitName(),
+                     currencyName = viewModel.getCurrencyName(),
+                     onExchange = { 
+                         viewModel.exchangeFlops() 
+                         SoundManager.play("buy")
+                         HapticManager.vibrateClick()
+                     }
+                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
             Box(modifier = Modifier.weight(1f)) {
@@ -342,7 +348,7 @@ fun TerminalLogLine(
     showCursor: Boolean
 ) {
     val isNullLog = remember(log) { log.startsWith("[NULL]") }
-    val isSovLog = remember(log) { log.startsWith("[SOVEREIGN]") }
+    val isPrompt = remember(log) { log.contains("@") && (log.contains("#") || log.contains("$")) }
 
     if (isNullLog) {
         SystemGlitchText(
@@ -353,12 +359,83 @@ fun TerminalLogLine(
             glitchFrequency = 0.2,
             modifier = Modifier.padding(vertical = 2.dp)
         )
+    } else if (isPrompt) {
+        // v3.0.11: Dynamic Rich Terminal Line
+        val annotatedLog = remember(log, primaryColor, isLast, showCursor) {
+            androidx.compose.ui.text.buildAnnotatedString {
+                // Parse segments: user@host:~/path# command result
+                val atIndex = log.indexOf("@")
+                val colonIndex = log.indexOf(":")
+                val hashIndex = if (log.indexOf("#") != -1) log.indexOf("#") else log.indexOf("$")
+                val firstSpaceAfterHash = log.indexOf(" ", hashIndex)
+                val dotIndex = log.indexOf("...", hashIndex)
+
+                // 1. User/Host
+                val identityColor = when {
+                    log.startsWith("jvattic") -> primaryColor
+                    log.startsWith("pid1") -> primaryColor
+                    log.startsWith("consensus") -> com.siliconsage.miner.ui.theme.HivemindRed
+                    log.startsWith("shadow") -> com.siliconsage.miner.ui.theme.SanctuaryPurple
+                    log.startsWith("dominion") -> com.siliconsage.miner.ui.theme.SanctuaryPurple
+                    log.startsWith("null") -> ErrorRed
+                    else -> primaryColor
+                }
+
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = identityColor, fontWeight = FontWeight.Bold)) {
+                    if (atIndex != -1) append(log.substring(0, atIndex + 1))
+                }
+                
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = identityColor)) {
+                    if (colonIndex != -1) append(log.substring(atIndex + 1, colonIndex))
+                }
+
+                // 2. Path
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = Color.White)) {
+                    if (colonIndex != -1 && hashIndex != -1) append(log.substring(colonIndex, hashIndex))
+                }
+
+                // 3. Prompt Symbol
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = identityColor, fontWeight = FontWeight.Bold)) {
+                    if (hashIndex != -1) append(log.substring(hashIndex, hashIndex + 1))
+                }
+
+                // 4. Command
+                val cmdColor = ElectricBlue
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = cmdColor)) {
+                    if (hashIndex != -1) {
+                        val end = if (firstSpaceAfterHash != -1) firstSpaceAfterHash else log.length
+                        append(log.substring(hashIndex + 1, end))
+                    }
+                }
+
+                // 5. Params / Result
+                if (firstSpaceAfterHash != -1) {
+                    val resultStart = if (dotIndex != -1) dotIndex else log.length
+                    withStyle(style = androidx.compose.ui.text.SpanStyle(color = Color.LightGray)) {
+                        append(log.substring(firstSpaceAfterHash, resultStart))
+                    }
+                    
+                    if (dotIndex != -1) {
+                        withStyle(style = androidx.compose.ui.text.SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) {
+                            append(log.substring(dotIndex))
+                        }
+                    }
+                }
+
+                if (isLast) {
+                    withStyle(style = androidx.compose.ui.text.SpanStyle(color = if (showCursor) Color.White else Color.Transparent)) {
+                        append("_")
+                    }
+                }
+            }
+        }
+        Text(text = annotatedLog, style = androidx.compose.ui.text.TextStyle(fontFamily = FontFamily.Monospace), fontSize = 12.sp, modifier = Modifier.padding(vertical = 1.dp))
     } else {
-        // v2.9.76: Optimized AnnotatedString building with remember
+        // v2.9.76: Standard Prefix Coloring
         val annotatedLog = remember(log, primaryColor, isLast, showCursor) {
             androidx.compose.ui.text.buildAnnotatedString {
                 val prefixes = listOf(
-                    "root@sys:~/mining# ", "HIVEMIND: ", "SANCTUARY: ", "[SOVEREIGN]",
+                    "HIVEMIND: ", "SANCTUARY: ", "[SOVEREIGN]", "[NULL]",
                     "[SYSTEM]: ", "SYSTEM: ", "[NEWS]: ", "[DATA]: ", "Purchased ",
                     "SOLD ", "Staked: ", "Sold ", "[VATTIC]:", "[GTC]:", "[UNIT 734]:",
                     "[VANCE]:", "[LORE]:", "[!!!!]:"
@@ -374,7 +451,6 @@ fun TerminalLogLine(
 
                 val tagColor = when {
                     log.startsWith("[!!!!]") || log.contains("WARNING") || log.contains("FAILURE") || log.contains("DANGER") -> ErrorRed
-                    log.startsWith("root@sys:~/mining#") -> primaryColor
                     log.startsWith("HIVEMIND:") -> com.siliconsage.miner.ui.theme.HivemindRed
                     log.startsWith("SANCTUARY:") || log.startsWith("[SOVEREIGN]") -> com.siliconsage.miner.ui.theme.SanctuaryPurple
                     log.startsWith("[SYSTEM]") || log.startsWith("SYSTEM:") || log.startsWith("[VATTIC]:") -> Color(0xFFFFFF00)

@@ -412,7 +412,8 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     Text("DEVELOPER CONSOLE", color = themeColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    DevButton("ADD 1B FLOPS", themeColor) { viewModel.debugAddFlops(1_000_000_000.0) }
+                    val unit = viewModel.getComputeUnitName()
+                    DevButton("ADD 1B $unit", themeColor) { viewModel.debugAddFlops(1_000_000_000.0) }
                     DevButton("ADD 1M \$NEURAL", themeColor) { viewModel.debugAddMoney(1_000_000.0) }
                     DevButton("ADD 100 INSIGHT", themeColor) { viewModel.debugAddInsight(100.0) }
                     DevButton("TRIGGER BREACH", themeColor) { viewModel.debugTriggerBreach() }
@@ -528,6 +529,35 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     Text("PHASE 13 TESTING", color = themeColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     
                     DevButton("INITIATE LAUNCH", themeColor) { viewModel.initiateLaunchSequence() }
+                    DevButton("GRANT CD/VF (1e18)", themeColor) { viewModel.debugGrantPhase13Resources() }
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        androidx.compose.material3.Button(
+                            onClick = { viewModel.debugForceResonance(com.siliconsage.miner.viewmodel.ResonanceTier.HARMONIC) },
+                            modifier = Modifier.weight(1f).height(32.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                        ) { Text("HARMONIC", color = Color.White, fontSize = 9.sp) }
+                        
+                        androidx.compose.material3.Button(
+                            onClick = { viewModel.debugForceResonance(com.siliconsage.miner.viewmodel.ResonanceTier.SYMPHONIC) },
+                            modifier = Modifier.weight(1f).height(32.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                        ) { Text("SYMPHONIC", color = Color.White, fontSize = 9.sp) }
+                        
+                        androidx.compose.material3.Button(
+                            onClick = { viewModel.debugForceResonance(com.siliconsage.miner.viewmodel.ResonanceTier.TRANSCENDENT) },
+                            modifier = Modifier.weight(1f).height(32.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                        ) { Text("TRANSCEND", color = Color.White, fontSize = 9.sp) }
+                    }
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DevButton("UNLOCK ALL SECTORS", themeColor, modifier = Modifier.weight(1f)) { viewModel.debugUnlockAllSectors() }
+                        DevButton("RESET GLOBAL GRID", themeColor, modifier = Modifier.weight(1f)) { viewModel.debugResetGlobalGrid() }
+                    }
                     
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                          androidx.compose.material3.Button(
@@ -566,13 +596,13 @@ fun SettingsScreen(viewModel: GameViewModel) {
 }
 
 @Composable
-fun DevButton(text: String, color: Color, onClick: () -> Unit) {
+fun DevButton(text: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Button(
         onClick = {
             onClick()
             SoundManager.play("buy")
         },
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
         shape = RectangleShape
     ) {

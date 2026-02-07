@@ -34,6 +34,7 @@ fun OfflineEarningsDialog(
     floopsEarned: Double,
     heatCooled: Double,
     insightEarned: Double,
+    unitName: String, // v3.0.0: Dynamic unit name
     onDismiss: () -> Unit
 ) {
     if (!isVisible) return
@@ -95,7 +96,7 @@ fun OfflineEarningsDialog(
             Text("TIME OFFLINE: ${formatTime(timeOfflineSec)}", color = Color.Gray, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
             
-            StatRow("FLOPS MINED", "+${formatLargeNumber(floopsEarned)}")
+            StatRow("$unitName MINED", "+${formatLargeNumber(floopsEarned)}")
             if (heatCooled > 0) {
                 StatRow("HEAT DISSIPATED", "-${String.format("%.1f", heatCooled)}%")
             }

@@ -1,6 +1,6 @@
 # Silicon Sage Performance Audit - Feb 6, 2026
 
-## Device: Pixel Fold (High-DPI, 120Hz capable)
+## Device: high-DPI foldable devices (High-DPI, 120Hz capable)
 ## Target: 60fps sustained during high FLOPS production
 
 ---
@@ -74,7 +74,7 @@ val glowStyle = TextStyle(
 
 **Measured Impact:**
 - Applied to: System title, location text, gauge labels
-- On Pixel Fold (2208x1840 unfolded): 8f blur = ~32px effective radius
+- On high-DPI foldable devices (2208x1840 unfolded): 8f blur = ~32px effective radius
 - Gaussian blur requires multiple render passes
 - 4-6ms per frame just for text shadows
 
@@ -90,7 +90,7 @@ val glowStyle = TextStyle(
 
 **Problem:**
 - Scanline loop (8dp spacing, still iterates ~20 times)
-- Waveform path generation (12px steps = ~100 iterations on Pixel Fold)
+- Waveform path generation (12px steps = ~100 iterations on high-DPI foldable devices)
 - Multiple path strokes (4 separate draws for bloom effect)
 - Runs every frame during animation
 
@@ -177,7 +177,7 @@ val glowStyle = TextStyle(
 ## 🚀 NEXT STEPS
 
 1. Apply fixes in order of priority
-2. Test on Pixel Fold after each change
+2. Test on high-DPI foldable devices after each change
 3. Profile with Android Studio GPU Profiler
 4. Verify 60fps during max FLOPS production
 5. Check battery impact (thermal throttling on fold devices)

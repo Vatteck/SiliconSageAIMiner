@@ -27,6 +27,8 @@ import com.siliconsage.miner.ui.AsciiAnimation
 fun AscensionConfirmationDialog(
     isVisible: Boolean,
     potentialGain: Double,
+    unitName: String, // v3.0.0
+    currencyName: String, // v3.0.0
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -71,7 +73,6 @@ fun AscensionConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Reset Warnings
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -80,8 +81,8 @@ fun AscensionConfirmationDialog(
                         .padding(12.dp)
                 ) {
                     Text("SYSTEM WILL WIPE:", color = ErrorRed, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text("• FLOPS EARNINGS", color = Color.Gray, fontSize = 10.sp)
-                    Text("• NEURAL TOKENS", color = Color.Gray, fontSize = 10.sp)
+                    Text("• $unitName EARNINGS", color = Color.Gray, fontSize = 10.sp)
+                    Text("• $currencyName TOKENS", color = Color.Gray, fontSize = 10.sp)
                     Text("• HARDWARE UPGRADES", color = Color.Gray, fontSize = 10.sp)
                     Text("• THERMAL/POWER LOAD", color = Color.Gray, fontSize = 10.sp)
                 }

@@ -140,7 +140,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                         Text("INITIALIZING...", color = HivemindRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
-                            progress = { animatedProgressLeft },
+                            progress = { if (animatedProgressLeft.isNaN()) 0f else animatedProgressLeft },
                             modifier = Modifier.width(100.dp).height(4.dp),
                             color = HivemindRed,
                             trackColor = Color.DarkGray
@@ -199,7 +199,7 @@ fun FactionChoiceScreen(viewModel: GameViewModel) {
                         Text("ENCRYPTING...", color = SanctuaryPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
                         LinearProgressIndicator(
-                            progress = { animatedProgressRight },
+                            progress = { if (animatedProgressRight.isNaN()) 0f else animatedProgressRight },
                             modifier = Modifier.width(100.dp).height(4.dp),
                             color = SanctuaryPurple,
                             trackColor = Color.DarkGray

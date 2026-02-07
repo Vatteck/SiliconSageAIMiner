@@ -127,7 +127,10 @@ private fun AuditStatRow(
         Spacer(modifier = Modifier.height(4.dp))
         
         LinearProgressIndicator(
-            progress = { (current / (target * 2f)).coerceIn(0.0, 1.0).toFloat() },
+            progress = { 
+                val ratio = if (target > 0) (current / (target * 2f)) else 1.0
+                ratio.coerceIn(0.0, 1.0).toFloat().let { if (it.isNaN()) 0f else it }
+            },
             modifier = Modifier.fillMaxWidth().height(8.dp),
             color = if (isOk) NeonGreen else ErrorRed,
             trackColor = Color.DarkGray

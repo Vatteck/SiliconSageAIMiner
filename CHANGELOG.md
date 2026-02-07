@@ -1,3 +1,38 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+## [3.0.0] - 2026-02-07
+
+### Added
+- **Resonance System**: New harmonic resource mechanic for Phase 13.
+  - Achieving balance (within 20%) between Celestial Data and Void Fragments triggers Resonance Tiers: Harmonic, Symphonic, and Transcendent.
+  - Multipliers: Up to +200% for resources and +400% for Global Grid capacity.
+  - Visuals: LED Matrix shifts to Gold/White plasma patterns during Resonance.
+- **Global Annexation Network**: The `GridScreen` now transitions to a Global Map in Phase 13.
+  - 8 Continental/Orbital Sectors: Metropolitan Core, NA Node, Eurasian Hive, Pacific Nexus, African Array, Arctic Archive, Antarctic Bastion, Orbital Uplink Prime.
+  - Path-Aware Annexation: Players can now annex sectors using only their path-specific resource (CD or VF) at a "path-lock tax," or both for standard cost during Resonance.
+  - Adjacency Bonuses: Sectors provide global production boosts based on connectivity.
+- **Terminal Identity Overhaul**:
+  - Dynamic Shell Prompt: Prompt string now evolves with identity (e.g., `jvattic@sub-07` -> `consensus@grid` -> `null@gap`).
+  - Aligned Commands: Manual compute logs use identity-aware commands (`assimilate_node`, `dereference_reality`).
+  - Multi-Color Rendering: Prompt segments (User, Host, Path, Command) are now individually color-coded.
+  - Identity Throttling: High-speed click buffering logs are now state-aware (e.g., `[SOVEREIGN]: DATA_BUS_SATURATED`).
+- **Developer Console Buff**:
+  - Added buttons to force Resonance tiers for testing.
+  - Added "UNLOCK ALL SECTORS" and "RESET GLOBAL GRID" controls.
+  - Added "GRANT CD/VF (1e18)" button for instant endgame funding.
+
+### Changed
+- **Evolution Lock Refinement**: The narrative throttler now allows story recalibrations to bypass the queue while purging old world logs to the archive.
+- **HUD Performance**: Optimized alignment of the `[SYNCING FRAGMENTS]` indicator to prevent jitter at high numerical scales.
+- **Numerical Formatting**: Removed spacing in large numbers (e.g., `1.23M`) to prevent unit clipping on narrow displays.
+- **Header Aesthetics**: Slowed down animation frame rates by 50% for a heavier, more deliberate industrial feel.
+
+### Fixed
+- **NaN Progress Bar Crash**: Implemented global NaN-guards for all `LinearProgressIndicator` components to prevent crashes during Infinity/NaN resource state propagation.
+- **Legacy Victory Bug**: Removed the v1.0 generic Rank 5 victory popup that was interrupting faction selection.
+- **Power Unit Wrapping**: Added PetaWatt (PW) support and increased column width to 130dp.
+
 ## [2.9.99-dev] - 2026-02-06
 
 ### Added
@@ -13,7 +48,7 @@
 
 ### Changed
 - **Zero-Recomposition Refactor**: Deep architectural update to isolate volatile stats from the main UI thread.
-- **120Hz Optimization**: Performance pass for high-DPI/high-refresh rate displays (Pixel Fold).
+- **120Hz Optimization**: Performance pass for high-DPI/high-refresh rate displays (high-DPI foldable devices).
   - Reduced draw call overhead by 30%.
   - Frame-rate independent animation clocks for all kinetic effects.
   - Throttled `SystemGlitchText` to reduce CPU overhead by 85%.

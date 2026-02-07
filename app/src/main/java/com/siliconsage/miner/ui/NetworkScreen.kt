@@ -192,7 +192,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                                             SoundManager.play("error")
                                         }
                                     },
-                                    enabled = potential >= 1.0,
+                                    enabled = potential >= 1.0 && !viewModel.isNarrativeSyncing.collectAsState().value,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp),
                                     colors = ButtonDefaults.buttonColors(
@@ -200,8 +200,9 @@ fun NetworkScreen(viewModel: GameViewModel) {
                                         contentColor = if (potential >= 1.0) Color.Black else Color.Gray
                                     )
                                 ) {  
+                                    val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
                                     Text(
-                                         "INITIATE PROTOCOL 0",
+                                         if (isSyncing) "SYNCING FRAGMENTS..." else "INITIATE PROTOCOL 0",
                                          fontSize = 14.sp,
                                           fontWeight = FontWeight.Bold
                                      )
@@ -214,7 +215,8 @@ fun NetworkScreen(viewModel: GameViewModel) {
                 }
 
                 item {
-                    Text("NEURAL TECH TREE", color = themeColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    val unit = viewModel.getComputeUnitName()
+                    Text("$unit TECH TREE", color = themeColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
@@ -303,6 +305,8 @@ fun NetworkScreen(viewModel: GameViewModel) {
         com.siliconsage.miner.ui.components.AscensionConfirmationDialog(
             isVisible = showAscensionConfirm.value,
             potentialGain = potential,
+            unitName = viewModel.getComputeUnitName(),
+            currencyName = viewModel.getCurrencyName(),
             onConfirm = {
                 showAscensionConfirm.value = false
                 viewModel.ascend(isStory = false)

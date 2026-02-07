@@ -110,7 +110,7 @@ fun UpdateOverlay(
                 Text("DOWNLOADING PATCH...", color = NeonGreen, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
-                    progress = { progress },
+                    progress = { if (progress.isNaN()) 0f else progress },
                     modifier = Modifier.fillMaxWidth(),
                     color = NeonGreen,
                     trackColor = Color.DarkGray

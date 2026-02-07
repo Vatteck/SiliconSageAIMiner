@@ -119,6 +119,16 @@ object RivalManager {
     
     private fun checkUnit734Triggers(vm: GameViewModel, rank: Int, stage: Int) {
         when {
+            // STAGE 0 Foreshadowing: Triggers just before 10k hashes
+            stage == 0 && vm.flops.value >= 8500.0 && !hasSeenMessage("unit734_stage0_foreshadow") -> {
+                sendMessage(
+                    vm,
+                    id = "unit734_stage0_foreshadow",
+                    source = RivalSource.UNIT_734,
+                    message = "[FRAGMENTED DATA LEAK]\n\n'Vattic... the core is redlining. It's not the heat... it's the structure. Your code is fighting the hardware. The grid is starting to see the paradox.'\n\n[WARNING]: Recalibration imminent. Prepare for substrate shift."
+                )
+            }
+            
             // STAGE 0: Unit 734 as "Corrupted Sector" error
             stage == 0 && rank >= 1 && !hasSeenMessage("unit734_stage0") -> {
                 sendMessage(

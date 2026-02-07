@@ -78,7 +78,7 @@ fun AscensionUploadOverlay(
             )
 
             LinearProgressIndicator(
-                progress = { animatedProgress },
+                progress = { if (animatedProgress.isNaN()) 0f else animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),

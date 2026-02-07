@@ -304,7 +304,7 @@ fun UpgradeItem(
 }
 
 @Composable
-fun ExchangeSection(rate: Double, color: Color, storyStage: Int, onExchange: () -> Unit) {
+fun ExchangeSection(rate: Double, color: Color, unitName: String, currencyName: String, onExchange: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "sellScale")
@@ -324,24 +324,15 @@ fun ExchangeSection(rate: Double, color: Color, storyStage: Int, onExchange: () 
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            val label = when {
-                storyStage < 1 -> "SELL HASHES"
-                storyStage < 2 -> "UPLOAD TELEMETRY"
-                else -> "SELL FLOPS"
-            }
-            val currencyLabel = when {
-                storyStage < 1 -> "CREDIT"
-                storyStage < 2 -> "DATA"
-                else -> "NEURAL"
-            }
+            val label = "SELL $unitName"
             Text(label, fontSize = 12.sp)
-            Text("1 = ${String.format("%.4f", rate)} $currencyLabel", color = Color.LightGray, fontSize = 10.sp)
+            Text("1 = ${String.format("%.4f", rate)} $currencyName", color = Color.LightGray, fontSize = 10.sp)
         }
     }
 }
 
 @Composable
-fun StakingSection(color: Color, storyStage: Int, onStake: () -> Unit) {
+fun StakingSection(color: Color, currencyName: String, onStake: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, label = "stakeScale")
@@ -361,7 +352,7 @@ fun StakingSection(color: Color, storyStage: Int, onStake: () -> Unit) {
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            val label = if (storyStage < 1) "STAKE \$100 CREDIT" else "STAKE \$100 NEURAL"
+            val label = "STAKE \$100 $currencyName"
             Text(label, fontSize = 12.sp)
             Text("+Efficiency", color = Color.LightGray, fontSize = 10.sp)
         }

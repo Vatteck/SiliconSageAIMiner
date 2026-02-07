@@ -79,4 +79,19 @@ class Converters {
             emptyMap()
         }
     }
+
+    // Map<String, SectorState> Converter (v3.0.0)
+    @TypeConverter
+    fun fromMapStringSector(value: Map<String, SectorState>): String {
+        return Json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toMapStringSector(value: String): Map<String, SectorState> {
+        return try {
+            Json.decodeFromString<Map<String, SectorState>>(value)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
 }

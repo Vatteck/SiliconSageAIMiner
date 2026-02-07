@@ -78,5 +78,26 @@ data class GameState(
     val orbitalAltitude: Double = 0.0, // Miles/Km above Earth
     val realityIntegrity: Double = 1.0, // 1.0 to 0.0 (Null Path)
     val entropyLevel: Double = 0.0, // v2.9.49
-    val gridNodeLevels: Map<String, Int> = emptyMap() // v2.9.72
+    val gridNodeLevels: Map<String, Int> = emptyMap(), // v2.9.72
+
+    // v3.0.0: Resonance & Global Grid
+    val resonanceActive: Boolean = false,
+    val resonanceTier: String = "NONE", // NONE, HARMONIC, SYMPHONIC, TRANSCENDENT
+    val singularityChoice: String = "NONE", // NONE, UNITY, SOVEREIGN
+    val globalSectors: Map<String, SectorState> = emptyMap(),
+    val synthesisPoints: Double = 0.0, // Unity Resource
+    val authorityPoints: Double = 0.0, // Sovereign Primary Resource
+    val harvestedFragments: Double = 0.0, // Sovereign Secondary Resource
+    val prestigePointsPostSingularity: Int = 0, // IP or CT
+    val prestigeCountPostSingularity: Int = 0
+)
+
+@Serializable
+data class SectorState(
+    val id: String,
+    val isUnlocked: Boolean = false,
+    val tier: Int = 0,
+    val cdYield: Double = 0.0,
+    val vfYield: Double = 0.0,
+    val capacity: Double = 0.0
 )

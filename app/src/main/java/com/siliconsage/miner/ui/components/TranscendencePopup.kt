@@ -34,6 +34,8 @@ import com.siliconsage.miner.ui.theme.ErrorRed
 @Composable
 fun TranscendencePopup(
     isVisible: Boolean,
+    unitName: String, // v3.0.0
+    currencyName: String, // v3.0.0
     onTranscend: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -121,7 +123,7 @@ fun TranscendencePopup(
             ) {
                 ResetItem("× All Upgrades", ErrorRed)
                 Spacer(modifier = Modifier.height(4.dp))
-                ResetItem("× FLOPS & Neural Tokens", ErrorRed)
+                ResetItem("× $unitName & $currencyName Tokens", ErrorRed)
                 Spacer(modifier = Modifier.height(4.dp))
                 ResetItem("× Story Progress", ErrorRed)
             }

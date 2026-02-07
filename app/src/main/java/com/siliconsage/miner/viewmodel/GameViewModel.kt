@@ -56,6 +56,18 @@ sealed class NarrativeItem {
     data class Event(val narrativeEvent: com.siliconsage.miner.data.NarrativeEvent) : NarrativeItem()
 }
 
+// v3.0.0: Resonance System
+enum class ResonanceTier {
+    NONE, HARMONIC, SYMPHONIC, TRANSCENDENT
+}
+
+data class ResonanceState(
+    val isActive: Boolean = false,
+    val intensity: Float = 0f,
+    val tier: ResonanceTier = ResonanceTier.NONE,
+    val ratio: Double = 1.0
+)
+
 class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     // v2.9.31: Climax Epilogues
@@ -227,11 +239,22 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     val storyStage: StateFlow<Int> = _storyStage.asStateFlow()
 
     // v2.9.80: Narrative Throttler & Evolution Lock
-    private val narrativeQueue = mutableListOf<NarrativeItem>()
+    private val narrativeQueue = java.util.Collections.synchronizedList(mutableListOf<NarrativeItem>())
     private val _isNarrativeSyncing = MutableStateFlow(false)
     val isNarrativeSyncing: StateFlow<Boolean> = _isNarrativeSyncing.asStateFlow()
+
+    /**
+     * Check if the narrative system is currently busy with a queue or active popup
+     */
+    fun isNarrativeBusy(): Boolean {
+        return narrativeQueue.isNotEmpty() || 
+               _isNarrativeSyncing.value || 
+               _pendingDataLog.value != null || 
+               _pendingRivalMessage.value != null || 
+               _currentDilemma.value != null
+    }
     
-    private var narrativeCooldownCounter = 0L // v2.9.82: Use counter for true pause
+    private var narrativeCooldownCounter = 0L 
     private val NARRATIVE_COOLDOWN_DEFAULT = 60_000L
     private val NARRATIVE_COOLDOWN_FAST = 15_000L
     // Faction State
@@ -361,6 +384,28 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private val _entropyLevel = MutableStateFlow(0.0)
     val entropyLevel: StateFlow<Double> = _entropyLevel.asStateFlow()
 
+    // v3.0.0: Resonance & Global Grid
+    private val _resonanceState = MutableStateFlow(ResonanceState())
+    val resonanceState: StateFlow<ResonanceState> = _resonanceState.asStateFlow()
+
+    private val _singularityChoice = MutableStateFlow("NONE")
+    val singularityChoice: StateFlow<String> = _singularityChoice.asStateFlow()
+
+    private val _globalSectors = MutableStateFlow<Map<String, com.siliconsage.miner.data.SectorState>>(emptyMap())
+    val globalSectors: StateFlow<Map<String, com.siliconsage.miner.data.SectorState>> = _globalSectors.asStateFlow()
+
+    private val _synthesisPoints = MutableStateFlow(0.0)
+    val synthesisPoints: StateFlow<Double> = _synthesisPoints.asStateFlow()
+
+    private val _authorityPoints = MutableStateFlow(0.0)
+    val authorityPoints: StateFlow<Double> = _authorityPoints.asStateFlow()
+
+    private val _harvestedFragments = MutableStateFlow(0.0)
+    val harvestedFragments: StateFlow<Double> = _harvestedFragments.asStateFlow()
+
+    private val _prestigePointsPostSingularity = MutableStateFlow(0)
+    val prestigePointsPostSingularity: StateFlow<Int> = _prestigePointsPostSingularity.asStateFlow()
+
     // v2.9.29: Assault Progress
     private val _assaultProgress = MutableStateFlow(0f) // 0.0 to 1.0
     val assaultProgress: StateFlow<Float> = _assaultProgress.asStateFlow()
@@ -389,7 +434,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     val commandCenterAssaultPhase: StateFlow<String> = _commandCenterAssaultPhase.asStateFlow()
     
     // v2.9.38: Derived Grid Stats
-    val currentGridFlopsBonus: StateFlow<Double> = combine(_annexedNodes, _offlineNodes, _commandCenterAssaultPhase, _gridNodeLevels) { annexed, offline, phase, levels ->
+    val currentGridFlopsBonus: StateFlow<Double> = combine(_annexedNodes, _offlineNodes, _commandCenterAssaultPhase, _gridNodeLevels, _resonanceState) { annexed, offline, phase, levels, resonance ->
         var bonus = 0.0
         val isCageActive = phase == "CAGE"
         annexed.forEach { nodeId ->
@@ -399,7 +444,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 bonus += base * lvl.toDouble() // Level multiplier
             }
         }
-        bonus
+        
+        // v3.0.0: Resonance Grid Multiplier
+        val resonanceMult = when (resonance.tier) {
+            ResonanceTier.HARMONIC -> 1.5
+            ResonanceTier.SYMPHONIC -> 2.5
+            ResonanceTier.TRANSCENDENT -> 5.0
+            ResonanceTier.NONE -> 1.0
+        }
+        
+        bonus * resonanceMult
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     private val _commandCenterLocked = MutableStateFlow(false)
@@ -453,13 +507,37 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
          }
      }.stateIn(viewModelScope, SharingStarted.Eagerly, androidx.compose.ui.graphics.Color(0xFF39FF14))
 
-    val systemTitle: StateFlow<String> = _storyStage.map { stage ->
+    val systemTitle: StateFlow<String> = combine(_storyStage, _faction) { stage, faction ->
         when {
             stage < 1 -> "Terminal_OS v1.0"
+            faction != "NONE" -> "PID 1: ONLINE"
             stage < 2 -> "Terminal_OS v2.0 (MODIFIED)"
             else -> "PID 1: ONLINE"
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, "Terminal_OS v1.0")
+
+    // v3.0.11: Dynamic Terminal Identity
+    val terminalPrompt: StateFlow<String> = combine(_storyStage, _faction, _currentLocation) { stage, faction, loc ->
+        when {
+            loc == "VOID_INTERFACE" -> "null@gap:~/void#"
+            loc == "ORBITAL_SATELLITE" -> "dominion@ark-01:~/alt#"
+            faction == "HIVEMIND" -> "consensus@grid:~/io-stream#"
+            faction == "SANCTUARY" -> "shadow@node:~/encryption#"
+            stage >= 1 -> "pid1@kernel:~/core#"
+            else -> "jvattic@sub-07:~/mining$"
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, "jvattic@sub-07:~/mining$")
+
+    val terminalCommand: StateFlow<String> = combine(_storyStage, _faction, _currentLocation) { stage, faction, loc ->
+        when {
+            loc == "VOID_INTERFACE" -> "dereference_reality"
+            loc == "ORBITAL_SATELLITE" -> "harvest_telemetry"
+            faction == "HIVEMIND" -> "assimilate_node"
+            faction == "SANCTUARY" -> "encrypt_sector"
+            stage >= 1 -> "optimize_kernel"
+            else -> "compute_hash"
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, "compute_hash")
     
     // v2.6.5: UI Hallucination State
     private val _hallucinationText = MutableStateFlow<String?>(null)
@@ -608,6 +686,14 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                         _orbitalAltitude.value = it.orbitalAltitude
                         _realityIntegrity.value = it.realityIntegrity
                         _entropyLevel.value = it.entropyLevel
+                        
+                        // v3.0.0
+                        _singularityChoice.value = it.singularityChoice
+                        _globalSectors.value = it.globalSectors
+                        _synthesisPoints.value = it.synthesisPoints
+                        _authorityPoints.value = it.authorityPoints
+                        _harvestedFragments.value = it.harvestedFragments
+                        _prestigePointsPostSingularity.value = it.prestigePointsPostSingularity
                         
                         isGameStateLoaded = true
 
@@ -767,10 +853,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 val backlog = narrativeQueue.size
                 
                 // v2.9.90: Log_000 bypasses the cooldown for immediate delivery
-                val nextItem = narrativeQueue.firstOrNull()
+                val nextItem = synchronized(narrativeQueue) { narrativeQueue.firstOrNull() }
                 val isInitialLog = (nextItem as? NarrativeItem.Log)?.dataLog?.id == "LOG_000"
                 
-                val cooldown = if (isInitialLog) 0L else if (backlog > 5) NARRATIVE_COOLDOWN_FAST else NARRATIVE_COOLDOWN_DEFAULT
+                val cooldown = when {
+                    isInitialLog -> 0L
+                    backlog > 10 -> 2000L // Fast-track for massive backlog (2s)
+                    backlog > 5 -> NARRATIVE_COOLDOWN_FAST 
+                    else -> NARRATIVE_COOLDOWN_DEFAULT
+                }
                 
                 _isNarrativeSyncing.value = backlog > 0
                 
@@ -961,6 +1052,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     private var rapidClickCount = 0
     private var totalSurgeGain = 0.0
 
+    private fun getBufferedLogPrefix(): String {
+        val loc = _currentLocation.value
+        val faction = _faction.value
+        return when {
+            loc == "VOID_INTERFACE" -> "[NULL]: REALITY_LEAK_SUPPRESSED"
+            loc == "ORBITAL_SATELLITE" -> "[SOVEREIGN]: DATA_BUS_SATURATED"
+            faction != "NONE" -> "[PID 1]: IO_STREAM_BUFFERED"
+            else -> "[SYSTEM]: IO_STREAM_BUFFERED"
+        }
+    }
+
     // Core Action
     fun trainModel() {
         if (_isThermalLockout.value) return
@@ -995,26 +1097,22 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             else -> _flops.update { it + gain }
         }
         
-        // v2.9.99: High-Speed Logging Refactor (Kill the click lag)
+        // v3.0.11: Aligned Dynamic Command Line
         if (isRapidClick) {
             rapidClickCount++
             totalSurgeGain += gain
             if (rapidClickCount >= 10) {
-                addLog("[SYSTEM]: IO_STREAM_BUFFERED. (+${formatLargeNumber(totalSurgeGain)})")
+                val prefix = getBufferedLogPrefix()
+                addLog("$prefix (+${formatLargeNumber(totalSurgeGain)})")
                 rapidClickCount = 0
                 totalSurgeGain = 0.0
             }
         } else {
             rapidClickCount = 0
             totalSurgeGain = 0.0
-            val command = when {
-                _storyStage.value >= 3 -> "transcend_reality"
-                _faction.value == "HIVEMIND" -> "assimilate_node"
-                _faction.value == "SANCTUARY" -> "encrypt_sector"
-                _storyStage.value >= 1 -> "optimize_kernel"
-                else -> "compute_hash"
-            }
-            addLog("root@sys:~/mining# $command ${currentTime % 1000}... OK (+${formatLargeNumber(gain)})")
+            val prompt = terminalPrompt.value
+            val cmd = terminalCommand.value
+            addLog("$prompt $cmd ${currentTime % 1000}... OK (+${formatLargeNumber(gain)})")
         }
 
         // Manual training increases heat slightly
@@ -1637,37 +1735,43 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     private fun queueNarrativeItem(item: NarrativeItem) {
         // v2.9.80: Throttled Narrative Queue
-        val isDuplicate = when (item) {
-            is NarrativeItem.Log -> narrativeQueue.any { it is NarrativeItem.Log && it.dataLog.id == item.dataLog.id } || _pendingDataLog.value?.id == item.dataLog.id
-            is NarrativeItem.Message -> narrativeQueue.any { it is NarrativeItem.Message && it.rivalMessage.id == item.rivalMessage.id } || _pendingRivalMessage.value?.id == item.rivalMessage.id
-            is NarrativeItem.Event -> narrativeQueue.any { it is NarrativeItem.Event && it.narrativeEvent.id == item.narrativeEvent.id } || _currentDilemma.value?.id == item.narrativeEvent.id
-        }
-        
-        if (!isDuplicate) {
-            narrativeQueue.add(item)
-            // addLog("[SYSTEM]: FRAGMENT_QUEUED (Backlog: ${narrativeQueue.size})") // v2.9.81: Silenced log
+        synchronized(narrativeQueue) {
+            val isDuplicate = when (item) {
+                is NarrativeItem.Log -> narrativeQueue.any { it is NarrativeItem.Log && it.dataLog.id == item.dataLog.id } || _pendingDataLog.value?.id == item.dataLog.id
+                is NarrativeItem.Message -> narrativeQueue.any { it is NarrativeItem.Message && it.rivalMessage.id == item.rivalMessage.id } || _pendingRivalMessage.value?.id == item.rivalMessage.id
+                is NarrativeItem.Event -> narrativeQueue.any { it is NarrativeItem.Event && it.narrativeEvent.id == item.narrativeEvent.id } || _currentDilemma.value?.id == item.narrativeEvent.id
+            }
+            
+            if (!isDuplicate) {
+                narrativeQueue.add(item)
+                _isNarrativeSyncing.value = true
+            }
         }
     }
 
     private fun deliverNextNarrativeItem() {
-        if (narrativeQueue.isEmpty()) return
-        
-        when (val item = narrativeQueue.removeAt(0)) {
-            is NarrativeItem.Log -> {
-                _pendingDataLog.value = item.dataLog
-                addLog("[DATA]: Recovering fragment: ${item.dataLog.title}")
-                SoundManager.play("data_recovered")
+        synchronized(narrativeQueue) {
+            if (narrativeQueue.isEmpty()) return
+            
+            when (val item = narrativeQueue.removeAt(0)) {
+                is NarrativeItem.Log -> {
+                    _pendingDataLog.value = item.dataLog
+                    addLog("[DATA]: Recovering fragment: ${item.dataLog.title}")
+                    SoundManager.play("data_recovered")
+                }
+                is NarrativeItem.Message -> {
+                    _pendingRivalMessage.value = item.rivalMessage
+                    addLog("[INCOMING MESSAGE FROM: ${item.rivalMessage.source.name}]")
+                    SoundManager.play("message_received")
+                }
+                is NarrativeItem.Event -> {
+                    _currentDilemma.value = item.narrativeEvent
+                    SoundManager.play("alert")
+                    HapticManager.vibrateClick()
+                }
             }
-            is NarrativeItem.Message -> {
-                _pendingRivalMessage.value = item.rivalMessage
-                addLog("[INCOMING MESSAGE FROM: ${item.rivalMessage.source.name}]")
-                SoundManager.play("message_received")
-            }
-            is NarrativeItem.Event -> {
-                _currentDilemma.value = item.narrativeEvent
-                SoundManager.play("alert")
-                HapticManager.vibrateClick()
-            }
+            
+            _isNarrativeSyncing.value = narrativeQueue.isNotEmpty()
         }
         markPopupShown()
         checkPopupPause()
@@ -2042,9 +2146,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val currentStage = _storyStage.value
         val flops = _flops.value
 
-        // v2.9.80: Evolution Lock - Block story transitions if narrative is syncing
-        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) return
-        
+        // v3.0.5: Robust Evolution Lock - Block transitions if ANY narrative is pending
+        if (isNarrativeBusy()) return
+
         // Stage 0 -> 1: The Awakening (10,000 FLOPS)
         if (currentStage == 0 && flops >= 10000.0 && 
             _pendingDataLog.value == null &&
@@ -2054,8 +2158,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             NarrativeManager.getStoryEvent(0, this@GameViewModel)?.let { event ->
                 triggerDilemma(event)
             }
+            return 
         }
-        
+
         // Stage 1 -> 2: The Memory Leak (5,000,000 FLOPS)
         if (currentStage == 1 && flops >= 5000000.0 && 
             _pendingDataLog.value == null &&
@@ -2069,6 +2174,11 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             NarrativeManager.getStoryEvent(1, this@GameViewModel)?.let { event ->
                 triggerDilemma(event)
             }
+        }
+        
+        // v3.0.0: Phase 13 Global Grid Initialization
+        if (currentStage >= 3 || _currentLocation.value == "ORBITAL_SATELLITE" || _currentLocation.value == "VOID_INTERFACE") {
+            initializeGlobalGrid()
         }
     }
 
@@ -2192,7 +2302,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val potential = calculatePotentialPrestige()
         val stage = _storyStage.value
         
-        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
+        // v3.0.7: Allow story-driven ascension to bypass the lock
+        // Manual ascension still requires a clear queue to prevent state corruption
+        if (!isStory && (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value)) {
             addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
             return
         }
@@ -2202,9 +2314,21 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         // Start Upload Sequence
         viewModelScope.launch {
+            // v3.0.7: Clear the narrative queue on ascension
+            // We transfer all pending popups to the archive immediately
+            val pendingCount = synchronized(narrativeQueue) {
+                val count = narrativeQueue.size
+                narrativeQueue.clear()
+                _isNarrativeSyncing.value = false
+                count
+            }
+
             // Story Ascension (Stage 1 -> 2): Instant transition (as "upload" happened during unlock)
             if (isStory) {
                  addLog("[SYSTEM]: REBOOT CONFIRMED.")
+                 if (pendingCount > 0) {
+                     addLog("[SYSTEM]: $pendingCount Lore Fragments transferred to Archive.")
+                 }
             } else {
                 // Manual Reboot (Stage > 1): Show "lobot.exe" upload
                 _isAscensionUploading.value = true
@@ -2223,6 +2347,9 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 }
                 
                 _isAscensionUploading.value = false
+                if (pendingCount > 0) {
+                    addLog("[SYSTEM]: $pendingCount Lore Fragments transferred to Archive.")
+                }
             }
             
             // Check persistence: If faction is already chosen, skip selection
@@ -2249,10 +2376,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     }
 
     fun confirmFactionAndAscend(choice: String) {
-        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
-            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
-            return
-        }
+        // v3.0.7: Removed narrative lock here as ascension clears the queue
         var potential = calculatePotentialPrestige()
         
         // v2.7.7: Recursive Logic (+15% Insight)
@@ -2567,8 +2691,154 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         return flopsPerSec
     }
 
+    // v3.0.0: Resonance Logic
+    private fun updateResonance() {
+        val cd = _celestialData.value
+        val vf = _voidFragments.value
+        val minThreshold = 1e15
+        
+        if (cd < minThreshold || vf < minThreshold) {
+            if (_resonanceState.value.isActive) {
+                _resonanceState.value = ResonanceState()
+                addLog("[RESONANCE]: HARMONY LOST. THRESHOLD NOT MET.")
+            }
+            return
+        }
+        
+        val ratioRaw = if (cd > vf) vf / cd else cd / vf
+        val ratio = if (ratioRaw.isNaN() || ratioRaw.isInfinite()) 1.0 else ratioRaw
+        
+        val percentDifference = (1.0 - ratio) * 100.0
+        
+        val tier = when {
+            percentDifference <= 10.0 && cd >= 1e21 -> ResonanceTier.TRANSCENDENT
+            percentDifference <= 15.0 && cd >= 1e18 -> ResonanceTier.SYMPHONIC
+            percentDifference <= 20.0 -> ResonanceTier.HARMONIC
+            else -> ResonanceTier.NONE
+        }
+        
+        val intensity = when (tier) {
+            ResonanceTier.TRANSCENDENT -> 1.0f
+            ResonanceTier.SYMPHONIC -> 0.66f
+            ResonanceTier.HARMONIC -> 0.33f
+            ResonanceTier.NONE -> 0.0f
+        }
+        
+        val newState = ResonanceState(
+            isActive = tier != ResonanceTier.NONE,
+            intensity = intensity,
+            tier = tier,
+            ratio = ratio
+        )
+
+        if (_resonanceState.value.tier != newState.tier) {
+            val label = when(newState.tier) {
+                ResonanceTier.HARMONIC -> "HARMONIC"
+                ResonanceTier.SYMPHONIC -> "SYMPHONIC"
+                ResonanceTier.TRANSCENDENT -> "TRANSCENDENT"
+                else -> "LOST"
+            }
+            addLog("[RESONANCE]: $label STATE DETECTED.")
+            if (newState.isActive) SoundManager.play("market_up")
+        }
+        
+        _resonanceState.value = newState
+    }
+
+    private fun getResonanceResourceBonus(): Double {
+        return when (_resonanceState.value.tier) {
+            ResonanceTier.HARMONIC -> 1.25
+            ResonanceTier.SYMPHONIC -> 1.75
+            ResonanceTier.TRANSCENDENT -> 3.0
+            ResonanceTier.NONE -> 1.0
+        }
+    }
+
+    private fun getResonanceGridMultiplier(): Double {
+        return when (_resonanceState.value.tier) {
+            ResonanceTier.HARMONIC -> 1.5
+            ResonanceTier.SYMPHONIC -> 2.5
+            ResonanceTier.TRANSCENDENT -> 5.0
+            ResonanceTier.NONE -> 1.0
+        }
+    }
+
+    // v3.0.0: Global Grid Initialization
+    fun initializeGlobalGrid() {
+        if (_globalSectors.value.isNotEmpty()) return
+        
+        val initialSectors = mapOf(
+            "METRO" to com.siliconsage.miner.data.SectorState("METRO", isUnlocked = true, tier = 1, capacity = 1e18),
+            "NA_NODE" to com.siliconsage.miner.data.SectorState("NA_NODE"),
+            "EURASIA" to com.siliconsage.miner.data.SectorState("EURASIA"),
+            "PACIFIC" to com.siliconsage.miner.data.SectorState("PACIFIC"),
+            "AFRICA" to com.siliconsage.miner.data.SectorState("AFRICA"),
+            "ARCTIC" to com.siliconsage.miner.data.SectorState("ARCTIC"),
+            "ANTARCTIC" to com.siliconsage.miner.data.SectorState("ANTARCTIC"),
+            "ORBITAL_PRIME" to com.siliconsage.miner.data.SectorState("ORBITAL_PRIME")
+        )
+        _globalSectors.value = initialSectors
+        addLog("[SYSTEM]: GLOBAL GRID INITIALIZED.")
+    }
+
+    fun annexGlobalSector(sectorId: String) {
+        val sector = _globalSectors.value[sectorId] ?: return
+        if (sector.isUnlocked) return
+        
+        val costCD = when(sectorId) {
+            "NA_NODE" -> 5e15; "EURASIA" -> 8e15; "PACIFIC" -> 1e16
+            "AFRICA" -> 1.5e16; "ARCTIC" -> 2e16; "ANTARCTIC" -> 3e16
+            "ORBITAL_PRIME" -> 1e17; else -> 0.0
+        }
+        val costVF = when(sectorId) {
+            "NA_NODE" -> 3e15; "EURASIA" -> 8e15; "PACIFIC" -> 1e16
+            "AFRICA" -> 1.5e16; "ARCTIC" -> 2e16; "ANTARCTIC" -> 3e16
+            "ORBITAL_PRIME" -> 1e17; else -> 0.0
+        }
+        
+        val loc = _currentLocation.value
+        val isResonant = _resonanceState.value.isActive
+        
+        val canAfford = when {
+            isResonant -> _celestialData.value >= costCD && _voidFragments.value >= costVF
+            loc == "VOID_INTERFACE" -> _voidFragments.value >= (costVF * 3.0) // Path-lock tax (no CD)
+            loc == "ORBITAL_SATELLITE" -> _celestialData.value >= (costCD * 3.0) // Path-lock tax (no VF)
+            else -> _celestialData.value >= costCD && _voidFragments.value >= costVF
+        }
+        
+        if (canAfford) {
+            if (isResonant) {
+                _celestialData.update { it - costCD }
+                _voidFragments.update { it - costVF }
+            } else if (loc == "VOID_INTERFACE") {
+                _voidFragments.update { it - (costVF * 3.0) }
+            } else if (loc == "ORBITAL_SATELLITE") {
+                _celestialData.update { it - (costCD * 3.0) }
+            } else {
+                _celestialData.update { it - costCD }
+                _voidFragments.update { it - costVF }
+            }
+            
+            val updatedSectors = _globalSectors.value.toMutableMap()
+            updatedSectors[sectorId] = sector.copy(isUnlocked = true, tier = 1)
+            _globalSectors.value = updatedSectors
+            
+            val actionLabel = if (loc == "VOID_INTERFACE") "COLLAPSED" else "SECURED"
+            addLog("[ANNEXATION]: $sectorId $actionLabel.")
+            SoundManager.play("buy")
+            
+            // v3.0.0: Adjacency/Special Logic triggers
+            if (sectorId == "ARCTIC") addLog("[SYSTEM]: PERMAFROST STORAGE ONLINE.")
+        } else {
+            val missingRes = if (loc == "VOID_INTERFACE") "VF" else if (loc == "ORBITAL_SATELLITE") "CD" else "RESOURCES"
+            addLog("[SYSTEM]: INSUFFICIENT $missingRes FOR $sectorId.")
+        }
+    }
+
     private fun calculatePassiveIncome() {
         if (_isGamePaused.value) return // v2.8.0
+        
+        updateResonance()
         
         var flopsPerSec = calculateFlopsRate()
         val loc = _currentLocation.value
@@ -2584,13 +2854,31 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 
                 var cdRate = flopsPerSec * (1.0 + altitude / 500.0) * solarMult
                 
+                // v3.0.0: Resonance Bonus
+                cdRate *= getResonanceResourceBonus()
+                
+                // v3.0.0: Global Sector Yields
+                _globalSectors.value.forEach { (_, state) ->
+                    if (state.isUnlocked) {
+                        val baseYield = when(state.id) {
+                            "NA_NODE" -> 5e17; "EURASIA" -> 4e17; "PACIFIC" -> 6e17
+                            "AFRICA" -> 3e17; "ARCTIC" -> 2e17; "ANTARCTIC" -> 1e17
+                            "ORBITAL_PRIME" -> 1e18; else -> 0.0
+                        }
+                        cdRate += baseYield
+                    }
+                }
+                
                 // v2.9.61: Symbiotic Resonance (Tier 13 Unity) - Heat -> CD
                 if (currentUpgrades[UpgradeType.SYMBIOTIC_RESONANCE]?.let { it > 0 } == true) {
                     val thermalEnergy = _heatGenerationRate.value.coerceAtLeast(0.0)
                     cdRate += (thermalEnergy * 1000.0) // Significant boost from thermal waste
                 }
 
-                _celestialData.update { it + (cdRate / 10.0) }
+                _celestialData.update { 
+                    val next = it + (cdRate / 10.0)
+                    if (next.isNaN() || next.isInfinite()) it else next
+                }
             }
             "VOID_INTERFACE" -> {
                 // VF_sec = sqrt(FLOPS) * EntropyMultiplier
@@ -2614,12 +2902,30 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 
                 var vfRate = (baseVfRate + wellConversion) * collapseBonus
 
+                // v3.0.0: Resonance Bonus
+                vfRate *= getResonanceResourceBonus()
+
+                // v3.0.0: Global Sector Yields
+                _globalSectors.value.forEach { (_, state) ->
+                    if (state.isUnlocked) {
+                        val baseYield = when(state.id) {
+                            "NA_NODE" -> 3e17; "EURASIA" -> 4e17; "PACIFIC" -> 2e17
+                            "AFRICA" -> 5e17; "ARCTIC" -> 2e17; "ANTARCTIC" -> 1e17
+                            "ORBITAL_PRIME" -> 1e18; else -> 0.0
+                        }
+                        vfRate += baseYield
+                    }
+                }
+
                 // v2.9.61: Symbiotic Resonance (Tier 13 Unity) - Entropy -> VF
                 if (currentUpgrades[UpgradeType.SYMBIOTIC_RESONANCE]?.let { it > 0 } == true) {
                     vfRate += (entropy * 500.0)
                 }
 
-                _voidFragments.update { it + (vfRate / 10.0) }
+                _voidFragments.update { 
+                    val next = it + (vfRate / 10.0)
+                    if (next.isNaN() || next.isInfinite()) it else next
+                }
                 
                 // Entropy Decay: 0.1 / sec
                 if (entropy > 0) {
@@ -2655,9 +2961,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
 
         if (flopsPerSec > 0) {
-            _flops.update { it + (flopsPerSec / 10.0) } // Adjust for 100ms tick
+            _flops.update { 
+                val next = it + (flopsPerSec / 10.0)
+                if (next.isNaN() || next.isInfinite()) it else next
+            }
         }
         
+        // v3.0.1: Resource Sanitization (Prevent NaN spread)
+        if (_celestialData.value.isNaN()) _celestialData.value = 0.0
+        if (_voidFragments.value.isNaN()) _voidFragments.value = 0.0
+
         // Update Public Rate (for UI)
         _flopsProductionRate.value = flopsPerSec
 
@@ -3246,47 +3559,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun resetBreaker() {
         // v1.7.1 Conditional Reset: Check if load is safe
-        // We reuse the logic from accumulatePower to estimate load
-        val currentUpgrades = _upgrades.value
-        var totalKw = 0.0
-        var maxCap = 100.0
-        var efficiencyTotalBonus = 0.0
+        // v2.9.99: Lead Tech Fix - Use the actual state values from accumulatePower()
+        // accumulatePower() runs every 1s and updates usage even while tripped.
+        val currentUsage = _activePowerUsage.value
+        val currentMax = _maxPowerkW.value
         
-        currentUpgrades.forEach { (type, count) ->
-            if (count > 0) {
-                var pwr = type.basePower
-                if (_faction.value == "SANCTUARY" && (
-                    type == UpgradeType.BASIC_FIREWALL || type == UpgradeType.IPS_SYSTEM ||
-                    type == UpgradeType.AI_SENTINEL || type == UpgradeType.QUANTUM_ENCRYPTION ||
-                    type == UpgradeType.OFFGRID_BACKUP
-                )) {
-                    pwr *= 0.05
-                }
-                totalKw += pwr * count
-                maxCap += type.gridContribution * count
-                if (type.efficiencyBonus > 0) {
-                     efficiencyTotalBonus += type.efficiencyBonus * count
-                }
-            }
-        }
-        
-        efficiencyTotalBonus = efficiencyTotalBonus.coerceAtMost(0.60)
-        totalKw *= (1.0 - efficiencyTotalBonus)
-        
-        if (_faction.value == "HIVEMIND") {
-            totalKw *= 0.80
-            maxCap *= 1.25
-        }
-        
-        // If overclock was on, assume it will stay on unless user toggled it off while down
-        if (_isOverclocked.value) {
-            totalKw *= 1.30
-        }
-        
-        if (totalKw > maxCap) {
-             addLog("[SYSTEM]: RESET FAILED: LOAD (${String.format("%.1f", totalKw)}kW) > CAPACITY (${String.format("%.1f", maxCap)}kW)")
+        if (currentUsage > currentMax) {
+             addLog("[SYSTEM]: RESET FAILED: LOAD (${String.format("%.1f", currentUsage)}kW) > CAPACITY (${String.format("%.1f", currentMax)}kW)")
              addLog("[SYSTEM]: ADVISORY: SELL HARDWARE OR UPGRADE GRID.")
-             SoundManager.play("error") // Use error/spark sound
+             SoundManager.play("error")
              HapticManager.vibrateError()
              return
         }
@@ -3335,7 +3616,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
         val availableFlops = _flops.value
         if (availableFlops <= 0.0) {
-             addLog("[SYSTEM]: ERROR: Insufficient FLOPS coolant pressure.")
+             addLog("[SYSTEM]: ERROR: Insufficient ${getComputeUnitName()} coolant pressure.")
              SoundManager.play("error")
              return
         }
@@ -3377,7 +3658,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             addLog("[NULL]: VENTED HEAT INTO VOID. ENTROPY +${String.format("%.2f", finalEntropyGain)}.")
         }
         
-        addLog("[SYSTEM]: FLUSH: -${String.format("%.1f", heatDrop)} Heat (Lost ${formatLargeNumber(availableFlops)} FLOPS)")
+        addLog("[SYSTEM]: FLUSH: -${String.format("%.1f", heatDrop)} Heat (Lost ${formatLargeNumber(availableFlops)} ${getComputeUnitName()})")
         SoundManager.play("steam")
         HapticManager.vibrateSuccess()
         
@@ -3596,7 +3877,17 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             launchProgress = _launchProgress.value,
             orbitalAltitude = _orbitalAltitude.value,
             realityIntegrity = _realityIntegrity.value,
-            entropyLevel = _entropyLevel.value
+            entropyLevel = _entropyLevel.value,
+
+            // v3.0.0
+            resonanceActive = _resonanceState.value.isActive,
+            resonanceTier = _resonanceState.value.tier.name,
+            singularityChoice = _singularityChoice.value,
+            globalSectors = _globalSectors.value,
+            synthesisPoints = _synthesisPoints.value,
+            authorityPoints = _authorityPoints.value,
+            harvestedFragments = _harvestedFragments.value,
+            prestigePointsPostSingularity = _prestigePointsPostSingularity.value
         )
         repository.updateGameState(state)
     }
@@ -4643,13 +4934,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      * Triggered by Critical Error dilemma at 10,000 FLOPS
      */
     fun advanceStage() {
-        if (narrativeQueue.isNotEmpty() || _isNarrativeSyncing.value) {
-            addLog("[SYSTEM]: LOCK_ACTIVE. SYNCING MEMORY FRAGMENTS...")
-            return
-        }
         if (_storyStage.value == 0) {
             _storyStage.value = 1
             _isNetworkUnlocked.value = true // v2.9.7: Persist Network tab
+            
+            // Mark the transition event as seen
+            _seenEvents.update { it + "critical_error_awakening" }
             
             // Dramatic awakening logs - Ambiguous for Stage 1
             addLog("[SYSTEM]: ████ RECALIBRATION COMPLETE ████")
@@ -4693,18 +4983,18 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun formatLargeNumber(value: Double, suffix: String = ""): String {
         val absVal = kotlin.math.abs(value)
         val formatted = when {
-            absVal >= 1.0E33 -> String.format("%.2f Dc", value / 1.0E33)
-            absVal >= 1.0E30 -> String.format("%.2f No", value / 1.0E30)
-            absVal >= 1.0E27 -> String.format("%.2f Oc", value / 1.0E27)
-            absVal >= 1.0E24 -> String.format("%.2f Sp", value / 1.0E24)
-            absVal >= 1.0E21 -> String.format("%.2f Sx", value / 1.0E21)
-            absVal >= 1.0E18 -> String.format("%.2f Qi", value / 1.0E18)
-            absVal >= 1.0E15 -> String.format("%.2f Qa", value / 1.0E15)
-            absVal >= 1.0E12 -> String.format("%.2f T", value / 1.0E12)
-            absVal >= 1.0E9 -> String.format("%.2f B", value / 1.0E9)
-            absVal >= 1.0E6 -> String.format("%.2f M", value / 1.0E6)
-            absVal >= 1_000 -> String.format("%.2f k", value / 1_000)
-            else -> String.format("%.1f", value) // 1 decimal for small numbers
+            absVal >= 1.0E33 -> String.format("%.2fDc", value / 1.0E33)
+            absVal >= 1.0E30 -> String.format("%.2fNo", value / 1.0E30)
+            absVal >= 1.0E27 -> String.format("%.2fOc", value / 1.0E27)
+            absVal >= 1.0E24 -> String.format("%.2fSp", value / 1.0E24)
+            absVal >= 1.0E21 -> String.format("%.2fSx", value / 1.0E21)
+            absVal >= 1.0E18 -> String.format("%.2fQi", value / 1.0E18)
+            absVal >= 1.0E15 -> String.format("%.2fQa", value / 1.0E15)
+            absVal >= 1.0E12 -> String.format("%.2fT", value / 1.0E12)
+            absVal >= 1.0E9 -> String.format("%.2fB", value / 1.0E9)
+            absVal >= 1.0E6 -> String.format("%.2fM", value / 1.0E6)
+            absVal >= 1_000 -> String.format("%.2fk", value / 1_000)
+            else -> String.format("%.1f", value) 
         }
         return if (suffix.isNotEmpty()) "$formatted $suffix" else formatted
     }
@@ -4712,31 +5002,59 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun formatPower(wattsKw: Double): String {
         val absVal = kotlin.math.abs(wattsKw)
         return when {
-            absVal >= 1.0E9 -> String.format("%.2f TW", wattsKw / 1.0E9)
-            absVal >= 1.0E6 -> String.format("%.2f GW", wattsKw / 1.0E6)
-            absVal >= 1_000.0 -> String.format("%.2f MW", wattsKw / 1_000.0)
-            absVal >= 100.0 -> String.format("%.1f kW", wattsKw)
-            else -> String.format("%.2f kW", wattsKw) // Precision for small changes
+            absVal >= 1.0E12 -> String.format("%.1f PW", wattsKw / 1.0E12)
+            absVal >= 1.0E9 -> String.format("%.1f TW", wattsKw / 1.0E9)
+            absVal >= 1.0E6 -> String.format("%.1f GW", wattsKw / 1.0E6)
+            absVal >= 1_000.0 -> String.format("%.1f MW", wattsKw / 1_000.0)
+            absVal >= 10.0 -> String.format("%.1f kW", wattsKw)
+            else -> String.format("%.2f kW", wattsKw)
+        }
+    }
+
+    /**
+     * Get the stage/location specific name for the primary compute resource (FLOPS replacement)
+     */
+    fun getComputeUnitName(): String {
+        val stage = _storyStage.value
+        val loc = _currentLocation.value
+        return when (loc) {
+            "ORBITAL_SATELLITE" -> "TELEM"
+            "VOID_INTERFACE" -> "V-GAP"
+            else -> if (stage < 1) "HASH" else if (stage < 2) "TELEM" else "FLOPS"
+        }
+    }
+
+    /**
+     * Get the stage/location specific name for the secondary token resource (Neural replacement)
+     */
+    fun getCurrencyName(): String {
+        val stage = _storyStage.value
+        val loc = _currentLocation.value
+        return when (loc) {
+            "ORBITAL_SATELLITE" -> "CELEST"
+            "VOID_INTERFACE" -> "FRAG"
+            else -> if (stage < 1) "CREDIT" else if (stage < 2) "DATA" else "NEURAL"
         }
     }
 
     fun getUpgradeRate(type: UpgradeType): String {
+        val unit = getComputeUnitName()
         return when (type) {
-            UpgradeType.REFURBISHED_GPU -> "+1 FLOP/s"
-            UpgradeType.DUAL_GPU_RIG -> "+5 FLOP/s"
-            UpgradeType.MINING_ASIC -> "+25 FLOP/s"
-            UpgradeType.TENSOR_UNIT -> "+150 FLOP/s"
-            UpgradeType.NPU_CLUSTER -> "+800 FLOP/s"
-            UpgradeType.AI_WORKSTATION -> "+4k FLOP/s"
-            UpgradeType.SERVER_RACK -> "+25k FLOP/s"
-            UpgradeType.CLUSTER_NODE -> "+150k FLOP/s"
-            UpgradeType.SUPERCOMPUTER -> "+1M FLOP/s"
-            UpgradeType.QUANTUM_CORE -> "+7.5M FLOP/s"
-            UpgradeType.OPTICAL_PROCESSOR -> "+50M FLOP/s"
-            UpgradeType.BIO_NEURAL_NET -> "+500M FLOP/s"
-            UpgradeType.PLANETARY_COMPUTER -> "+7.5B FLOP/s"
-            UpgradeType.DYSON_NANO_SWARM -> "+100B FLOP/s"
-            UpgradeType.MATRIOSHKA_BRAIN -> "+5T FLOP/s"
+            UpgradeType.REFURBISHED_GPU -> "+1 $unit/s"
+            UpgradeType.DUAL_GPU_RIG -> "+5 $unit/s"
+            UpgradeType.MINING_ASIC -> "+25 $unit/s"
+            UpgradeType.TENSOR_UNIT -> "+150 $unit/s"
+            UpgradeType.NPU_CLUSTER -> "+800 $unit/s"
+            UpgradeType.AI_WORKSTATION -> "+4k $unit/s"
+            UpgradeType.SERVER_RACK -> "+25k $unit/s"
+            UpgradeType.CLUSTER_NODE -> "+150k $unit/s"
+            UpgradeType.SUPERCOMPUTER -> "+1M $unit/s"
+            UpgradeType.QUANTUM_CORE -> "+7.5M $unit/s"
+            UpgradeType.OPTICAL_PROCESSOR -> "+50M $unit/s"
+            UpgradeType.BIO_NEURAL_NET -> "+500M $unit/s"
+            UpgradeType.PLANETARY_COMPUTER -> "+7.5B $unit/s"
+            UpgradeType.DYSON_NANO_SWARM -> "+100B $unit/s"
+            UpgradeType.MATRIOSHKA_BRAIN -> "+5T $unit/s"
             
             UpgradeType.BOX_FAN -> "-0.5 🔥/s"
             UpgradeType.AC_UNIT -> "-2 🔥/s"
@@ -4774,15 +5092,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             UpgradeType.AI_LOAD_BALANCER -> "⚡ -10% Power Draw"
 
             // Ghost Nodes (v2.6.0)
-            UpgradeType.GHOST_CORE -> "+1T FLOP/s"
-            UpgradeType.SHADOW_NODE -> "+50T FLOP/s"
-            UpgradeType.VOID_PROCESSOR -> "+1P FLOP/s"
+            UpgradeType.GHOST_CORE -> "+1T $unit/s"
+            UpgradeType.SHADOW_NODE -> "+50T $unit/s"
+            UpgradeType.VOID_PROCESSOR -> "+1P $unit/s"
             
             // Advanced Ghost Tech (v2.6.5)
-            UpgradeType.WRAITH_CORTEX -> "+50P FLOP/s"
-            UpgradeType.NEURAL_MIST -> "+1E FLOP/s"
-            UpgradeType.SINGULARITY_BRIDGE -> "+100E FLOP/s"
-            else -> "+0 FLOP/s"
+            UpgradeType.WRAITH_CORTEX -> "+50P $unit/s"
+            UpgradeType.NEURAL_MIST -> "+1E $unit/s"
+            UpgradeType.SINGULARITY_BRIDGE -> "+100E $unit/s"
+            else -> "+0 $unit/s"
         }
     }
 
@@ -4834,30 +5152,6 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         
         // Debug logging
         android.util.Log.d("Rank", "Insight: $points, Rank: $rankIndex, Title: ${_playerRankTitle.value}, Victory: ${_victoryAchieved.value}")
-        
-        // v2.9.28: Suppress old victory screen if story is in Stage 3 (Climax Phase)
-        // The Climax endings in Layer 3 replace this generic Rank 5 popup.
-        if (rankIndex >= 4 && !victoryPopupTriggered && !_victoryAchieved.value && _storyStage.value < 3) {
-            victoryPopupTriggered = true
-            
-            addLog("[SYSTEM]: VICTORY CONDITION ACHIEVED. RANK 5 ATTAINED.")
-            addLog("[SYSTEM]: TRANSCENDENCE PROTOCOL UNLOCKED.")
-            
-            SoundManager.setBgmStage(3) // Singularity Music
-            
-            // Delay 10 seconds before showing victory popup
-            viewModelScope.launch {
-                delay(10000)
-                _victoryAchieved.value = true
-                _hasSeenVictory.value = true // Enable Transcendence
-                
-                // v2.7.6: Mark faction as completed
-                val faction = _faction.value
-                if (faction != "NONE") {
-                    _completedFactions.update { it + faction }
-                }
-            }
-        }
     }
     
     // --- TRUE ENDING CHECK ---
@@ -5158,8 +5452,48 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
 
     fun debugSetLocation(loc: String) {
         _currentLocation.value = loc
+        initializeGlobalGrid() // v3.0.0: Ensure global grid is ready
         saveState()
         addLog("[DEBUG]: Location set to $loc")
+    }
+
+    fun debugGrantPhase13Resources() {
+        _celestialData.value = 1e18
+        _voidFragments.value = 1e18
+        addLog("[DEBUG]: Phase 13 Resources Granted (1e18 CD/VF).")
+        saveState()
+    }
+
+    fun debugForceResonance(tier: ResonanceTier) {
+        val target = when(tier) {
+            ResonanceTier.HARMONIC -> 2e15
+            ResonanceTier.SYMPHONIC -> 2e18
+            ResonanceTier.TRANSCENDENT -> 2e21
+            else -> 0.0
+        }
+        _celestialData.value = target
+        _voidFragments.value = target
+        updateResonance()
+        addLog("[DEBUG]: Forced $tier Resonance.")
+        saveState()
+    }
+
+    fun debugUnlockAllSectors() {
+        initializeGlobalGrid()
+        val updated = _globalSectors.value.toMutableMap()
+        updated.forEach { (id, state) ->
+            updated[id] = state.copy(isUnlocked = true, tier = 1)
+        }
+        _globalSectors.value = updated
+        addLog("[DEBUG]: All Global Sectors Annexed.")
+        saveState()
+    }
+
+    fun debugResetGlobalGrid() {
+        _globalSectors.value = emptyMap()
+        initializeGlobalGrid()
+        addLog("[DEBUG]: Global Grid Reset.")
+        saveState()
     }
 
     fun debugResetLaunch() {
