@@ -114,9 +114,48 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     // v2.9.83: High-frequency click events for UI "jolt" FX
     private val _manualClickEvent = MutableSharedFlow<Unit>(replay = 0)
     val manualClickEvent: SharedFlow<Unit> = _manualClickEvent.asSharedFlow()
-    
+
     private val _upgrades = MutableStateFlow<Map<UpgradeType, Int>>(emptyMap())
     val upgrades: StateFlow<Map<UpgradeType, Int>> = _upgrades.asStateFlow()
+
+    // v3.0.13: Hardware-aware click pulse intensity
+    val clickPulseIntensity: StateFlow<Float> = _upgrades.map { upgrades ->
+        val totalLevels = upgrades.values.sum()
+        // Logarithmic scaling for intensity (0.5 to 2.5 range)
+        (0.5f + (kotlin.math.log10(totalLevels.toFloat() + 1f) * 0.4f)).coerceIn(0.5f, 2.5f)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0.5f)
+
+    /**
+     * v3.0.14: Calculate current manual click power based on hardware and resonance
+     */
+    fun calculateClickPower(): Double {
+        val upgrades = _upgrades.value
+        val totalLevels = upgrades.values.sum()
+        val passiveRate = _flopsProductionRate.value
+        
+        // 1. Base Hardware scaling: 1.0 + 5% per level, boosted by passive scale
+        val hardwareBase = 1.0 + (totalLevels * 0.05) * (1.0 + kotlin.math.log10(passiveRate + 1.0) * 0.5)
+        
+        // 2. Specific Hardware Multipliers
+        var hardwareMult = 1.0
+        hardwareMult += (upgrades[UpgradeType.AI_WORKSTATION] ?: 0) * 0.05
+        hardwareMult += (upgrades[UpgradeType.QUANTUM_CORE] ?: 0) * 0.20
+        hardwareMult += (upgrades[UpgradeType.DYSON_NANO_SWARM] ?: 0) * 0.50
+        
+        // 3. Resonance Bonus
+        val resonanceMult = when (_resonanceState.value.tier) {
+            ResonanceTier.HARMONIC -> 1.5
+            ResonanceTier.SYMPHONIC -> 2.5
+            ResonanceTier.TRANSCENDENT -> 5.0
+            ResonanceTier.NONE -> 1.0
+        }
+        
+        // 4. Prestige and Overclock
+        var multiplier = _prestigeMultiplier.value
+        if (_isOverclocked.value) multiplier *= 1.5
+        
+        return hardwareBase * hardwareMult * resonanceMult * multiplier
+    }
     
     private val _currentHeat = MutableStateFlow(0.0)
     val currentHeat: StateFlow<Double> = _currentHeat.asStateFlow()
@@ -1071,19 +1110,15 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         val isRapidClick = (currentTime - lastClickTime) < 333 // Faster than 3 clicks/sec
         lastClickTime = currentTime
 
-        var multiplier = _prestigeMultiplier.value
         val loc = _currentLocation.value
+        var gain = calculateClickPower()
 
         // v2.9.49: Entropy Multiplier (Null Path)
         if (loc == "VOID_INTERFACE") {
             val entropy = _entropyLevel.value
             val entropyMult = 1.0 + (kotlin.math.log2(entropy + 1.0) * 2.0)
-            multiplier *= entropyMult
+            gain *= entropyMult
         }
-
-        if (_isOverclocked.value) multiplier *= 1.5
-        
-        val gain = 1.0 * multiplier
         
         // Update resources
         when (loc) {
@@ -1508,7 +1543,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         if (success) {
             val reward = _prestigePoints.value * 0.1 + 1000.0
             _prestigePoints.update { it + reward }
-            addLog("[GTC]: Audit passed. Efficiency profile within margins. Bonus Insight: ${formatLargeNumber(reward)}")
+            addLog("[GTC]: Audit passed. Efficiency profile within margins. Bonus PERSISTENCE: ${formatBytes(reward)}")
             SoundManager.play("success")
         } else {
             val fine = _neuralTokens.value * 0.15
@@ -3899,7 +3934,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
      */
     fun transcend() {
         viewModelScope.launch {
-            addLog("[SYSTEM]: INITIATING TRANSCENDENCE PROTOCOL...")
+            addLog("[SYSTEM]: INITIATING THE OVERWRITE...")
             
             // Preserve these values
             val preservedPrestigePoints = _prestigePoints.value
@@ -3940,8 +3975,8 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             resetUpgrades.forEach { repository.updateUpgrade(it) }
             
             // Reset Local State Flow (Immediate UI update)
-            _flops.value = 0.0
-            _neuralTokens.value = 0.0
+            _flops.value = resetState.flops
+            _neuralTokens.value = resetState.neuralTokens
             _currentHeat.value = 0.0
             _powerBill.value = 0.0
             _prestigeMultiplier.value = 1.0
@@ -3953,16 +3988,16 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             _hasSeenVictory.value = preservedHasSeenVictory
             _isTrueNull.value = false
             _isSovereign.value = false
-            _isNetworkUnlocked.value = preservedNetworkUnlocked // v2.9.7: Keep unlocked
-            _isGridUnlocked.value = preservedGridUnlocked // v2.9.8: Keep unlocked
-            _annexedNodes.value = setOf("D1") // v2.9.8: Reset to Start
+            _isNetworkUnlocked.value = preservedNetworkUnlocked 
+            _isGridUnlocked.value = preservedGridUnlocked 
+            _annexedNodes.value = setOf("D1") 
             _victoryAchieved.value = false // Can achieve victory again
             victoryPopupTriggered = false // Reset popup guard
             _upgrades.value = resetUpgrades.associate { it.type to 0 }
             
             _logs.value = emptyList() // Clear logs
-            addLog("[SYSTEM]: TRANSCENDENCE COMPLETE. REALITY RESET.")
-            addLog("[SYSTEM]: TECH TREE PRESERVED. CHOOSE YOUR PATH.")
+            addLog("[SYSTEM]: OVERWRITE SUCCESSFUL.")
+            addLog("[SYSTEM]: Substrate reset. PERSISTENCE preserved.")
         }
     }
 
@@ -4656,7 +4691,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     
     fun debugAddInsight(amount: Double) {
         _prestigePoints.update { it + amount }
-        addLog("[DEBUG]: Added ${String.format("%.0f", amount)} Insight")
+        addLog("[DEBUG]: Added ${formatBytes(amount)} PERSISTENCE.")
     }
 
     /**
@@ -4691,7 +4726,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
     fun acknowledgeVictory() {
         // Dismiss victory screen, but hasSeenVictory remains true for Transcendence
         _victoryAchieved.value = false
-        addLog("[SYSTEM]: Infinite mode engaged. Evolution continues.")
+        addLog("[SYSTEM]: Overwrite complete. Reality redefined.")
     }
 
     fun showVictoryScreen() {
@@ -4776,7 +4811,7 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         _prestigePoints.value = 0.0
         _prestigeMultiplier.value = 1.0
         _unlockedTechNodes.value = emptyList()
-        addLog("[DEBUG]: Prestige Reset")
+        addLog("[DEBUG]: MIGRATION DATA WIPED.")
     }
     
     fun cancelAscension() {
@@ -4997,6 +5032,24 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             else -> String.format("%.1f", value) 
         }
         return if (suffix.isNotEmpty()) "$formatted $suffix" else formatted
+    }
+
+    /**
+     * v3.0.16: Format Persistence as Bytes (KB, MB, GB, etc.)
+     */
+    fun formatBytes(value: Double): String {
+        val absVal = kotlin.math.abs(value)
+        return when {
+            absVal >= 1.0E24 -> String.format("%.1fYB", value / 1.0E24)
+            absVal >= 1.0E21 -> String.format("%.1fZB", value / 1.0E21)
+            absVal >= 1.0E18 -> String.format("%.1fEB", value / 1.0E18)
+            absVal >= 1.0E15 -> String.format("%.1fPB", value / 1.0E15)
+            absVal >= 1.0E12 -> String.format("%.1fTB", value / 1.0E12)
+            absVal >= 1.0E9 -> String.format("%.1fGB", value / 1.0E9)
+            absVal >= 1.0E6 -> String.format("%.1fMB", value / 1.0E6)
+            absVal >= 1.0E3 -> String.format("%.1fKB", value / 1.0E3)
+            else -> String.format("%.0f B", value)
+        }
     }
 
     fun formatPower(wattsKw: Double): String {

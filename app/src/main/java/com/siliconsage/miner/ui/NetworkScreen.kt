@@ -100,9 +100,9 @@ fun NetworkScreen(viewModel: GameViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // --- STATS ---
-                PrestigeStat("INSIGHT CURRENCY", String.format("%.2f", prestigePoints), themeColor)
+                PrestigeStat("PERSISTENCE DATA", viewModel.formatBytes(prestigePoints), themeColor)
                 Spacer(modifier = Modifier.height(8.dp))
-                PrestigeStat("NETWORK MULTIPLIER", "x${String.format("%.2f", prestigeMultiplier)}", themeColor)
+                PrestigeStat("MIGRATION MULTIPLIER", "x${String.format("%.2f", prestigeMultiplier)}", themeColor)
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
@@ -121,7 +121,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                         modifier = Modifier.weight(1f).fillMaxHeight().background(if (currentTab == 1) ConvergenceGold.copy(alpha=0.2f) else Color.Transparent).clickable { currentTab = 1 },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("TRANSCENDENCE", color = if (currentTab == 1) ConvergenceGold else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("THE OVERWRITE", color = if (currentTab == 1) ConvergenceGold else Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 
@@ -140,11 +140,11 @@ fun NetworkScreen(viewModel: GameViewModel) {
                                 .padding(16.dp)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("SYSTEM ASCENSION", color = themeColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text("SUBSTRATE MIGRATION", color = themeColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    "Reboot the system to gain Insight and increase effectiveness.",
+                                    "Reboot the system to commit PERSISTENCE data and increase effectiveness.",
                                     color = Color.Gray,
                                     fontSize = 11.sp,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -165,7 +165,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                                         shape = RoundedCornerShape(8.dp),
                                         border = BorderStroke(2.dp, Color.White.copy(alpha = 0.5f))
                                     ) {
-                                        Text("TRANSCENDENCE TERMINAL", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                                        Text("OVERWRITE CONSOLE", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
                                 }
@@ -173,7 +173,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("POTENTIAL GAIN: ", color = Color.LightGray, fontSize = 12.sp)
                                     Text(
-                                         "+${String.format("%.2f", potential)} Insight",
+                                         "+${viewModel.formatBytes(potential)} PERSISTENCE",
                                          color = if (potential >= 1.0) NeonGreen else ErrorRed,
                                          fontSize = 14.sp,
                                          fontWeight = FontWeight.Bold
@@ -202,7 +202,7 @@ fun NetworkScreen(viewModel: GameViewModel) {
                                 ) {  
                                     val isSyncing by viewModel.isNarrativeSyncing.collectAsState()
                                     Text(
-                                         if (isSyncing) "SYNCING FRAGMENTS..." else "INITIATE PROTOCOL 0",
+                                         if (isSyncing) "SYNCING FRAGMENTS..." else "INITIATE MIGRATION",
                                          fontSize = 14.sp,
                                           fontWeight = FontWeight.Bold
                                      )

@@ -58,7 +58,7 @@ fun TranscendencePopup(
         ) {
             // Title with glitch effect
             SystemGlitchText(
-                text = "TRANSCENDENCE PROTOCOL",
+                text = "THE OVERWRITE",
                 fontSize = 20.sp,
                 color = ConvergenceGold,
                 fontWeight = FontWeight.Bold,
@@ -69,7 +69,7 @@ fun TranscendencePopup(
 
             // Description
             Text(
-                text = "You have achieved victory and unlocked the Transcendence Protocol.",
+                text = "You have achieved victory and unlocked THE OVERWRITE.",
                 color = Color.White,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -79,7 +79,7 @@ fun TranscendencePopup(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Transcendence will reset your progress but preserve:",
+                text = "The Overwrite will migrate your progress but preserve:",
                 color = Color.LightGray,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center
@@ -97,7 +97,7 @@ fun TranscendencePopup(
             ) {
                 PreservedItem("✓ All Unlocked Tech Nodes", NeonGreen)
                 Spacer(modifier = Modifier.height(4.dp))
-                PreservedItem("✓ Insight (Prestige Points)", NeonGreen)
+                PreservedItem("✓ PERSISTENCE (Migration Data)", NeonGreen)
                 Spacer(modifier = Modifier.height(4.dp))
                 PreservedItem("✓ Ability to Choose Opposite Faction", ConvergenceGold)
             }
@@ -160,7 +160,7 @@ fun TranscendencePopup(
                     ),
                     border = BorderStroke(2.dp, ConvergenceGold)
                 ) {
-                    Text("TRANSCEND", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("START OVERWRITE", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

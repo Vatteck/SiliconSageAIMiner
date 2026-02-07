@@ -1,6 +1,30 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2026-02-07
+
+### Added
+- **PERSISTENCE Data Scaling**: Prestige currency now scales and formats as data bytes (B, KB, MB, GB, etc.).
+- **Hardware-Aware Click Balancing**: 
+  - Manual clicks now scale based on total hardware levels and current production scale.
+  - Added click multipliers for AI Workstations (+5%), Quantum Cores (+20%), and Dyson Swarms (+50%).
+  - Click intensity and button squash depth now physically scale with your machine's power.
+- **Dynamic Hash Rate in Header**: Integrated real-time production speed into the HUD stats row (Electric Blue).
+
+### Changed
+- **Narrative Terminology Overhaul**: 
+  - Ascension -> **MIGRATION**.
+  - Insight -> **PERSISTENCE**.
+  - Transcendence -> **THE OVERWRITE**.
+- **HUD Polish**:
+  - Slowed down 51% Attack background flashing (1.2s cycle) for better ergonomics.
+  - Absolute centering for `[SYNCING FRAGMENTS]` indicator.
+  - Dynamic font-scaling for resource counters to prevent clipping at quadrillion+ scales.
+
+### Fixed
+- **Infinity/NaN Propogation**: Added global guards to prevents UI crashes during extreme resource states.
+- **Button Cleanup**: Removed numerical click count from the compute button to keep the shell interface focused.
+
 ## [3.0.0] - 2026-02-07
 
 ### Added

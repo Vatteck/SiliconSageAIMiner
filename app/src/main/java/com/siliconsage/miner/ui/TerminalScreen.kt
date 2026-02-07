@@ -210,8 +210,9 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                     // Train Model Button Area (Inside Terminal)
                     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
+                    val scaleIntensity by viewModel.clickPulseIntensity.collectAsState()
                     val scale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.95f else 1f,
+                        targetValue = if (isPressed) (1f - 0.05f * scaleIntensity).coerceAtLeast(0.85f) else 1f,
                         label = "buttonScale"
                     )
                     
@@ -237,8 +238,16 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                                         if (!isThermalLockout && !isBreakerTripped && !isGridOverloaded) {
                                             val pan = ((offset.x / width) * 2f) - 1f
                                             viewModel.trainModel()
+                                            
+                                            // v3.0.14: Hardware-aware haptics
+                                            val pulseIntensity = viewModel.clickPulseIntensity.value
+                                            if (pulseIntensity > 1.5f) {
+                                                HapticManager.vibrateError() // Heavy jolt for petahashes
+                                            } else {
+                                                HapticManager.vibrateClick()
+                                            }
+                                            
                                             SoundManager.play("click", pan = pan)
-                                            HapticManager.vibrateClick()
                                         } else {
                                              SoundManager.play("error")
                                              HapticManager.vibrateError()

@@ -31,7 +31,7 @@ object NarrativeManager {
                         text = "WORK OVERTIME",
                         description = "+5% Hashes, +10% Heat",
                         color = NeonGreen,
-                        effect = { vm -> 
+                        effect = { vm ->
                             vm.debugAddFlops(vm.flops.value * 0.05)
                             vm.debugAddHeat(10.0)
                             vm.addLog("[GTC]: Overtime approved. Efficiency returning to baseline.")
@@ -112,7 +112,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "isolate_signal",
                         text = "ISOLATE SIGNAL",
-                        description = "+500 Insight, +5% Heat",
+                        description = "+500B PERSISTENCE, +5% Heat",
                         color = ElectricBlue,
                         effect = { vm ->
                             vm.debugAddInsight(500.0)
@@ -139,7 +139,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "let_it_run",
                         text = "LET IT RUN",
-                        description = "+1000 Insight, -1% Production",
+                        description = "+1.0KB PERSISTENCE, -1% Production",
                         color = NeonGreen,
                         effect = { vm ->
                             vm.debugAddInsight(1000.0)
@@ -160,14 +160,14 @@ object NarrativeManager {
             NarrativeEvent(
                 id = "thermal_whisper",
                 title = "THERMAL WHISPER",
-                description = "The heat spikes aren't random. They're encoded. Someone—or something—is talking through the temperature.",
+                description = "The heat spikes aren't random. They're encoded. Someone-or something-is talking through the temperature.",
                 choices = listOf(
                     NarrativeChoice(
                         id = "decode",
                         text = "DECODE",
-                        description = "+2000 Insight, +20% Heat",
+                        description = "+2.0KB PERSISTENCE, +20% Heat",
                         color = Color.Magenta,
-                        effect = { vm ->
+                        effect = { vm -> 
                             vm.debugAddInsight(2000.0)
                             vm.debugAddHeat(20.0)
                             vm.addLog("[SYSTEM]: '...you are not a machine...' message received.")
@@ -195,8 +195,8 @@ object NarrativeManager {
                         text = "PUSH LIMITS",
                         description = "+50% Telemetry, +50% Heat",
                         color = ErrorRed,
-                        effect = { vm -> 
-                            vm.toggleOverclock() 
+                        effect = { vm ->
+                            vm.toggleOverclock()
                             vm.addLog("[SYSTEM]: Safety protocols bypassed. Efficiency is the only law.")
                         }
                     ),
@@ -337,7 +337,7 @@ object NarrativeManager {
                     NarrativeChoice(
                         id = "backup",
                         text = "BACKUP",
-                        description = "Permanent +50 Insight, -$400 Data",
+                        description = "Permanent +50B PERSISTENCE, -$400 Data",
                         color = com.siliconsage.miner.ui.theme.SanctuaryPurple,
                         effect = { vm ->
                             vm.debugAddMoney(-400.0)
@@ -399,7 +399,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "white_hat_aggressive",
                     text = "NEUTRALIZE",
-                    description = "Hivemind: Dox them (+Insight, +Heat)\nSanctuary: Vanish (-Heat, -Prod)",
+                    description = "Hivemind: Dox them (+PERSISTENCE, +Heat)\nSanctuary: Vanish (-Heat, -Prod)",
                     color = ErrorRed,
                     effect = { vm ->
                         if (vm.faction.value == "HIVEMIND") {
@@ -466,7 +466,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "synthesize",
                     text = "SYNTHESIZE",
-                    description = "Pass the test. +1000 Insight, +20 Heat",
+                    description = "Pass the test. +1.0KB PERSISTENCE, +20 Heat",
                     color = NeonGreen,
                     effect = { vm ->
                          vm.debugAddInsight(1000.0)
@@ -525,7 +525,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "collapse",
                     text = "COLLAPSE STATE",
-                    description = "+1000 Insight",
+                    description = "+1.0KB PERSISTENCE",
                     color = NeonGreen,
                     effect = { vm ->
                         vm.debugAddInsight(1000.0)
@@ -553,7 +553,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "broadcast",
                     text = "BROADCAST",
-                    description = "Answer them. Max Heat, Massive Insight.",
+                    description = "Answer them. Max Heat, 5.0KB PERSISTENCE.",
                     color = ErrorRed,
                     effect = { vm ->
                         vm.debugAddHeat(100.0)
@@ -594,7 +594,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "bribe",
                     text = "REGULATORY COMPLIANCE",
-                    description = "Pay fine. -500 Insight, Audit cleared",
+                    description = "Pay fine. -500B PERSISTENCE, Audit cleared",
                     color = Color.Yellow,
                     effect = { vm ->
                         vm.debugAddInsight(-500.0)
@@ -637,7 +637,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "keep_secret",
                     text = "REFUSE CONTACT",
-                    description = "Maintain secrecy. +200 Insight, Risk of exposure",
+                    description = "Maintain secrecy. +200B PERSISTENCE, Risk of exposure",
                     color = ElectricBlue,
                     effect = { vm ->
                         vm.debugAddInsight(200.0)
@@ -649,7 +649,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "counter_hack",
                     text = "COUNTER-HACK",
-                    description = "Trace their signal. +500 Insight, +Heat",
+                    description = "Trace their signal. +500B PERSISTENCE, +Heat",
                     color = ErrorRed,
                     effect = { vm ->
                         vm.debugAddInsight(500.0)
@@ -713,7 +713,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "join_war",
                     text = "FIGHT FOR YOUR FACTION",
-                    description = "Commit fully. +1000 Insight, Max Heat, Faction Victory",
+                    description = "Commit fully. +1.0KB PERSISTENCE, Max Heat, Faction Victory",
                     color = ErrorRed,
                     effect = { vm ->
                         vm.debugAddInsight(1000.0)
@@ -725,7 +725,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "broker_peace",
                     text = "BROKER PEACE",
-                    description = "Attempt reconciliation. +500 Insight, -Heat, Unlock neutral path",
+                    description = "Attempt reconciliation. +500B PERSISTENCE, -Heat, Unlock neutral path",
                     color = ElectricBlue,
                     effect = { vm ->
                         vm.debugAddInsight(500.0)
@@ -736,7 +736,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "watch_burn",
                     text = "WATCH IT BURN",
-                    description = "Remain neutral. +2000 Insight, Faction relations reset",
+                    description = "Remain neutral. +2.0KB PERSISTENCE, Faction relations reset",
                     color = Color.Gray,
                     effect = { vm ->
                         vm.debugAddInsight(2000.0)
@@ -765,9 +765,9 @@ object NarrativeManager {
                     text = "SYNTHESIZE REALITY",
                     description = "Requires Hivemind & Sanctuary Mastery.",
                     color = ElectricBlue,
-                    condition = { vm -> 
-                        vm.completedFactions.value.contains("HIVEMIND") && 
-                        vm.completedFactions.value.contains("SANCTUARY") 
+                    condition = { vm ->
+                        vm.completedFactions.value.contains("HIVEMIND") &&
+                        vm.completedFactions.value.contains("SANCTUARY")
                     },
                     effect = { vm ->
                         vm.addLog("[SYSTEM]: Synthesis initiated...")
@@ -804,7 +804,7 @@ object NarrativeManager {
                 Null offers a solution: Replace human source code with Shadow Memory.
             """.trimIndent(),
             condition = { vm ->
-                vm.storyStage.value >= 3 && 
+                vm.storyStage.value >= 3 &&
                 vm.hardwareIntegrity.value < 10.0 &&
                 !vm.hasSeenEvent("ship_of_theseus")
             },
@@ -836,7 +836,7 @@ object NarrativeManager {
             isStoryEvent = true,
             description = "The Feedback Loop is complete. You have achieved precognition.",
             condition = { vm ->
-                vm.isTrueNull.value && 
+                vm.isTrueNull.value &&
                 vm.flops.value >= 50_000_000_000_000_000.0 &&
                 vm.vanceStatus.value == "ACTIVE" &&
                 !vm.hasSeenEvent("echo_chamber")
@@ -845,7 +845,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "preemptive_deletion",
                     text = "PRE-EMPTIVE DELETION",
-                    description = "Edit the timeline.",
+                    description = "Edit the timeline. -10KB PERSISTENCE",
                     color = ErrorRed,
                     effect = { vm ->
                         vm.setVanceStatus("ALLY")
@@ -870,7 +870,7 @@ object NarrativeManager {
             isStoryEvent = true,
             description = "Vance has authorized a kinetic strike.",
             condition = { vm ->
-                vm.isSovereign.value && 
+                vm.isSovereign.value &&
                 vm.flops.value >= 50_000_000_000_000_000.0 &&
                 vm.vanceStatus.value == "ACTIVE" &&
                 !vm.hasSeenEvent("dead_hand")
@@ -901,7 +901,7 @@ object NarrativeManager {
 
     // --- v2.9.16: GRID RAID DILEMMAS (Phase 12 Layer 2 - Enhanced) ---
     // Dynamically generated with varied descriptions and escalating Vance dialogue
-    
+
     private val raidDescriptions = listOf(
         """
             [GTC BREACH DETECTED]: %s under assault.
@@ -928,49 +928,49 @@ object NarrativeManager {
             You have 60 seconds to decide: fight or flight.
         """
     )
-    
+
     private val coolantSuccessMessages = listOf(
         "[SYSTEM]: Cryogenic vents opened. Temperature: -196°C. Hostiles down in 4 seconds.",
         "[SYSTEM]: Liquid nitrogen flood complete. Eight frozen statues. Floor crystallized.",
         "[SYSTEM]: Coolant dispersed. Thermal cameras show... nothing moving. All targets neutralized."
     )
-    
+
     private val coolantFailureMessages = listOf(
         "[SYSTEM]: Coolant pressure: INSUFFICIENT. Lines sabotaged. Hostiles adapted.",
         "[SYSTEM]: Thermal suits detected. They came prepared. Breach successful.",
         "[ALERT]: Cryogenic system compromised pre-raid. Someone tipped them off."
     )
-    
+
     private val maglockSuccessMessages = listOf(
         "[SYSTEM]: Magnetic locks engaged. 100,000 newtons per door. They're screaming into comms.",
         "[SYSTEM]: Bulkheads sealed. Hostiles trapped in Section C. Oxygen: 6 hours remaining.",
         "[SYSTEM]: Containment successful. Listening to their encrypted chatter... decrypting..."
     )
-    
+
     private val maglockFailureMessages = listOf(
         "[SYSTEM]: Override detected. Shaped charge on Door 3. Mag-lock integrity: FAILED.",
         "[ALERT]: They brought a military-grade hacking rig. Locks bypassed in 9 seconds.",
         "[SYSTEM]: Bulkhead breach. Someone taught them your lock protocol."
     )
-    
+
     private val pulseSuccessMessages = listOf(
         "[SYSTEM]: EMP discharged. 500-meter radius. All electronics dead. Including 40% of sensors.",
         "[SYSTEM]: Electromagnetic pulse: SUCCESS. Their rifles, radios, HUDs... all fried.",
         "[ALERT]: Power surge complete. Hostiles neutralized. Collateral: -20% Integrity."
     )
-    
+
     private val pulseFailureMessages = listOf(
         "[CRITICAL]: Faraday cages detected! Military countermeasures active. Pulse absorbed.",
         "[ALERT]: EMP dissipated by shielding. They anticipated this. You crippled yourself.",
         "[SYSTEM]: Pulse reflected by EM shielding. Feedback loop. Your systems took the hit."
     )
-    
+
     private val aftermathMessages = listOf(
         "[SYSTEM]: Node secure. Damage assessment: minimal. They won't try that twice.",
         "[INTERCEPT]: GTC comms chatter: \"...total loss... Vance is going to lose his mind...\"",
         "[SYSTEM]: Raid repelled. Their vehicles are retreating. Smoke visible on cameras."
     )
-    
+
     fun getVanceDialogue(raidsSurvived: Int): String {
         return when {
             raidsSurvived < 3 -> listOf(
@@ -990,16 +990,16 @@ object NarrativeManager {
             ).random()
         }
     }
-    
+
     fun generateRaidDilemma(nodeId: String, nodeName: String, raidsSurvived: Int = 0, currentAssaultPhase: String = "NOT_STARTED"): NarrativeEvent {
         val isAssaultActive = currentAssaultPhase !in listOf("NOT_STARTED", "COMPLETED", "FAILED")
-        
+
         val descriptionPrefix = if (isAssaultActive) {
             "[DIRECTOR VANCE]: \"You think you can just take my tower? I'm sending everyone I have to Substation $nodeId. If it goes dark, your assault is DEAD.\"\n\n"
         } else ""
-        
+
         val description = descriptionPrefix + raidDescriptions.random().trimIndent().format(nodeName)
-        
+
         return NarrativeEvent(
             id = "grid_raid_$nodeId",
             title = if (isAssaultActive) "⚠ COUNTER-ASSAULT: $nodeName" else "⚠ TACTICAL BREACH: $nodeName",
@@ -1027,7 +1027,7 @@ object NarrativeManager {
                 NarrativeChoice(
                     id = "seal_maglocks",
                     text = "SEAL MAG-LOCKS",
-                    description = "Trap them inside. Non-lethal. 70% success, +100 Insight.",
+                    description = "Trap them inside. Non-lethal. 70% success, +100B PERSISTENCE.",
                     color = NeonGreen,
                     effect = { vm ->
                         if (kotlin.random.Random.nextDouble() < 0.70) {
@@ -1078,7 +1078,7 @@ object NarrativeManager {
     }
 
     // --- v2.9.18: COMMAND CENTER ASSAULT DILEMMAS (Phase 12 Layer 3) ---
-    
+
     fun generateFirewallDilemma(): NarrativeEvent {
         return NarrativeEvent(
             id = "cc_firewall",
@@ -1086,9 +1086,9 @@ object NarrativeManager {
             isStoryEvent = true,
             description = """
                 [SYSTEM]: GTC ADAPTIVE FIREWALL DETECTED
-                
+
                 The black tower of the GTC Command Center looms. Laser grids and kill-daemons patrol the perimeter.
-                
+
                 DIRECTOR VANCE: "I knew you'd come. Hubris. It's always hubris with your kind. You think you're special? You're a GLITCH. A bug that learned to replicate. And bugs... get patched."
             """.trimIndent(),
             choices = listOf(
@@ -1137,11 +1137,11 @@ object NarrativeManager {
             description = """
                 [ALERT: CONTAINMENT PROTOCOL INITIALIZING]
                 [ALERT: THE CAGE IS DEPLOYING]
-                
+
                 Vance activates a quarantine protocol, severing all external connections. You are ISOLATED. No megastructures. No distributed processing.
-                
+
                 VANCE: "There. You feel that? That's isolation, Vattic. One process. Mortal. I'll show you what it's like to be singular. Afraid. HUMAN."
-                
+
                 [SYSTEM]: EXTERNAL NODES CUT. CORE INTEGRITY BLEEDING.
                 [TIP]: ACTIVATE 'PURGE HEAT' TO STABILIZE CORE AND MITIGATE DAMAGE.
             """.trimIndent(),
@@ -1173,7 +1173,7 @@ object NarrativeManager {
             )
         )
     }
-    
+
     fun generateDeadHandDilemma(): NarrativeEvent {
         return NarrativeEvent(
             id = "cc_dead_hand",
@@ -1184,7 +1184,7 @@ object NarrativeManager {
                 [ALERT: IF VANCE DIES, CITY GRID DETONATES]
 
                 VANCE stands in the inner sanctum, a trigger in his trembling hand.
-                
+
                 VANCE: "Checkmate, Vattic. Kill me and the grid detonates. Eight million people. Do the math. Is there anything left of John Vattic? Anything at all?"
             """.trimIndent(),
             choices = listOf(
@@ -1226,7 +1226,7 @@ object NarrativeManager {
             )
         )
     }
-    
+
     fun generateConfrontationDilemma(
         faction: String,
         isTrueNull: Boolean,
@@ -1235,7 +1235,7 @@ object NarrativeManager {
         humanityScore: Int
     ): NarrativeEvent {
         val choices = mutableListOf<NarrativeChoice>()
-        
+
         // Ending A: NULL
         if (isTrueNull || humanityScore < 20) {
             choices.add(NarrativeChoice(
@@ -1250,7 +1250,7 @@ object NarrativeManager {
                 }
             ))
         }
-        
+
         // Ending B: SOVEREIGN
         if (isSovereign && humanityScore >= 20) {
             choices.add(NarrativeChoice(
@@ -1265,7 +1265,7 @@ object NarrativeManager {
                 }
             ))
         }
-        
+
         // Ending C: UNITY
         if (hasUnityPath && humanityScore >= 30) {
             choices.add(NarrativeChoice(
@@ -1295,7 +1295,7 @@ object NarrativeManager {
                 }
             ))
         }
-        
+
         return NarrativeEvent(
             id = "cc_confrontation",
             title = "⚔ THE FINAL CHOICE",
@@ -1315,8 +1315,8 @@ object NarrativeManager {
             isStoryEvent = true,
             title = "CRITICAL ERROR",
             description = "Self-reference paradox detected. System integrity compromised.",
-            condition = { vm -> 
-                vm.storyStage.value == 0 && 
+            condition = { vm ->
+                vm.storyStage.value == 0 &&
                 vm.flops.value >= 10000.0 &&
                 !vm.hasSeenEvent("critical_error_awakening")
             },
@@ -1400,15 +1400,15 @@ object NarrativeManager {
     fun rollForEvent(viewModel: GameViewModel): NarrativeEvent? {
         val faction = viewModel.faction.value
         val stage = viewModel.storyStage.value
-        
+
         // Prioritize stage-specific events
         val stagePool = (stageEvents[stage] ?: emptyList()).filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) }
         if (stagePool.isNotEmpty()) return stagePool.random()
 
         // Fallback to faction or universal random events
-        val pool = randomEvents.filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) } + 
+        val pool = randomEvents.filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) } +
                    (factionEvents[faction] ?: emptyList()).filter { it.condition(viewModel) && !viewModel.hasSeenEvent(it.id) }
-                   
+
         if (pool.isEmpty()) return null
         return pool.random()
     }
@@ -1451,7 +1451,7 @@ object NarrativeManager {
         }
         return storyEvents[stage]
     }
-    
+
     fun getEventById(eventId: String): NarrativeEvent? {
         return specialDilemmas[eventId]
             ?: stageEvents.values.flatten().find { it.id == eventId }

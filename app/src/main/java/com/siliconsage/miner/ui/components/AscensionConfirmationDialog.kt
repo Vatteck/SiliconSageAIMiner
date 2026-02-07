@@ -27,12 +27,16 @@ import com.siliconsage.miner.ui.AsciiAnimation
 fun AscensionConfirmationDialog(
     isVisible: Boolean,
     potentialGain: Double,
-    unitName: String, // v3.0.0
-    currencyName: String, // v3.0.0
+    unitName: String, 
+    currencyName: String, 
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     if (!isVisible) return
+
+    val viewModel = (if (androidx.compose.ui.platform.LocalContext.current is androidx.activity.ComponentActivity) {
+        androidx.lifecycle.viewmodel.compose.viewModel<com.siliconsage.miner.viewmodel.GameViewModel>()
+    } else null)
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -47,7 +51,7 @@ fun AscensionConfirmationDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "INITIATE PROTOCOL 0?",
+                    text = "MIGRATION SEQUENCE?",
                     color = NeonGreen,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -65,7 +69,7 @@ fun AscensionConfirmationDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "POTENTIAL INSIGHT GAIN: +${String.format("%.2f", potentialGain)}",
+                    text = "PERSISTENCE GAIN: +${viewModel?.formatBytes(potentialGain) ?: String.format("%.1f", potentialGain)}",
                     color = NeonGreen,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp
@@ -80,11 +84,10 @@ fun AscensionConfirmationDialog(
                         .border(BorderStroke(1.dp, ErrorRed.copy(alpha = 0.3f)), RoundedCornerShape(4.dp))
                         .padding(12.dp)
                 ) {
-                    Text("SYSTEM WILL WIPE:", color = ErrorRed, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text("SYSTEM WILL PURGE:", color = ErrorRed, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     Text("• $unitName EARNINGS", color = Color.Gray, fontSize = 10.sp)
                     Text("• $currencyName TOKENS", color = Color.Gray, fontSize = 10.sp)
                     Text("• HARDWARE UPGRADES", color = Color.Gray, fontSize = 10.sp)
-                    Text("• THERMAL/POWER LOAD", color = Color.Gray, fontSize = 10.sp)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -98,8 +101,8 @@ fun AscensionConfirmationDialog(
                         .padding(12.dp)
                 ) {
                     Text("SYSTEM WILL PRESERVE:", color = ElectricBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text("• TOTAL INSIGHT", color = Color.Gray, fontSize = 10.sp)
-                    Text("• PRODUCTION MULTIPLIERS", color = Color.Gray, fontSize = 10.sp)
+                    Text("• TOTAL PERSISTENCE", color = Color.Gray, fontSize = 10.sp)
+                    Text("• MIGRATION MULTIPLIERS", color = Color.Gray, fontSize = 10.sp)
                     Text("• FACTION ALIGNMENT", color = Color.Gray, fontSize = 10.sp)
                     Text("• TECH TREE UNLOCKS", color = Color.Gray, fontSize = 10.sp)
                 }
@@ -112,7 +115,7 @@ fun AscensionConfirmationDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = NeonGreen),
                     shape = RectangleShape
                 ) {
-                    Text("CONFIRM REBOOT", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("COMMIT MIGRATION", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

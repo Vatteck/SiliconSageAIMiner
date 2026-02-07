@@ -1,8 +1,8 @@
 {
-  "version": "3.0.0-dev",
-  "build": 237,
+  "version": "3.0.1-dev",
+  "build": 238,
   "date": "2026-02-07",
-  "changes": "Phase 13 Part 3: The Convergence. Global Grid & Resonance.",
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v3.0.0-dev",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v3.0.0-dev/Sage_3.0.0-dev.apk"
+  "changes": "Renames, click balancing, and visual polish.",
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v3.0.1-dev",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v3.0.1-dev/Sage_3.0.1-dev.apk"
 }

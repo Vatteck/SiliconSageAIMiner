@@ -188,10 +188,10 @@ fun FiftyOneAttackOverlay(
 
     val infiniteTransition = rememberInfiniteTransition(label = "51attack")
     val backgroundAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 0.7f,
+        initialValue = 0.3f,
+        targetValue = 0.6f,
         animationSpec = infiniteRepeatable(
-            animation = tween(100, easing = LinearEasing),
+            animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "bgAlpha"

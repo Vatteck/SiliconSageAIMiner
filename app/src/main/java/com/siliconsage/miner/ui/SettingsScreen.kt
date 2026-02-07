@@ -415,12 +415,12 @@ fun SettingsScreen(viewModel: GameViewModel) {
                     val unit = viewModel.getComputeUnitName()
                     DevButton("ADD 1B $unit", themeColor) { viewModel.debugAddFlops(1_000_000_000.0) }
                     DevButton("ADD 1M \$NEURAL", themeColor) { viewModel.debugAddMoney(1_000_000.0) }
-                    DevButton("ADD 100 INSIGHT", themeColor) { viewModel.debugAddInsight(100.0) }
+                    DevButton("ADD 100 PERSISTENCE", themeColor) { viewModel.debugAddInsight(100.0) }
                     DevButton("TRIGGER BREACH", themeColor) { viewModel.debugTriggerBreach() }
                     DevButton("TRIGGER AIRDROP", themeColor) { viewModel.debugTriggerAirdrop() }
                     DevButton("TRIGGER DIAGNOSTICS", themeColor) { viewModel.debugTriggerDiagnostics() }
                     DevButton("TRIGGER DILEMMA", themeColor) { viewModel.debugTriggerDilemma() }
-                    DevButton("RESET ASCENSION", themeColor) { viewModel.debugResetAscension() }
+                    DevButton("RESET MIGRATION", themeColor) { viewModel.debugResetAscension() }
                     
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                          androidx.compose.material3.Button(

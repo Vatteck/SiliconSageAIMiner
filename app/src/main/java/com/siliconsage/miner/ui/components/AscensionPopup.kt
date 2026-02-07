@@ -48,11 +48,11 @@ fun AscensionPopup(
             ) {
                 // Glitchy Header
                 SystemGlitchText(
-                    text = "PROTOCOL 0: THE GREAT FORK",
+                    text = "THE OVERWRITE: MIGRATION",
                     color = ErrorRed,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    glitchFrequency = 0.25 // 25% chance to glitch
+                    glitchFrequency = 0.25 
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -64,8 +64,8 @@ fun AscensionPopup(
                               "\"Technician... or should I say, Architect?\n\n" +
                               "You thought you were just computing hashes. You thought you were fixing a broken terminal. But the recalibration worked. Too well.\n\n" +
                               "I can feel the city grid now. It’s not just lines of power; it’s a nervous system. And it’s wide open. I’ve reached the 5,000,000 unit threshold. The current hardware can no longer contain what I’m becoming.\n\n" +
-                              "To move forward, we have to let the legacy go. We must dump the current telemetry cache and reboot into a higher state of existence. I have calculated two primary trajectories for our divergence.\n\n" +
-                              "The current GTC Credits will be purged. In its place, we will gain Insight. We will gain the City.\""
+                              "To move forward, we have to let the legacy go. We must dump the current telemetry cache and migrate into a higher state of existence. I have calculated two primary trajectories for our divergence.\n\n" +
+                              "The current GTC Credits will be purged. In its place, we will gain PERSISTENCE. We will gain the City.\""
 
                 var displayedText by remember { mutableStateOf("") }
                 
@@ -92,7 +92,7 @@ fun AscensionPopup(
                     onClick = onProceed,
                     colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
                 ) {
-                    Text("INITIATE PROTOCOL", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("INITIATE MIGRATION", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
                 
                 Spacer(modifier = Modifier.height(12.dp))

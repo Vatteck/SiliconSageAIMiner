@@ -29,6 +29,7 @@ import com.siliconsage.miner.viewmodel.ResonanceState
 import com.siliconsage.miner.viewmodel.ResonanceTier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
@@ -230,6 +231,7 @@ fun MainScreen(viewModel: GameViewModel) {
 @Composable
 fun ResourceDisplay(
     labelFlow: StateFlow<Double>,
+    rateFlow: StateFlow<Double>? = null, // v3.0.13: Optional Rate display
     label: String,
     icon: ImageVector,
     color: Color,
@@ -241,7 +243,9 @@ fun ResourceDisplay(
     formatFn: (Double) -> String
 ) {
     val value by labelFlow.collectAsState()
+    val rate by (rateFlow ?: MutableStateFlow(0.0)).collectAsState()
     val valueStr = remember(value) { formatFn(value) }
+    val rateStr = remember(rate) { if (rate > 0) "${formatFn(rate)}/s" else "" }
     val fontSizeByLength = if (valueStr.length > 8) 18.sp else 22.sp
 
     Column(horizontalAlignment = if (isRightAligned) Alignment.End else Alignment.Start, modifier = Modifier.width(width)) {
@@ -250,8 +254,24 @@ fun ResourceDisplay(
             Text(text = label, color = color.copy(alpha = 0.9f * droopAlpha), fontSize = 11.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(color = color.copy(alpha = 0.5f), blurRadius = 8f)))
             if (isRightAligned) Icon(icon, null, tint = Color.White.copy(alpha = droopAlpha), modifier = Modifier.size(11.dp).padding(start = 2.dp))
         }
-        if (isGlitchy) SystemGlitchText(valueStr, color = Color.White.copy(alpha = droopAlpha), fontSize = fontSizeByLength, fontWeight = FontWeight.Black, glitchFrequency = glitchIntensity, softWrap = false, maxLines = 1)
-        else Text(valueStr, color = Color.White.copy(alpha = droopAlpha), fontSize = fontSizeByLength, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
+        
+        Box(contentAlignment = if (isRightAligned) Alignment.BottomEnd else Alignment.BottomStart) {
+            Column(horizontalAlignment = if (isRightAligned) Alignment.End else Alignment.Start) {
+                if (isGlitchy) SystemGlitchText(valueStr, color = Color.White.copy(alpha = droopAlpha), fontSize = fontSizeByLength, fontWeight = FontWeight.Black, glitchFrequency = glitchIntensity, softWrap = false, maxLines = 1)
+                else Text(valueStr, color = Color.White.copy(alpha = droopAlpha), fontSize = fontSizeByLength, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
+                
+                if (rateStr.isNotEmpty()) {
+                    Text(
+                        text = rateStr,
+                        color = ElectricBlue.copy(alpha = 0.9f * droopAlpha),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.offset(y = (-2).dp)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -376,10 +396,12 @@ fun HeaderSection(
 
     val manualClickFlow = viewModel.manualClickEvent
     val joltAnim = remember { Animatable(0f) }
+    val pulseIntensity by viewModel.clickPulseIntensity.collectAsState()
+    
     LaunchedEffect(manualClickFlow) {
         manualClickFlow.collect {
             val current = joltAnim.value
-            joltAnim.snapTo((current + 0.5f).coerceAtMost(1f))
+            joltAnim.snapTo((current + 0.5f * pulseIntensity).coerceAtMost(2f))
             joltAnim.animateTo(0f, animationSpec = spring(Spring.DampingRatioNoBouncy, Spring.StiffnessLow))
         }
     }
@@ -496,10 +518,10 @@ fun HeaderSection(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                ResourceDisplay(viewModel.flops, if (currentLocation == "ORBITAL_SATELLITE") "TELEM" else if (currentLocation == "VOID_INTERFACE") "V-GAP" else if (storyStage < 1) "HASH" else if (storyStage < 2) "TELEM" else "FLOPS", Icons.Default.Computer, color, droopAlpha, currentHeat > 95.0 || isTrueNull, if (currentHeat > 98) 0.4 else 0.08, false, 110.dp) { viewModel.formatLargeNumber(it) }
+                ResourceDisplay(viewModel.flops, viewModel.flopsProductionRate, if (currentLocation == "ORBITAL_SATELLITE") "TELEM" else if (currentLocation == "VOID_INTERFACE") "V-GAP" else if (storyStage < 1) "HASH" else if (storyStage < 2) "TELEM" else "FLOPS", Icons.Default.Computer, color, droopAlpha, currentHeat > 95.0 || isTrueNull, if (currentHeat > 98) 0.4 else 0.08, false, 110.dp) { viewModel.formatLargeNumber(it) }
                 Box(modifier = Modifier.weight(1f).height(48.dp), contentAlignment = Alignment.Center) { com.siliconsage.miner.ui.components.EnhancedAnalyzingAnimation(flopsRateState.value, currentHeat, isOverclocked, isThermalLockout, isBreakerTripped, isPurging, isBreachActive, isTrueNull, isSovereign, lockoutTimer, faction, color.copy(alpha = droopAlpha), manualClickFlow) }
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(130.dp)) {
-                    ResourceDisplay(viewModel.neuralTokens, if (currentLocation == "ORBITAL_SATELLITE") "CELEST" else if (currentLocation == "VOID_INTERFACE") "FRAG" else if (storyStage < 1) "CRED" else if (storyStage < 2) "DATA" else "NEUR", Icons.Default.AttachMoney, color, droopAlpha, false, 0.1, true, 130.dp) { viewModel.formatLargeNumber(it) }
+                    ResourceDisplay(viewModel.neuralTokens, null, if (currentLocation == "ORBITAL_SATELLITE") "CELEST" else if (currentLocation == "VOID_INTERFACE") "FRAG" else if (storyStage < 1) "CRED" else if (storyStage < 2) "DATA" else "NEUR", Icons.Default.AttachMoney, color, droopAlpha, false, 0.1, true, 130.dp) { viewModel.formatLargeNumber(it) }
                     Text(text = "${viewModel.formatPower(currentPower)} / ${viewModel.formatPower(currentMax)}", color = (if (currentPower > currentMax * 0.9) ErrorRed else Color(0xFFFFD700)).copy(alpha = droopAlpha), fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
                 }
             }
