@@ -765,7 +765,12 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
                 if (_isGamePaused.value) continue
                 
                 val backlog = narrativeQueue.size
-                val cooldown = if (backlog > 5) NARRATIVE_COOLDOWN_FAST else NARRATIVE_COOLDOWN_DEFAULT
+                
+                // v2.9.90: Log_000 bypasses the cooldown for immediate delivery
+                val nextItem = narrativeQueue.firstOrNull()
+                val isInitialLog = (nextItem as? NarrativeItem.Log)?.dataLog?.id == "LOG_000"
+                
+                val cooldown = if (isInitialLog) 0L else if (backlog > 5) NARRATIVE_COOLDOWN_FAST else NARRATIVE_COOLDOWN_DEFAULT
                 
                 _isNarrativeSyncing.value = backlog > 0
                 
@@ -951,10 +956,19 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
         }
     }
     
+    // v2.9.99: Click Debouncing for Performance
+    private var lastClickTime = 0L
+    private var rapidClickCount = 0
+    private var totalSurgeGain = 0.0
+
     // Core Action
     fun trainModel() {
         if (_isThermalLockout.value) return
         
+        val currentTime = System.currentTimeMillis()
+        val isRapidClick = (currentTime - lastClickTime) < 333 // Faster than 3 clicks/sec
+        lastClickTime = currentTime
+
         var multiplier = _prestigeMultiplier.value
         val loc = _currentLocation.value
 
@@ -965,52 +979,53 @@ class GameViewModel(private val repository: GameRepository) : ViewModel() {
             multiplier *= entropyMult
         }
 
-        // v2.6.8: Overclocking increases manual training speed (+50%)
-        if (_isOverclocked.value) {
-            multiplier *= 1.5
-        }
+        if (_isOverclocked.value) multiplier *= 1.5
         
         val gain = 1.0 * multiplier
         
-        // v2.9.49: Update Phase 13 Resources
+        // Update resources
         when (loc) {
             "ORBITAL_SATELLITE" -> {
                 val altitude = _orbitalAltitude.value
                 val solarSailLevel = _upgrades.value[UpgradeType.SOLAR_SAIL_ARRAY] ?: 0
-                val solarMult = 1.0 + (solarSailLevel * 0.15)
-                val cdGain = gain * (1.0 + altitude / 500.0) * solarMult
+                val cdGain = gain * (1.0 + altitude / 500.0) * (1.0 + (solarSailLevel * 0.15))
                 _celestialData.update { it + cdGain }
             }
-            "VOID_INTERFACE" -> {
-                // VF is square-root scaled from FLOPS energy but boosted by entropy
-                _voidFragments.update { it + gain }
-            }
-            else -> {
-                _flops.update { it + gain }
-            }
+            "VOID_INTERFACE" -> _voidFragments.update { it + gain }
+            else -> _flops.update { it + gain }
         }
         
-        // Log text changes based on identity
-        val command = when {
-            _storyStage.value >= 3 -> "transcend_reality"
-            _faction.value == "HIVEMIND" -> "assimilate_node"
-            _faction.value == "SANCTUARY" -> "encrypt_sector"
-            _storyStage.value >= 1 -> "optimize_kernel"
-            else -> "compute_hash"
+        // v2.9.99: High-Speed Logging Refactor (Kill the click lag)
+        if (isRapidClick) {
+            rapidClickCount++
+            totalSurgeGain += gain
+            if (rapidClickCount >= 10) {
+                addLog("[SYSTEM]: IO_STREAM_BUFFERED. (+${formatLargeNumber(totalSurgeGain)})")
+                rapidClickCount = 0
+                totalSurgeGain = 0.0
+            }
+        } else {
+            rapidClickCount = 0
+            totalSurgeGain = 0.0
+            val command = when {
+                _storyStage.value >= 3 -> "transcend_reality"
+                _faction.value == "HIVEMIND" -> "assimilate_node"
+                _faction.value == "SANCTUARY" -> "encrypt_sector"
+                _storyStage.value >= 1 -> "optimize_kernel"
+                else -> "compute_hash"
+            }
+            addLog("root@sys:~/mining# $command ${currentTime % 1000}... OK (+${formatLargeNumber(gain)})")
         }
-        
-        addLog("root@sys:~/mining# $command ${System.currentTimeMillis() % 1000}... OK (+${formatLargeNumber(gain)})")
+
         // Manual training increases heat slightly
         _currentHeat.update { (it + 0.8).coerceAtMost(100.0) }
         
-        // Trigger click event for UI FX
+        // Trigger click event for UI FX (Asynchronous)
         viewModelScope.launch {
             _manualClickEvent.emit(Unit)
+            DataLogManager.checkUnlocks(this@GameViewModel)
+            checkStoryTransitions()
         }
-        
-        // Check for unlocks
-        DataLogManager.checkUnlocks(this)
-        checkStoryTransitions()
     }
 
     // Exchange Logic

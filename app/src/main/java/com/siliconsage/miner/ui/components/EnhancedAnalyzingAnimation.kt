@@ -62,14 +62,14 @@ fun EnhancedAnalyzingAnimation(
         else -> AnimationState.NORMAL
     }
     
-    // v2.9.83: Dynamic speed based on rate
+    // v2.9.83: Dynamic speed based on rate (Slower endgame v2.9.99)
     val frameDelay = when {
-        flopsRate <= 0.0 -> 2000L
-        flopsRate < 10.0 -> 1200L
-        flopsRate < 1000.0 -> 800L
-        flopsRate < 100_000.0 -> 400L
-        flopsRate < 10_000_000.0 -> 200L
-        else -> 100L // Fast as hell for end-game
+        flopsRate <= 0.0 -> 2500L
+        flopsRate < 10.0 -> 1500L
+        flopsRate < 1000.0 -> 1000L
+        flopsRate < 100_000.0 -> 600L
+        flopsRate < 10_000_000.0 -> 400L
+        else -> 300L // Minimal readable delay
     }
     
     // State-specific frames
@@ -186,8 +186,20 @@ fun EnhancedAnalyzingAnimation(
         label = "alpha"
     )
     
-    // Shake effect for LOCKOUT state or JOLT
-    val joltShake = if (isJolting) (kotlin.random.Random.nextFloat() * 4f - 2f) else 0f
+    // v3.0.0: Frame-rate independent shake effect (optimized for 120Hz)
+    // Jolt shake uses animation instead of random for consistent performance
+    val joltTransition = rememberInfiniteTransition(label = "joltShake")
+    val joltShakeAnim by joltTransition.animateFloat(
+        initialValue = -2f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(30, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "jolt"
+    )
+    val joltShake = if (isJolting) joltShakeAnim else 0f
+    
     val shakeOffset by if (animationState == AnimationState.LOCKOUT) {
         infiniteTransition.animateFloat(
             initialValue = -2f,
@@ -215,7 +227,13 @@ fun EnhancedAnalyzingAnimation(
     Box(
         modifier = modifier.padding(top = 4.dp)
     ) {
-        if (animationState == AnimationState.NORMAL && !isJolting) {
+        // v2.9.95: OPTIMIZED - Use plain Text for more states, only glitch for CRITICAL situations
+        val usePlainText = animationState == AnimationState.NORMAL 
+            || animationState == AnimationState.HOT 
+            || animationState == AnimationState.PURGING 
+            || animationState == AnimationState.SOVEREIGN
+        
+        if (usePlainText && !isJolting) {
             Text(
                 text = displayedText,
                 fontFamily = FontFamily.Monospace,
@@ -225,23 +243,24 @@ fun EnhancedAnalyzingAnimation(
                 letterSpacing = 0.5.sp,
                 modifier = Modifier.graphicsLayer(
                     shadowElevation = 4f,
-                    translationX = joltShake
+                    translationX = shakeOffset + joltShake
                 )
             )
         } else {
+            // Only glitch for: BREACH, LOCKOUT, REDLINE, NULL, OFFLINE or when jolting
             SystemGlitchText(
                 text = displayedText,
                 style = androidx.compose.ui.text.TextStyle(
                     fontFamily = FontFamily.Monospace,
                     letterSpacing = 0.5.sp
                 ),
-                color = if (isJolting) Color.White else frameColor.copy(alpha = alpha * 0.8f),
+                color = if (isJolting) frameColor else frameColor.copy(alpha = alpha * 0.8f),
                 fontSize = 11.sp, // Squeezed (v2.9.83)
                 fontWeight = FontWeight.Bold,
                 glitchFrequency = when(animationState) {
-                    AnimationState.LOCKOUT, AnimationState.REDLINE -> 0.40
-                    AnimationState.PURGING -> 0.25
-                    else -> if (isJolting) 0.8 else 0.15
+                    AnimationState.LOCKOUT, AnimationState.REDLINE -> 0.35 // Reduced from 0.40
+                    AnimationState.BREACH -> 0.40 // Only max glitch for breach
+                    else -> if (isJolting) 0.6 else 0.12 // Reduced from 0.8/0.15
                 },
                 modifier = Modifier.graphicsLayer(
                     shadowElevation = 4f,

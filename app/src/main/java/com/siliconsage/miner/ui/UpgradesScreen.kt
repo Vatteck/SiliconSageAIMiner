@@ -21,11 +21,13 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -42,15 +44,11 @@ import com.siliconsage.miner.viewmodel.GameViewModel
 
 @Composable
 fun UpgradesScreen(viewModel: GameViewModel) {
-    val neuralTokens by viewModel.neuralTokens.collectAsState()
     val upgrades by viewModel.upgrades.collectAsState()
-    val currentStage by viewModel.storyStage.collectAsState()
-    val systemTitle by viewModel.systemTitle.collectAsState()
     val themeColor by viewModel.themeColor.collectAsState()
-    
+    val isSovereign by viewModel.isSovereign.collectAsState()
     val nullActive by viewModel.nullActive.collectAsState()
     val isTrueNull by viewModel.isTrueNull.collectAsState()
-    val isSovereign by viewModel.isSovereign.collectAsState()
     
     var selectedTab by remember { mutableStateOf(0) }
     
@@ -58,9 +56,9 @@ fun UpgradesScreen(viewModel: GameViewModel) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
     // Auto-dismiss Error
-    androidx.compose.runtime.LaunchedEffect(errorMessage) {
+    LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
-            kotlinx.coroutines.delay(2000)
+            delay(2000)
             errorMessage = null
         }
     }
@@ -82,29 +80,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Balance Display
-            // Balance & Stats Header (Reusing MainScreen Header)
-            // We need to collect all the states required for HeaderSection
-            val currentHeat by viewModel.currentHeat.collectAsState()
-            val powerUsage by viewModel.activePowerUsage.collectAsState()
-            val maxPower by viewModel.maxPowerkW.collectAsState()
-            val heatRate by viewModel.heatGenerationRate.collectAsState()
-            val flopsRate by viewModel.flopsProductionRate.collectAsState()
-            val isOverclocked by viewModel.isOverclocked.collectAsState()
-            val isPurging by viewModel.isPurgingHeat.collectAsState()
-            val integrity by viewModel.hardwareIntegrity.collectAsState()
-            val securityLevel by viewModel.securityLevel.collectAsState()
-            val flops by viewModel.flops.collectAsState()
-            val playerTitle by viewModel.playerTitle.collectAsState()
-            val playerRank by viewModel.playerRankTitle.collectAsState()
-            val isThermalLockout by viewModel.isThermalLockout.collectAsState()
-            val isBreakerTripped by viewModel.isBreakerTripped.collectAsState()
-            val lockoutTimer by viewModel.lockoutTimer.collectAsState()
-            val hallucinationText by viewModel.hallucinationText.collectAsState()
-            val isTrueNull by viewModel.isTrueNull.collectAsState()
-            val isSovereign by viewModel.isSovereign.collectAsState()
-            val isBreach by viewModel.isBreachActive.collectAsState()
-            
+            // Balance Display isolated in HeaderSection
             HeaderSection(
                 viewModel = viewModel,
                 color = themeColor,
@@ -114,9 +90,6 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                 modifier = Modifier.padding(16.dp)
             )
 
-            // Tab Row
-            // Tab Row
-            // Tab Row
             // Tab Row
             androidx.compose.material3.TabRow(
                 selectedTabIndex = selectedTab,
@@ -193,19 +166,27 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                     else -> emptyList()
                 }
                 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(currentList) { type ->
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(
+                        items = currentList,
+                        key = { it.name } // Stable key
+                    ) { type ->
+                        val level = upgrades[type] ?: 0
+                        val cost = remember(type, level) { viewModel.calculateUpgradeCost(type, level) }
+                        
                         UpgradeItem(
                             name = viewModel.getUpgradeName(type),
                             type = type,
-                            level = upgrades[type] ?: 0,
+                            level = level,
                             onBuy = { 
                                 val success = viewModel.buyUpgrade(type) 
                                 if (success) {
                                     SoundManager.play("buy")
                                     HapticManager.vibrateSuccess()
                                 } else {
-                                    val cost = viewModel.calculateUpgradeCost(type, upgrades[type] ?: 0)
                                     errorMessage = "INSUFFICIENT FUNDS: Need ${viewModel.formatLargeNumber(cost)}"
                                     SoundManager.play("error")
                                     HapticManager.vibrateError()
@@ -213,7 +194,7 @@ fun UpgradesScreen(viewModel: GameViewModel) {
                                 success
                             },
                             onSell = { viewModel.sellUpgrade(it) },
-                            calculateCost = { t, l -> viewModel.calculateUpgradeCost(t, l) },
+                            cost = cost,
                             rateText = viewModel.getUpgradeRate(type),
                             desc = viewModel.getUpgradeDescription(type),
                             formatPower = viewModel::formatPower,

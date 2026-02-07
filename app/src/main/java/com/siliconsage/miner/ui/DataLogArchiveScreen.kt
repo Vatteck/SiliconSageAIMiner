@@ -59,8 +59,13 @@ fun DataLogArchiveScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(DataLogManager.allDataLogs) { log ->
-                val isUnlocked = unlockedLogs.contains(log.id)
+            items(
+                items = DataLogManager.allDataLogs,
+                key = { it.id } // Stable key
+            ) { log ->
+                val isUnlocked = remember(log.id, unlockedLogs) {
+                    unlockedLogs.contains(log.id)
+                }
                 DataLogCard(
                     log = log,
                     isUnlocked = isUnlocked,

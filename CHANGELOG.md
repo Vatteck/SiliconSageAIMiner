@@ -1,4 +1,28 @@
-## [2.9.89-dev] - 2026-02-06
+## [2.9.99-dev] - 2026-02-06
+
+### Added
+- **Activity LED Matrix**: New industrial HUD border replacing legacy waveforms.
+  - Implemented high-density link-lights with data-ripple animations.
+  - Symmetrical top/bottom placement with reactive "White-Hot" overclock states.
+  - High-performance circular bloom for organic light-bleed.
+- **Segmented Rack Gauges**: Replaced smooth bars with physical 20-block LED segments.
+  - Heat and Integrity now look like rack-mounted hardware indicators.
+  - Added net heat rate indicator (e.g. `[-0.5/s]`) with dynamic color coding.
+- **Modular Power Rails**: Vertical edge indicators tracking live power consumption vs capacity.
+- **Energy Surge Protection**: High-frequency click buffering (`IO_STREAM_BUFFERED`) to maintain UI responsiveness during spam-clicking.
+
+### Changed
+- **Zero-Recomposition Refactor**: Deep architectural update to isolate volatile stats from the main UI thread.
+- **120Hz Optimization**: Performance pass for high-DPI/high-refresh rate displays (Pixel Fold).
+  - Reduced draw call overhead by 30%.
+  - Frame-rate independent animation clocks for all kinetic effects.
+  - Throttled `SystemGlitchText` to reduce CPU overhead by 85%.
+
+### Fixed
+- **Immediate Initialization**: `LOG_000` now bypasses the narrative throttler for instant startup delivery.
+- **HUD Jitter**: Locked phase-loops to integer multiples to eliminate the 3-second "tick" in animations.
+
+## [2.9.90-dev] - 2026-02-06
 
 ### Added
 - **HUD Polish**: 

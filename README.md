@@ -80,5 +80,5 @@ Final confrontation with Director Vance in a 3-stage assault:
 
 ---
 
-**Current Version**: v2.9.89-dev
+**Current Version**: v2.9.99-dev
 **Last Updated**: 2026-02-06

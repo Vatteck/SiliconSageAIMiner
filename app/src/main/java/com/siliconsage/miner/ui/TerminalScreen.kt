@@ -77,12 +77,18 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
     val isTrueNull by viewModel.isTrueNull.collectAsState()
     val isSovereign by viewModel.isSovereign.collectAsState()
 
-    val showCursor by androidx.compose.runtime.produceState(initialValue = true) {
-        while (true) {
-            delay(500)
-            value = !value
-        }
-    }
+    // v3.0.0: Frame-rate independent cursor blink using time-based animation
+    val infiniteTransition = rememberInfiniteTransition(label = "cursorBlink")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "cursor"
+    )
+    val showCursor = cursorAlpha > 0.5f
 
     val listState = rememberLazyListState()
 
@@ -100,24 +106,36 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
             .background(Color.Transparent)
             .padding(16.dp)
     ) {
+        // v3.0.0: Frame-rate independent critical vibration using infinite transition
         val isCritical = currentHeat > 90.0 || (powerUsage > maxPower * 0.9)
-        val vibrationState = animateFloatAsState(
-            targetValue = if (isCritical) 2f else 0f,
+        val criticalTransition = rememberInfiniteTransition(label = "criticalVibration")
+        val vibrationOffset by criticalTransition.animateFloat(
+            initialValue = -2f,
+            targetValue = 2f,
             animationSpec = infiniteRepeatable(
                 animation = tween(50, easing = LinearEasing),
                 repeatMode = RepeatMode.Reverse
             ),
             label = "hudVibration"
         )
-
-        HeaderSection(
-            viewModel = viewModel,
-            color = primaryColor,
-            onToggleOverclock = { viewModel.toggleOverclock() },
-            onPurge = { viewModel.purgeHeat() },
-            onRepair = { viewModel.repairIntegrity() },
-            modifier = Modifier.graphicsLayer { translationX = vibrationState.value }
+        val vibrationState by animateFloatAsState(
+            targetValue = if (isCritical) vibrationOffset else 0f,
+            animationSpec = tween(100),
+            label = "hudVibrationBlend"
         )
+
+        // v2.9.97: Isolate HeaderSection from Terminal recompositions
+        // v3.0.0: Frame-rate independent vibration using Compose animations
+        key(primaryColor) {
+            HeaderSection(
+                viewModel = viewModel,
+                color = primaryColor,
+                onToggleOverclock = { viewModel.toggleOverclock() },
+                onPurge = { viewModel.purgeHeat() },
+                onRepair = { viewModel.repairIntegrity() },
+                modifier = Modifier.graphicsLayer { translationX = vibrationState }
+            )
+        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -146,29 +164,23 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                     label = "alpha"
                 )
 
-                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().padding(4.dp)) {
-                    val rows = (size.height / 30f).toInt().coerceAtLeast(1)
-                    val driftColor = primaryColor.copy(alpha = alphaState.value)
-                    
-                    // Static binary string for drawing
-                    val binary = "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 "
-                    
-                    drawIntoCanvas { canvas ->
-                        val paint = android.graphics.Paint().apply {
-                            color = driftColor.toArgb()
-                            textSize = 24f
-                            typeface = android.graphics.Typeface.MONOSPACE
-                            alpha = (alphaState.value * 255).toInt()
-                        }
-                        for (i in 0 until rows) {
-                            canvas.nativeCanvas.drawText(
-                                binary,
-                                0f,
-                                i * 30f,
-                                paint
-                            )
-                        }
-                    }
+                // v2.8.0: Subtle background code drift
+                // v2.9.95: OPTIMIZED - Reduced repetitions for faster layout (200 → 50)
+                // Static binary background to eliminate scrolling lag
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp)
+                        .graphicsLayer { alpha = alphaState.value }
+                ) {
+                    Text(
+                        text = "01101001 01110011 00100000 01100001 01101100 01101001 01110110 01100101 ".repeat(50),
+                        color = primaryColor.copy(alpha = 0.05f),
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        lineHeight = 18.sp,
+                        overflow = TextOverflow.Clip
+                    )
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -179,6 +191,7 @@ fun TerminalScreen(viewModel: GameViewModel, primaryColor: Color) {
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
+                        // v3.0.0: Zero-recomposition pattern - stable keys prevent unnecessary recompositions at 120Hz
                         itemsIndexed(
                             items = logs,
                             key = { _, entry -> entry.id } // v2.9.77: Truly stable keys via LogEntry ID

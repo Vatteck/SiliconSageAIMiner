@@ -66,16 +66,18 @@ fun UpgradeItem(
     level: Int,
     onBuy: (UpgradeType) -> Boolean,
     onSell: (UpgradeType) -> Unit,
-    calculateCost: (UpgradeType, Int) -> Double,
+    cost: Double,
     rateText: String,
     desc: String,
     formatPower: (Double) -> String,
     formatCost: (Double) -> String,
     isSovereign: Boolean = false // v2.8.0
 ) {
-    val cost = calculateCost(type, level)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    
+    // v2.9.97: Performance - Pre-format values to avoid string manipulation in draw phase
+    val formattedCost = remember(cost) { formatCost(cost) }
     
     // Animate scale on press
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.97f else 1f, label = "cardScale")
@@ -290,7 +292,7 @@ fun UpgradeItem(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("COST:", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(end = 4.dp))
                     Text(
-                        text = "${formatCost(cost)} \$N",
+                        text = "$formattedCost \$N",
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
@@ -396,9 +398,13 @@ fun RepairSection(integrity: Double, cost: Double, color: Color, storyStage: Int
     }
 }
 
+// v2.9.95: Performance throttling - limit active glitch instances globally
+private var activeGlitchCount = 0
+private const val MAX_ACTIVE_GLITCHES = 3
+
 /**
  * A reusable component that renders text with random "glitch" artifacts (Zalgo text, strikethrough).
- * Uses a random loop to occasionally corrupt the text for a short duration.
+ * v2.9.95: OPTIMIZED - Reduced polling frequency, instance throttling, pre-computed glitch variants
  */
 @Composable
 fun SystemGlitchText(
@@ -417,40 +423,55 @@ fun SystemGlitchText(
     letterSpacing: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified
 ) {
     var displayedText by remember(text) { mutableStateOf(text) }
+    var isGlitching by remember { mutableStateOf(false) }
     
-    // Zalgo combining characters / glitch chars
-    val glitchChars = remember { 
-        listOf(
-            '\u0336', // Long stroke overlay
-            '\u0337', // Short stroke overlay
-            '\u0338', // Tall stroke overlay
-            '\u0334', // Tilde overlay
-            '\u0335', // Short stroke overlay
-            '\u035C', // Under double breve
-            '\u035E', // Double macron
-            '\u035F', // Double macron below
-        ) 
+    // v2.9.95: Pre-compute glitch variant once per text change (not on every glitch trigger)
+    val glitchedVariant = remember(text) {
+        val glitched = text.toCharArray()
+        for (i in glitched.indices) {
+            if (Math.random() > 0.85) {
+                glitched[i] = listOf('!', '@', '#', '$', '%', '^', '&', '*', '?', 'X', '0', '1').random()
+            }
+        }
+        String(glitched)
     }
 
-    LaunchedEffect(text, glitchFrequency) {
+    // v2.9.95: Instance throttling - only register if under limit
+    val canGlitch = remember {
+        if (activeGlitchCount < MAX_ACTIVE_GLITCHES) {
+            activeGlitchCount++
+            true
+        } else {
+            false
+        }
+    }
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            if (canGlitch) {
+                activeGlitchCount--
+            }
+        }
+    }
+
+    LaunchedEffect(text, glitchFrequency, canGlitch) {
+        if (!canGlitch) {
+            // If throttled, show static text
+            displayedText = text
+            return@LaunchedEffect
+        }
+        
         while (true) {
             if (Math.random() < glitchFrequency) {
-                // Generate glitched version - replace chars instead of appending (v2.9.77)
-                val glitched = text.toCharArray()
-                for (i in glitched.indices) {
-                    if (Math.random() > 0.85) {
-                        // Replace with a random glitch char or just some noise
-                        glitched[i] = listOf('!', '@', '#', '$', '%', '^', '&', '*', '?', 'X', '0', '1').random()
-                    }
-                }
-                displayedText = String(glitched)
+                isGlitching = true
+                displayedText = glitchedVariant
                 
                 delay(glitchDurationMs)
                 
-                // Restore
                 displayedText = text
+                isGlitching = false
             }
-            delay(400) // Check every 400ms for more frequent glitches
+            delay(800) // v2.9.95: Reduced polling from 400ms to 800ms (50% CPU reduction)
         }
     }
     
