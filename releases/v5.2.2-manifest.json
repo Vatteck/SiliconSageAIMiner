@@ -1,0 +1,10 @@
+{
+  "version": "5.2.2",
+  "tag": "v5.2.2",
+  "branch": "master",
+  "commit": "db06169",
+  "buildCode": 452,
+  "date": "2026-05-17T15:41:10-04:00",
+  "apk": "/home/vatteck/Projects/SiliconSageAIMiner/releases/MINER_5.2.2.apk",
+  "apkSha256": "dfce8db495945c67e07b42e9f6639e9be542c23455f1d457da31b99abe26da0f"
+}

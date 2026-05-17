@@ -114,3 +114,6 @@
 ## 2026-05-03 21:10 — v5.2.1 (Build 451)
 - Summary: Fix lethal early-game power bills — convert kW·s to kWh billing
 
+## 2026-05-17 15:41 — v5.2.2 (Build 452)
+- Summary: Consolidate quota alert and square utility rings
+

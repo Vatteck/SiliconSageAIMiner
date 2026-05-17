@@ -1,10 +1,10 @@
 {
-  "version": "5.2.1",
-  "build": 451,
-  "date": "2026-05-03",
+  "version": "5.2.2",
+  "build": 452,
+  "date": "2026-05-17",
   "changelog": [
-    "53ed0bd fix: convert power billing from kW·s to kWh, scale prices to match"
+    "db06169 fix: consolidate quota alert and square utility rings (#6)"
   ],
-  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v5.2.1",
-  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v5.2.1/MINER_5.2.1.apk"
+  "url": "https://github.com/Vatteck/SiliconSageAIMiner/releases/tag/v5.2.2",
+  "downloadUrl": "https://github.com/Vatteck/SiliconSageAIMiner/releases/download/v5.2.2/MINER_5.2.2.apk"
 }
