@@ -117,3 +117,6 @@
 ## 2026-05-17 15:41 — v5.2.2 (Build 452)
 - Summary: Consolidate quota alert and square utility rings
 
+## 2026-05-22 23:56 — v5.2.3 (Build 453)
+- Summary: Fix centered breaker/grid overload overlay and reset both fault states
+
