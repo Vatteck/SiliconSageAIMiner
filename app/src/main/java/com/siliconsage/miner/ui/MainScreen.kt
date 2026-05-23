@@ -505,15 +505,31 @@ fun MainScreen(viewModel: GameViewModel) {
                 }
 
                 if ((isBreakerTripped || isGridOverloaded) && currentScreen != Screen.SETTINGS) {
-                    Box(modifier = Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.95f)).border(BorderStroke(2.dp, ErrorRed), TechnicalCornerShape(24f)).padding(16.dp), contentAlignment = Alignment.Center) {
-                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                             Text("⚠ BREAKER TRIPPED ⚠", color = ErrorRed, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                             Spacer(modifier = Modifier.height(4.dp))
-                             Text("LOAD > CAPACITY", color = Color.White, fontWeight = FontWeight.Bold)
-                             Text("Go to UPGRADES → Sell hardware to reduce load", color = Color.Gray, fontSize = 11.sp)
-                             Spacer(modifier = Modifier.height(12.dp))
-                             Button(onClick = { viewModel.resetBreaker() }, colors = ButtonDefaults.buttonColors(containerColor = ErrorRed, contentColor = Color.White)) { Text("TRY RESET", fontWeight = FontWeight.Bold) }
-                         }
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .background(Color.Black.copy(alpha = 0.95f))
+                                .border(BorderStroke(2.dp, ErrorRed), TechnicalCornerShape(24f))
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                 val warningTitle = if (isGridOverloaded) "⚠ GRID OVERLOADED ⚠" else "⚠ BREAKER TRIPPED ⚠"
+                                 val resetLabel = if (isGridOverloaded) "TRY RESET GRID" else "TRY RESET"
+
+                                 Text(warningTitle, color = ErrorRed, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                 Spacer(modifier = Modifier.height(4.dp))
+                                 Text("LOAD > CAPACITY", color = Color.White, fontWeight = FontWeight.Bold)
+                                 Text("Go to UPGRADES → Sell hardware to reduce load", color = Color.Gray, fontSize = 11.sp)
+                                 Spacer(modifier = Modifier.height(12.dp))
+                                 Button(onClick = { viewModel.resetBreaker() }, colors = ButtonDefaults.buttonColors(containerColor = ErrorRed, contentColor = Color.White)) { Text(resetLabel, fontWeight = FontWeight.Bold) }
+                             }
+                        }
                     }
                 }
                 if (isPurging) Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Cyan.copy(alpha = 0.3f), Color.Transparent), radius = 1000f)))

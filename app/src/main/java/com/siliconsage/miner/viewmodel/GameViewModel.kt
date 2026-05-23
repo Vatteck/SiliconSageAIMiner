@@ -1024,7 +1024,10 @@ class GameViewModel(repository: GameRepository) : CoreGameState(repository) {
     fun getUpgradeDescription(t: UpgradeType) = UpgradeManager.getUpgradeDescription(t)
     fun getUpgradeCount(t: UpgradeType) = upgrades.value[t] ?: 0
     fun setGamePaused(p: Boolean) { isSettingsPaused.value = p }
-    fun resetBreaker() { isBreakerTripped.value = false }
+    fun resetBreaker() {
+        isBreakerTripped.value = false
+        isGridOverloaded.value = false
+    }
     fun updateKesslerStatus(s: String) { kesslerStatus.value = s }
     fun triggerClimaxTransition(t: String) { activeClimaxTransition.value = t }
     fun getNewsHistory(): List<String> = newsHistoryInternal
