@@ -1,1 +1,0 @@
-/home/vatteck/.openclaw/workspace/CANON.md
