@@ -60,34 +60,6 @@ fun UpgradesScreen(
     val throttle = Derived.heatThrottle(state.heat, config)
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        // Compact status HUD — always visible while shopping
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .background(CrtSurface, RoundedCornerShape(4.dp))
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                "${formatFlops(state.flops)} \$FLOPS",
-                style = MaterialTheme.typography.bodySmall,
-                color = TerminalGreen,
-            )
-            Text(
-                "HEAT ${state.heat.toInt()}/${config.maxHeat.toInt()}" +
-                    (if (throttle < 1.0) " ⚠" else ""),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (throttle < 1.0) TerminalAmber else TerminalGreenDim,
-            )
-            Text(
-                "PWR ${formatFlops(powerDraw)}/${formatFlops(powerCapacity)} kW" +
-                    (if (powerDraw > powerCapacity) " !" else ""),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (powerDraw > powerCapacity) TerminalRed else TerminalGreenDim,
-            )
-        }
-
-        Spacer(Modifier.height(6.dp))
         Row(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -37,7 +37,6 @@ import com.hashfactory.game.ui.theme.TerminalRed
 fun FactoryScreen(
     state: GameState,
     config: GameConfig,
-    terminalLog: List<String>,
     onTap: () -> Unit,
     onToggleOverclock: () -> Unit,
     onPurgeHeat: () -> Unit,
@@ -128,18 +127,6 @@ fun FactoryScreen(
             detail = "%s / %s kW".format(formatFlops(powerDraw), formatFlops(powerCapacity)) +
                 if (powerDraw > powerCapacity) "  [STARVED]" else "",
         )
-
-        // Terminal log strip
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .background(CrtSurface, RoundedCornerShape(4.dp))
-                .padding(8.dp),
-        ) {
-            terminalLog.forEach { line ->
-                Text("> $line", style = MaterialTheme.typography.bodySmall, color = TerminalGreenDim)
-            }
-        }
 
         Spacer(Modifier.height(4.dp))
 

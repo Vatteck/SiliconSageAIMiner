@@ -62,11 +62,7 @@ fun CardValidatorScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("DATA VALIDATOR", style = MaterialTheme.typography.bodySmall, color = TerminalGreenDim)
-        Text(
-            "${formatFlops(flops)} \$FLOPS",
-            style = MaterialTheme.typography.titleMedium,
-            color = TerminalGreen,
-        )
+        Spacer(Modifier.height(4.dp))
 
         if (batch == null) {
             Spacer(Modifier.weight(1f))
