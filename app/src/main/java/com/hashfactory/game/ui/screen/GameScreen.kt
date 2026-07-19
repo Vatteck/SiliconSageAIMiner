@@ -22,6 +22,10 @@ fun GameScreen(vm: GameViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val terminalLog by vm.terminalLog.collectAsStateWithLifecycle()
     val offlineReport by vm.offlineReport.collectAsStateWithLifecycle()
+    val dataset by vm.activeDataset.collectAsStateWithLifecycle()
+    val tileStates by vm.tileStates.collectAsStateWithLifecycle()
+    val cardBatch by vm.cardBatch.collectAsStateWithLifecycle()
+    val cardIndex by vm.cardIndex.collectAsStateWithLifecycle()
 
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var showBurnDialog by rememberSaveable { mutableStateOf(false) }
@@ -35,6 +39,8 @@ fun GameScreen(vm: GameViewModel) {
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("TERMINAL") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("UPGRADES") })
+                Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("VALIDATE") })
+                Tab(selected = tab == 3, onClick = { tab = 3 }, text = { Text("DATASETS") })
             }
             when (tab) {
                 0 -> FactoryScreen(
@@ -50,6 +56,25 @@ fun GameScreen(vm: GameViewModel) {
                     state = state,
                     config = vm.gameConfig,
                     onBuy = vm::onBuy,
+                )
+                2 -> CardValidatorScreen(
+                    batch = cardBatch,
+                    currentIndex = cardIndex,
+                    flops = state.flops,
+                    onPurchase = vm::onPurchaseCardBatch,
+                    onSwipe = vm::onSwipeCard,
+                    onCashOut = vm::onCashOutCards,
+                    onAbandon = vm::onAbandonCards,
+                )
+                3 -> DatasetScreen(
+                    dataset = dataset,
+                    tileStates = tileStates,
+                    flops = state.flops,
+                    onPurchase = vm::onPurchaseDataset,
+                    onToggleTile = vm::onToggleTile,
+                    onNextPage = vm::onNextPage,
+                    onSubmit = vm::onSubmitDataset,
+                    onCancel = vm::onCancelDataset,
                 )
             }
         }

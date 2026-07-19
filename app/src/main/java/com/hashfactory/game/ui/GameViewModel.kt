@@ -5,6 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hashfactory.core.actions.Actions
 import com.hashfactory.core.config.GameConfig
+import com.hashfactory.core.datamining.CardBatch
+import com.hashfactory.core.datamining.CardValidator
+import com.hashfactory.core.datamining.Dataset
+import com.hashfactory.core.datamining.DatasetFactory
+import com.hashfactory.core.datamining.scoreDataset
 import com.hashfactory.core.model.GameState
 import com.hashfactory.core.sim.GameEvent
 import com.hashfactory.core.sim.OfflineResult
@@ -39,6 +44,27 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _terminalLog = MutableStateFlow(listOf("GTC REMOTE SHIFT TERMINAL v0.1", "AWAITING OPERATOR INPUT"))
     val terminalLog: StateFlow<List<String>> = _terminalLog.asStateFlow()
+
+    private val _activeDataset = MutableStateFlow<Dataset?>(null)
+    val activeDataset: StateFlow<Dataset?> = _activeDataset.asStateFlow()
+
+    private val _datasetClicks = MutableStateFlow<Set<Int>>(emptySet())
+    val datasetClicks: StateFlow<Set<Int>> = _datasetClicks.asStateFlow()
+
+    /** Per-tile reveal state: NONE → CORRECT or WRONG after click, locked thereafter. */
+    enum class TileReveal { NONE, CORRECT, WRONG }
+
+    private val _tileStates = MutableStateFlow<List<TileReveal>>(emptyList())
+    val tileStates: StateFlow<List<TileReveal>> = _tileStates.asStateFlow()
+
+    private var datasetPage = 0
+    private var datasetSeed = 0L
+
+    private val _cardBatch = MutableStateFlow<CardBatch?>(null)
+    val cardBatch: StateFlow<CardBatch?> = _cardBatch.asStateFlow()
+
+    private val _cardIndex = MutableStateFlow(0)
+    val cardIndex: StateFlow<Int> = _cardIndex.asStateFlow()
 
     val gameConfig: GameConfig get() = config
 
@@ -131,6 +157,151 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun dismissOfflineReport() {
         _offlineReport.value = null
+    }
+
+    // ── dataset mining ────────────────────────────────────────────────
+
+    private fun generatePage(): Dataset {
+        return DatasetFactory.generate(
+            id = "ds-$datasetSeed",
+            width = 4,
+            height = 4,
+            faceRatio = 0.5,
+            cost = 0.0, // cost already paid on purchase
+            rewardPerFace = 50.0,
+            penaltyPerMistake = 25.0,
+            baseSeed = datasetSeed + datasetPage * 1000,
+        )
+    }
+
+    fun onPurchaseDataset() {
+        if (!ready || _activeDataset.value != null) return
+        val cost = 10.0
+        val current = _state.value
+        if (current.flops < cost) return
+        _state.update { it.copy(flops = it.flops - cost) }
+        datasetSeed = System.currentTimeMillis()
+        datasetPage = 0
+        val ds = generatePage()
+        _activeDataset.value = ds
+        _tileStates.value = ds.tiles.map { TileReveal.NONE }
+        log("DATASET BUNDLE ACQUIRED — PAGE 1")
+    }
+
+    fun onToggleTile(index: Int) {
+        val ds = _activeDataset.value ?: return
+        if (index !in ds.tiles.indices) return
+        val states = _tileStates.value
+        if (states[index] != TileReveal.NONE) return // already revealed, locked
+
+        val tile = ds.tiles[index]
+        val newReveal = if (tile.isFace) TileReveal.CORRECT else TileReveal.WRONG
+        val payout = if (tile.isFace) ds.rewardPerFace else -ds.penaltyPerMistake
+
+        _state.update { it.copy(flops = (it.flops + payout).coerceAtLeast(0.0)) }
+        _tileStates.update { it.toMutableList().also { list -> list[index] = newReveal } }
+        _datasetClicks.update { it + index }
+
+        if (tile.isFace) log("FACE CONFIRMED — +${"%.0f".format(ds.rewardPerFace)} \$FLOPS")
+        else log("ANOMALY DETECTED — −${"%.0f".format(ds.penaltyPerMistake)} \$FLOPS")
+
+        // Auto-advance when all faces on this page are found
+        val updatedStates = _tileStates.value
+        val allFacesFound = ds.tiles.indices.all { i ->
+            if (ds.tiles[i].isFace) updatedStates[i] == TileReveal.CORRECT else true
+        }
+        if (allFacesFound) {
+            datasetPage++
+            val nextDs = generatePage()
+            _activeDataset.value = nextDs
+            _tileStates.value = nextDs.tiles.map { TileReveal.NONE }
+            _datasetClicks.value = emptySet()
+            log("ALL FACES FOUND — PAGE ${datasetPage + 1} LOADED")
+        }
+    }
+
+    fun onNextPage() {
+        val ds = _activeDataset.value ?: return
+        // Only allow next page when all faces on current page are found
+        val allFacesFound = ds.tiles.indices.all { i ->
+            if (ds.tiles[i].isFace) _tileStates.value[i] == TileReveal.CORRECT else true
+        }
+        if (!allFacesFound) return
+
+        datasetPage++
+        val nextDs = generatePage()
+        _activeDataset.value = nextDs
+        _tileStates.value = nextDs.tiles.map { TileReveal.NONE }
+        _datasetClicks.value = emptySet()
+        log("PAGE ${datasetPage + 1} LOADED")
+    }
+
+    fun onSubmitDataset() {
+        val ds = _activeDataset.value ?: return
+        val facesFound = ds.tiles.indices.count { i -> ds.tiles[i].isFace && _tileStates.value[i] == TileReveal.CORRECT }
+        val mistakes = ds.tiles.indices.count { i -> !ds.tiles[i].isFace && _tileStates.value[i] == TileReveal.WRONG }
+        val totalFaces = ds.tiles.count { it.isFace }
+        log("BUNDLE COMPLETE — $datasetPage PAGE(S), $facesFound/$totalFaces FACES FOUND ON FINAL PAGE")
+        _activeDataset.value = null
+        _tileStates.value = emptyList()
+        _datasetClicks.value = emptySet()
+    }
+
+    fun onCancelDataset() {
+        if (_activeDataset.value == null) return
+        _activeDataset.value = null
+        _tileStates.value = emptyList()
+        _datasetClicks.value = emptySet()
+        log("DATASET ABANDONED")
+    }
+
+    // ── card validation ────────────────────────────────────────────────
+
+    fun onPurchaseCardBatch() {
+        if (!ready || _cardBatch.value != null) return
+        val cost = 15.0
+        val current = _state.value
+        if (current.flops < cost) return
+        _state.update { it.copy(flops = it.flops - cost) }
+        val batch = CardValidator.generateBatch(size = 12, cost = cost)
+        _cardBatch.value = batch
+        _cardIndex.value = 0
+        log("DATA BATCH LOADED — ${batch.profiles.size} RECORDS FOR VALIDATION")
+    }
+
+    fun onSwipeCard(approved: Boolean) {
+        val batch = _cardBatch.value ?: return
+        val idx = _cardIndex.value
+        if (idx >= batch.profiles.size) return
+        val profile = batch.profiles[idx]
+        val correct = approved == profile.isValid
+        val payout = if (correct) batch.rewardPerCorrect else -batch.penaltyPerWrong
+
+        _state.update { it.copy(flops = (it.flops + payout).coerceAtLeast(0.0)) }
+        _cardIndex.value = idx + 1
+
+        if (correct) {
+            val action = if (approved) "APPROVED" else "FLAGGED"
+            log("$action — CORRECT +${"%.0f".format(batch.rewardPerCorrect)} \$FLOPS")
+        } else {
+            val reason = profile.flagReason ?: "UNKNOWN"
+            log("WRONG — $reason · −${"%.0f".format(batch.penaltyPerWrong)} \$FLOPS")
+        }
+    }
+
+    fun onCashOutCards() {
+        if (_cardBatch.value == null) return
+        val total = _cardIndex.value
+        log("VALIDATION COMPLETE — $total RECORDS PROCESSED")
+        _cardBatch.value = null
+        _cardIndex.value = 0
+    }
+
+    fun onAbandonCards() {
+        if (_cardBatch.value == null) return
+        _cardBatch.value = null
+        _cardIndex.value = 0
+        log("VALIDATION ABANDONED")
     }
 
     private fun logEvent(event: GameEvent) {
