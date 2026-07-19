@@ -1,5 +1,6 @@
 package com.hashfactory.game.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -24,16 +26,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.hashfactory.core.config.GameConfig
 import com.hashfactory.core.config.UpgradeCategory
 import com.hashfactory.core.config.UpgradeDef
 import com.hashfactory.core.config.UpgradeDefs
 import com.hashfactory.core.economy.Economy
 import com.hashfactory.core.model.GameState
+import com.hashfactory.core.sim.Derived
 import com.hashfactory.game.ui.BuyMode
 import com.hashfactory.game.ui.format.formatFlops
+import com.hashfactory.game.ui.theme.CrtSurface
 import com.hashfactory.game.ui.theme.CrtSurfaceBright
+import com.hashfactory.game.ui.theme.TerminalAmber
 import com.hashfactory.game.ui.theme.TerminalGreen
 import com.hashfactory.game.ui.theme.TerminalGreenDim
+import com.hashfactory.game.ui.theme.TerminalRed
 
 private val categoryTitles = mapOf(
     UpgradeCategory.HARDWARE to "HARDWARE — COMPUTE CAPACITY",
@@ -44,11 +51,43 @@ private val categoryTitles = mapOf(
 @Composable
 fun UpgradesScreen(
     state: GameState,
+    config: GameConfig,
     onBuy: (String, BuyMode) -> Unit,
 ) {
     var buyMode by rememberSaveable { mutableStateOf(BuyMode.ONE) }
+    val powerDraw = Derived.powerDraw(state)
+    val powerCapacity = Derived.powerCapacity(state, config)
+    val throttle = Derived.heatThrottle(state.heat, config)
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        // Compact status HUD — always visible while shopping
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(CrtSurface, RoundedCornerShape(4.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "${formatFlops(state.flops)} \$FLOPS",
+                style = MaterialTheme.typography.bodySmall,
+                color = TerminalGreen,
+            )
+            Text(
+                "HEAT ${state.heat.toInt()}/${config.maxHeat.toInt()}" +
+                    (if (throttle < 1.0) " ⚠" else ""),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (throttle < 1.0) TerminalAmber else TerminalGreenDim,
+            )
+            Text(
+                "PWR ${formatFlops(powerDraw)}/${formatFlops(powerCapacity)} kW" +
+                    (if (powerDraw > powerCapacity) " !" else ""),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (powerDraw > powerCapacity) TerminalRed else TerminalGreenDim,
+            )
+        }
+
+        Spacer(Modifier.height(6.dp))
         Row(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

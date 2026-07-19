@@ -12,15 +12,18 @@ import kotlin.math.max
  */
 object Derived {
 
-    /** Total compute capacity in flops/s, including milestone and prestige multipliers. */
+    /** Total compute capacity in flops/s, including milestone, prestige, and overclock multipliers. */
     fun capacity(state: GameState, config: GameConfig): Double {
         var sum = 0.0
         for (def in UpgradeDefs.ALL) {
             if (def.computeCapacity <= 0.0) continue
             sum += Economy.hardwareOutput(def.computeCapacity, state.level(def.id))
         }
-        return sum * Economy.prestigeMultiplier(state.persistence, config)
+        return sum * Economy.prestigeMultiplier(state.persistence, config) * overclockOutputFactor(state, config)
     }
+
+    fun overclockOutputFactor(state: GameState, config: GameConfig): Double =
+        if (state.overclocked) config.overclockOutputMult else 1.0
 
     fun powerDraw(state: GameState): Double {
         var sum = 0.0
@@ -45,10 +48,10 @@ object Derived {
         return (powerCapacity(state, config) / draw).coerceAtMost(1.0).coerceAtLeast(0.0)
     }
 
-    fun heatGeneration(state: GameState): Double {
+    fun heatGeneration(state: GameState, config: GameConfig): Double {
         var sum = 0.0
         for (def in UpgradeDefs.ALL) sum += def.heatPerSec * state.level(def.id)
-        return sum
+        return sum * if (state.overclocked) config.overclockHeatMult else 1.0
     }
 
     fun cooling(state: GameState, config: GameConfig): Double {

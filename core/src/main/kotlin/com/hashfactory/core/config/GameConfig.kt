@@ -24,6 +24,12 @@ data class GameConfig(
     val offlineCapSeconds: Double = 8.0 * 3600.0,
     /** Chunk size for offline replay, seconds. */
     val offlineStepSeconds: Double = 1.0,
+    /** Output multiplier while overclocked. */
+    val overclockOutputMult: Double = 2.0,
+    /** Heat generation multiplier while overclocked. */
+    val overclockHeatMult: Double = 2.0,
+    /** Heat reduced per $FLOPS spent when purging (emergency dump). */
+    val purgeHeatEfficiency: Double = 0.05,
     /** Capacity multiplier per Persistence point: 1 + persistence * this. */
     val persistenceBonusPerPoint: Double = 0.01,
     /** Burn is allowed once prestigeGain(flopsThisRun) reaches this (300 = 1e6 flops earned). */

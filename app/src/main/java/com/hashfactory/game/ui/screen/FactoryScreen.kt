@@ -39,12 +39,16 @@ fun FactoryScreen(
     config: GameConfig,
     terminalLog: List<String>,
     onTap: () -> Unit,
+    onToggleOverclock: () -> Unit,
+    onPurgeHeat: () -> Unit,
     onBurnRequest: () -> Unit,
 ) {
     val effectiveCapacity = Derived.effectiveCapacity(state, config)
     val powerDraw = Derived.powerDraw(state)
     val powerCapacity = Derived.powerCapacity(state, config)
     val throttle = Derived.heatThrottle(state.heat, config)
+    val netHeatRate = Derived.heatGeneration(state, config) * Derived.powerFactor(state, config) * throttle -
+        Derived.cooling(state, config)
     val burnGain = Economy.prestigeGain(state.flopsThisRun)
 
     Column(
@@ -56,12 +60,27 @@ fun FactoryScreen(
     ) {
         Text("GTC REMOTE COMPUTE // SHIFT ACTIVE", style = MaterialTheme.typography.bodySmall, color = TerminalGreenDim)
 
+        if (Derived.powerFactor(state, config) < 0.5) {
+            Text(
+                "!! POWER STARVED — OUTPUT REDUCED TO %.0f%%".format(
+                    Derived.powerFactor(state, config) * 100,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TerminalRed,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(TerminalRed.copy(alpha = 0.10f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+
         // Wallet
         Column {
             Text("\$FLOPS BALANCE", style = MaterialTheme.typography.bodySmall, color = TerminalGreenDim)
             Text(formatFlops(state.flops), style = MaterialTheme.typography.displayMedium, color = TerminalGreen)
             Text(
                 "ASSIGNED THROUGHPUT: ${formatFlops(effectiveCapacity)}/s" +
+                    (if (state.overclocked) "  [OVERCLOCKED]" else "") +
                     if (throttle < 1.0) "  [THROTTLED]" else "",
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (throttle < 1.0) TerminalAmber else MaterialTheme.colorScheme.onBackground,
@@ -93,7 +112,13 @@ fun FactoryScreen(
                 state.heat > 60.0 -> TerminalAmber
                 else -> TerminalGreen
             },
-            detail = if (throttle < 1.0) "THROTTLE %.0f%%".format(throttle * 100) else null,
+            detail = buildString {
+                append("%.0f°".format(state.heat))
+                if (throttle < 1.0) append(" · THROTTLE %.0f%%".format(throttle * 100))
+                append(" · ")
+                append(if (netHeatRate >= 0.0) "+" else "−")
+                append("%.0f°/s".format(kotlin.math.abs(netHeatRate)))
+            },
         )
         Meter(
             label = "POWER",
@@ -126,6 +151,41 @@ fun FactoryScreen(
             colors = ButtonDefaults.buttonColors(containerColor = TerminalGreen),
         ) {
             Text("COMPUTE HASH", style = MaterialTheme.typography.headlineSmall)
+        }
+
+        // Overclock: trade heat for output
+        OutlinedButton(
+            onClick = onToggleOverclock,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = if (state.overclocked) TerminalAmber else TerminalGreenDim,
+            ),
+        ) {
+            Text(
+                if (state.overclocked) "!! OVERCLOCK ENGAGED — TAP TO DISENGAGE"
+                else "OVERCLOCK — x%.0f OUTPUT / x%.0f HEAT".format(config.overclockOutputMult, config.overclockHeatMult),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+
+        // Purge heat: emergency dump — all flops for instant cooling
+        OutlinedButton(
+            onClick = onPurgeHeat,
+            enabled = state.flops > 0.0 && state.heat > 0.0,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = TerminalAmber,
+            ),
+        ) {
+            val cooling = (state.flops * config.purgeHeatEfficiency).coerceAtMost(state.heat)
+            Text(
+                when {
+                    state.heat <= 0.0 -> "DUMP HEAT — THERMAL LEVELS NOMINAL"
+                    state.flops <= 0.0 -> "DUMP HEAT — NO \$FLOPS TO BURN"
+                    else -> "DUMP HEAT — ${formatFlops(state.flops)} \$FLOPS → −${formatFlops(cooling)}°"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
 
         // The Burn

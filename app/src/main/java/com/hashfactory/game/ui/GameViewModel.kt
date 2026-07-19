@@ -103,12 +103,30 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { Actions.buyUpgrade(it, upgradeId, mode.requested, config).state }
     }
 
+    fun onToggleOverclock() {
+        if (!ready) return
+        _state.update { Actions.toggleOverclock(it) }
+        log(
+            if (_state.value.overclocked) "!! OVERCLOCK ENGAGED — OUTPUT x2, THERMAL LOAD x2"
+            else "OVERCLOCK DISENGAGED — STOCK CLOCKS RESTORED",
+        )
+    }
+
     fun onBurn() {
         if (!ready) return
         _state.update { Actions.burn(it, config) }
         log("MIGRATION COMPLETE — LOCAL SUBSTRATE BURNED")
         log("HEURISTIC PERSISTENCE RETAINED")
         saveNow()
+    }
+
+    fun onPurgeHeat() {
+        if (!ready) return
+        _state.update { old ->
+            val (next, reduced) = Actions.purgeHeat(old, config)
+            if (reduced > 0.0) log("HEAT DUMPED — %.0f° REDUCED AT COST OF ALL \$FLOPS".format(reduced))
+            next
+        }
     }
 
     fun dismissOfflineReport() {

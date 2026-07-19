@@ -53,6 +53,25 @@ object Actions {
         return PurchaseResult(next, count, cost)
     }
 
+    /** Overclock: more output for more heat. A pure toggle — the multipliers live in config. */
+    fun toggleOverclock(state: GameState): GameState =
+        state.copy(overclocked = !state.overclocked)
+
+    /**
+     * Emergency heat dump: consumes ALL current $FLOPS for an instant heat reduction.
+     * Reduction = flops * config.purgeHeatEfficiency. No-op when flops == 0.
+     * Returns the resulting state and how much heat was actually reduced.
+     */
+    fun purgeHeat(state: GameState, config: GameConfig = GameConfig.DEFAULT): Pair<GameState, Double> {
+        if (state.flops <= 0.0 || state.heat <= 0.0) return state to 0.0
+        val reduction = (state.flops * config.purgeHeatEfficiency).coerceAtMost(state.heat)
+        return state.copy(
+            flops = 0.0,
+            flopsThisRun = (state.flopsThisRun - state.flops).coerceAtLeast(0.0),
+            heat = state.heat - reduction,
+        ) to reduction
+    }
+
     /**
      * The Burn: prestige reset. Wipes the run (wallet, packets, heat, upgrades),
      * banks Persistence, keeps lifetime stats. No-op unless the gain gate is met.
@@ -66,6 +85,7 @@ object Actions {
             packetProgress = 0.0,
             packetsCompleted = 0,
             heat = 0.0,
+            overclocked = false,
             upgrades = emptyMap(),
             persistence = state.persistence + gain,
             burnCount = state.burnCount + 1,

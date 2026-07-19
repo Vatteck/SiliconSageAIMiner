@@ -42,10 +42,13 @@ fun GameScreen(vm: GameViewModel) {
                     config = vm.gameConfig,
                     terminalLog = terminalLog,
                     onTap = vm::onTap,
+                    onToggleOverclock = vm::onToggleOverclock,
+                    onPurgeHeat = vm::onPurgeHeat,
                     onBurnRequest = { showBurnDialog = true },
                 )
                 1 -> UpgradesScreen(
                     state = state,
+                    config = vm.gameConfig,
                     onBuy = vm::onBuy,
                 )
             }

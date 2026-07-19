@@ -42,7 +42,7 @@ object Simulation {
 
         // Heat integrates: generation is throttled with the rig, so the system
         // self-stabilizes at an equilibrium instead of death-spiraling.
-        val heatDelta = Derived.heatGeneration(state) * powerFactor * throttle -
+        val heatDelta = Derived.heatGeneration(state, config) * powerFactor * throttle -
             Derived.cooling(state, config)
         val newHeat = (worked.heat + heatDelta * dtSeconds)
             .sane()

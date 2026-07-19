@@ -22,6 +22,8 @@ data class GameState(
     val heat: Double = 0.0,
     /** upgradeId -> owned level. Ids come from UpgradeDefs. */
     val upgrades: Map<String, Int> = emptyMap(),
+    /** Overclock toggle: multiplies output and heat generation while on. */
+    val overclocked: Boolean = false,
     /** Prestige currency, kept across Burns. */
     val persistence: Double = 0.0,
     val burnCount: Int = 0,
